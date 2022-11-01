@@ -7,6 +7,8 @@ name = "pypi"
 pandas = "*"
 dash = "*"
 dataretrieval = "*"
+plotly = "*"
+dash-bootstrap-components = "*"
 
 [dev-packages]
 
