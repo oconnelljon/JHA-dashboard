@@ -1,17 +1,110 @@
 from datetime import date, datetime
 import dataretrieval.nwis as nwis
 import utils.param_codes as pc
-from dash import dash, html, dcc, Input, Output, State
+from dash import dash, html, dcc, Input, Output
 import plotly.graph_objects as go
 import pandas as pd
-from utils import download, utils
-import json
+from utils import utils
+
+# import dash_bootstrap_components as dbc
+STAID_coord = pd.read_csv("src/data/site_data.csv")
+mapbox_access_token = "pk.eyJ1Ijoic2xlZXB5Y2F0IiwiYSI6ImNsOXhiZng3cDA4cmkzdnFhOWhxdDEwOHQifQ.SU3dYPdC5aFVgOJWGzjq2w"
+
+
+def create_map():
+    fig = go.Figure(
+        go.Scattermapbox(
+            lat=STAID_coord["lat"],
+            lon=STAID_coord["long"],
+            mode="markers",
+            marker=go.scattermapbox.Marker(size=9),
+            text=STAID_coord["name"],
+        )
+    )
+    fig.update_layout(
+        autosize=True,
+        hovermode="closest",
+        mapbox=dict(
+            accesstoken=mapbox_access_token,
+            bearing=0,
+            center=dict(
+                lat=STAID_coord["lat"].median(),
+                lon=STAID_coord["long"].median(),
+            ),
+            pitch=0,
+            zoom=10,
+        ),
+    )
+    return fig
+
+
+SIDEBAR_STYLE = {
+    "position": "fixed",
+    "top": 0,
+    "left": 0,
+    "bottom": 0,
+    "width": "18rem",
+    "padding": "4rem 1rem 2rem",
+    "background-color": "#f8f9fa",
+}
+
+CONTENT_STYLE = {
+    "margin-left": "19rem",
+    "margin-right": "2rem",
+    "padding": "2rem 1rem",
+}
+
+sidebar = html.Div(
+    [
+        html.H1("Sidebar", className="display-4"),
+        html.Hr(),
+        html.P("A simple sidebar layout with navigation links", className="lead"),
+        html.Div(
+            [
+                "Station ID: ",
+                dcc.Input(
+                    id="station_ID",
+                    value="12323840",
+                    debounce=True,
+                    inputMode="numeric",
+                    autoFocus=True,
+                    minLength=8,
+                    placeholder="enter station",
+                    type="text",
+                ),
+            ],
+        ),
+        html.Div(
+            [
+                html.P("Select Date Range"),
+                dcc.DatePickerRange(
+                    id="date_range",
+                    start_date=date(2020, 3, 1),
+                    end_date=date(2020, 11, 1),
+                    initial_visible_month=datetime.now(),
+                    style={
+                        "font-size": "6px",
+                        "display": "inline-block",
+                        "border-radius": "2px",
+                        "border": "1px solid #ccc",
+                        "color": "#333",
+                        "border-spacing": "0",
+                        "border-collapse": "separate",
+                    },
+                ),
+            ],
+        ),
+    ],
+    style=SIDEBAR_STYLE,
+)
+
 
 app = dash.Dash()
 application = app.server
 
 app.layout = html.Div(
     [
+        sidebar,
         html.Div(
             [
                 html.H1(
@@ -19,32 +112,7 @@ app.layout = html.Div(
                     children="The QCinator, it's coming for your data!",
                     style={"textAlign": "center", "marginTop": 40, "marginBottom": 40},
                 ),
-                html.Div(
-                    [
-                        "Station ID: ",
-                        dcc.Input(
-                            id="station_ID",
-                            value="12323840",
-                            debounce=True,
-                            inputMode="numeric",
-                            autoFocus=True,
-                            minLength=8,
-                            placeholder="enter station",
-                            type="text",
-                        ),
-                    ]
-                ),
-                html.Div(
-                    [
-                        "Select Date Range",
-                        dcc.DatePickerRange(
-                            id="date_range",
-                            start_date=date(2020, 3, 1),
-                            end_date=date(2020, 11, 1),
-                            initial_visible_month=datetime.now(),
-                        ),
-                    ],
-                ),
+                dcc.Graph(figure=create_map()),
                 html.Div(
                     [
                         "Select parameter by name: ",
@@ -55,17 +123,6 @@ app.layout = html.Div(
                         ),
                     ],
                     style={"width": "49%", "display": "inline-block"},
-                ),
-                html.Div(
-                    [
-                        "Filter by sample type: ",
-                        dcc.Dropdown(
-                            id="sample_code_select",
-                            options=pc.sample_codes,
-                            value="9",
-                        ),
-                    ],
-                    style={"width": "20%"},
                 ),
                 dcc.Graph(id="scatter_plot"),
                 html.Div(
@@ -91,10 +148,16 @@ app.layout = html.Div(
                 dcc.Graph(id="plot_X_vs_Y", style={"display": "inline-block"}),
                 dcc.Store(id="memory_data", storage_type="memory"),
                 dcc.Store(id="filtered_data", storage_type="memory"),
-            ]
+            ],
+            style=CONTENT_STYLE,
         ),
     ]
 )
+
+
+# @app.callback(
+#     Output("main_map", "figure"),
+# )
 
 
 @app.callback(
@@ -110,28 +173,14 @@ def get_qw_data(site, start, end):
     return df.to_json()
 
 
-# @app.callback(
-#     Output("filtered_data", "data"),
-#     [
-#         Input("sample_code_select", "value"),
-#         Input("memory_data", "value"),
-#     ],
-# )
-# def filter_qw_data(sample_code, data):
-#     df = pd.read_json(data)
-#     df = df.loc[df["samp_type_cd"] == sample_code]
-#     return df.to_json()
-
-
 @app.callback(
     Output("scatter_plot", "figure"),
     [
         Input("param_select", "value"),
         Input("memory_data", "data"),
-        Input("sample_code_select", "value"),
     ],
 )
-def plot_parameter(param, data, sample_code):
+def plot_parameter(param, data, sample_code=9):
     df = pd.read_json(data)
     try:
         sample_code = int(sample_code)
@@ -204,3 +253,29 @@ def x_vs_y(station, param_x: str, param_y: str, data):
 
 if __name__ == "__main__":
     app.run()
+
+
+# html.Div(
+#     [
+#         "Filter by sample type: ",
+#         dcc.Dropdown(
+#             id="sample_code_select",
+#             options=pc.sample_codes,
+#             value="9",
+#         ),
+#     ],
+#     style={"width": "20%"},
+# ),
+
+
+# @app.callback(
+#     Output("filtered_data", "data"),
+#     [
+#         Input("sample_code_select", "value"),
+#         Input("memory_data", "value"),
+#     ],
+# )
+# def filter_qw_data(sample_code, data):
+#     df = pd.read_json(data)
+#     df = df.loc[df["samp_type_cd"] == sample_code]
+#     return df.to_json()
