@@ -2,12 +2,14 @@ from datetime import date, datetime
 import dataretrieval.nwis as nwis
 import utils.param_codes as pc
 from dash import dash, html, dcc, Input, Output
+from dash.exceptions import PreventUpdate
 import plotly.graph_objects as go
 import pandas as pd
 from utils import utils
+import json
 
 # import dash_bootstrap_components as dbc
-STAID_coord = pd.read_csv("src/data/site_data.csv")
+STAID_coord = pd.read_csv("data/site_data.csv")
 mapbox_access_token = "pk.eyJ1Ijoic2xlZXB5Y2F0IiwiYSI6ImNsOXhiZng3cDA4cmkzdnFhOWhxdDEwOHQifQ.SU3dYPdC5aFVgOJWGzjq2w"
 
 
@@ -18,7 +20,8 @@ def create_map():
             lon=STAID_coord["long"],
             mode="markers",
             marker=go.scattermapbox.Marker(size=9),
-            text=STAID_coord["name"],
+            text=STAID_coord[["name", "station_id"]],
+            customdata=STAID_coord["station_id"],
         )
     )
     fig.update_layout(
@@ -112,7 +115,7 @@ app.layout = html.Div(
                     children="The QCinator, it's coming for your data!",
                     style={"textAlign": "center", "marginTop": 40, "marginBottom": 40},
                 ),
-                dcc.Graph(figure=create_map()),
+                dcc.Graph(id="location_map", figure=create_map()),
                 html.Div(
                     [
                         "Select parameter by name: ",
@@ -155,9 +158,21 @@ app.layout = html.Div(
 )
 
 
-# @app.callback(
-#     Output("main_map", "figure"),
-# )
+# @app.callback(Output("location_map", "figure"), Input("location_map", "ClickData"))
+# def display_click_data(clickData):
+#     return json.dumps(clickData, indent=2)
+
+
+@app.callback(
+    Output("station_ID", "value"),
+    [
+        Input("location_map", "clickData"),
+    ],
+)
+def update_STAID(clickData):
+    if not clickData:
+        raise PreventUpdate
+    return clickData["Points"][0]["customData"]["station_id"]
 
 
 @app.callback(
@@ -252,7 +267,7 @@ def x_vs_y(station, param_x: str, param_y: str, data):
 
 
 if __name__ == "__main__":
-    app.run()
+    app.run_server(debug=True)
 
 
 # html.Div(
