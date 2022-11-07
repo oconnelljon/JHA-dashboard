@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import dataretrieval.nwis as nwis
 import utils.param_codes as pc
 from dash import dash, html, dcc, Input, Output
@@ -9,19 +9,19 @@ from utils import utils
 import json
 
 # import dash_bootstrap_components as dbc
-STAID_coord = pd.read_csv("data/site_data.csv")
+STAID_coord = pd.read_csv("data/JHA_STAID_INFO.csv")
 mapbox_access_token = "pk.eyJ1Ijoic2xlZXB5Y2F0IiwiYSI6ImNsOXhiZng3cDA4cmkzdnFhOWhxdDEwOHQifQ.SU3dYPdC5aFVgOJWGzjq2w"
 
 
-def create_map():
+def create_map(lat="dec_lat_va", long="dec_long_va"):
     fig = go.Figure(
         go.Scattermapbox(
-            lat=STAID_coord["lat"],
-            lon=STAID_coord["long"],
+            lat=STAID_coord[lat],
+            lon=STAID_coord[long],
             mode="markers",
             marker=go.scattermapbox.Marker(size=9),
-            text=STAID_coord[["name", "station_id"]],
-            customdata=STAID_coord["station_id"],
+            text=STAID_coord[["site_no"]],
+            customdata=STAID_coord["site_no"],
         )
     )
     fig.update_layout(
@@ -31,8 +31,8 @@ def create_map():
             accesstoken=mapbox_access_token,
             bearing=0,
             center=dict(
-                lat=STAID_coord["lat"].median(),
-                lon=STAID_coord["long"].median(),
+                lat=STAID_coord[lat].median(),
+                lon=STAID_coord[long].median(),
             ),
             pitch=0,
             zoom=10,
@@ -65,15 +65,20 @@ sidebar = html.Div(
         html.Div(
             [
                 "Station ID: ",
-                dcc.Input(
+                # dcc.Input(
+                #     id="station_ID",
+                #     value=STAID_coord["site_no"][0],
+                #     debounce=True,
+                #     inputMode="numeric",
+                #     autoFocus=True,
+                #     minLength=8,
+                #     placeholder="enter station",
+                #     type="text",
+                # ),
+                dcc.Dropdown(
                     id="station_ID",
-                    value="12323840",
-                    debounce=True,
-                    inputMode="numeric",
-                    autoFocus=True,
-                    minLength=8,
-                    placeholder="enter station",
-                    type="text",
+                    value="433641110441501",
+                    options=pc.station_list,
                 ),
             ],
         ),
@@ -82,8 +87,8 @@ sidebar = html.Div(
                 html.P("Select Date Range"),
                 dcc.DatePickerRange(
                     id="date_range",
-                    start_date=date(2020, 3, 1),
-                    end_date=date(2020, 11, 1),
+                    start_date=datetime.now().date() - timedelta(days=1460),
+                    end_date=datetime.now().date(),
                     initial_visible_month=datetime.now(),
                     style={
                         "font-size": "6px",
@@ -151,6 +156,7 @@ app.layout = html.Div(
                 dcc.Graph(id="plot_X_vs_Y", style={"display": "inline-block"}),
                 dcc.Store(id="memory_data", storage_type="memory"),
                 dcc.Store(id="filtered_data", storage_type="memory"),
+                dcc.Store(id="STAID", storage_type="memory", data="12323840"),
             ],
             style=CONTENT_STYLE,
         ),
@@ -164,7 +170,7 @@ app.layout = html.Div(
 
 
 @app.callback(
-    Output("station_ID", "value"),
+    Output("STAID", "value"),
     [
         Input("location_map", "clickData"),
     ],
@@ -172,7 +178,7 @@ app.layout = html.Div(
 def update_STAID(clickData):
     if not clickData:
         raise PreventUpdate
-    return clickData["Points"][0]["customData"]["station_id"]
+    return str(clickData["points"][0]["customdata"])
 
 
 @app.callback(
