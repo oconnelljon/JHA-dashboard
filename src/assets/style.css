@@ -6,7 +6,7 @@
     bottom: 0;
     width: 5rem;
     padding: 2rem 1rem;
-    background-color: #f8f9fa;
+    background-color: #cbd3dd;
     z-index: 1050;
     transition: width 0.1s ease-in-out;
 }
@@ -31,7 +31,7 @@
 /* hide the navlink labels by default */
 .sidebar .nav-link span {
     visibility: hidden;
-    opacity: 0;
+    opacity: 1;
     transition: opacity 0.1s ease-in-out;
 }
 
@@ -39,6 +39,7 @@
 .sidebar:hover .nav-link span {
     visibility: visible;
     opacity: 1;
+    color: black;
 }
 
 /* container for the sidebar header. make sure the contents don't wrap when

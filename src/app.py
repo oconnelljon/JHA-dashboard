@@ -1,8 +1,10 @@
 from datetime import date, datetime, timedelta
 import dataretrieval.nwis as nwis
 import utils.param_codes as pc
-from dash import dash, html, dcc, Input, Output
+import dash
+from dash import html, dcc, Input, Output, State
 from dash.exceptions import PreventUpdate
+import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 import pandas as pd
 from utils import utils
@@ -57,24 +59,82 @@ CONTENT_STYLE = {
     "padding": "2rem 1rem",
 }
 
+
+# app = dash.Dash(
+#     __name__,
+#     external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.FONT_AWESOME],
+#     # these meta_tags ensure content is scaled correctly on different devices
+#     # see: https://www.w3schools.com/css/css_rwd_viewport.asp for more
+#     meta_tags=[{"name": "viewport", "content": "width=device-width, initial-scale=1"}],
+# )
+
+app = dash.Dash(
+    __name__,
+    suppress_callback_exceptions=True,
+    external_stylesheets=[dbc.themes.MATERIA, dbc.icons.FONT_AWESOME],
+)
+
+navbar = dbc.NavbarSimple(
+    children=[
+        dbc.Button("Sidebar", outline=True, color="secondary", className="mr-1", id="btn_sidebar"),
+        dbc.NavItem(dbc.NavLink("Page 1", href="#")),
+        dbc.DropdownMenu(
+            children=[
+                dbc.DropdownMenuItem("More pages", header=True),
+                dbc.DropdownMenuItem("Page 2", href="#"),
+                dbc.DropdownMenuItem("Page 3", href="#"),
+            ],
+            nav=True,
+            in_navbar=True,
+            label="More",
+        ),
+    ],
+    brand="Brand",
+    brand_href="#",
+    color="dark",
+    dark=True,
+    fluid=True,
+)
+
 sidebar = html.Div(
     [
-        html.H1("Sidebar", className="display-4"),
+        html.Div(
+            [
+                html.H2("Auto ML", style={"color": "white"}),
+            ],
+            className="sidebar-header",
+        ),
         html.Hr(),
-        html.P("A simple sidebar layout with navigation links", className="lead"),
+        dbc.Nav(
+            [
+                dbc.NavLink(
+                    [html.I(className="fas fa-home me-2"), html.Span("Dashboard")],
+                    href="/",
+                    active="exact",
+                ),
+                dbc.NavLink(
+                    [
+                        html.I(className="fas fa-calendar-alt me-2"),
+                        html.Span("Projects"),
+                    ],
+                    href="/projects",
+                    active="exact",
+                ),
+                dbc.NavLink(
+                    [
+                        html.I(className="fas fa-envelope-open-text me-2"),
+                        html.Span("Datasets"),
+                    ],
+                    href="/datasets",
+                    active="exact",
+                ),
+            ],
+            vertical=True,
+            pills=True,
+        ),
         html.Div(
             [
                 "Station ID: ",
-                # dcc.Input(
-                #     id="station_ID",
-                #     value=STAID_coord["site_no"][0],
-                #     debounce=True,
-                #     inputMode="numeric",
-                #     autoFocus=True,
-                #     minLength=8,
-                #     placeholder="enter station",
-                #     type="text",
-                # ),
                 dcc.Dropdown(
                     id="station_ID",
                     value="433641110441501",
@@ -103,15 +163,14 @@ sidebar = html.Div(
             ],
         ),
     ],
-    style=SIDEBAR_STYLE,
+    className="sidebar",
 )
 
-
-app = dash.Dash()
 application = app.server
 
 app.layout = html.Div(
     [
+        navbar,
         sidebar,
         html.Div(
             [
@@ -158,7 +217,7 @@ app.layout = html.Div(
                 dcc.Store(id="filtered_data", storage_type="memory"),
                 dcc.Store(id="STAID", storage_type="memory", data="12323840"),
             ],
-            style=CONTENT_STYLE,
+            className="content",
         ),
     ]
 )
@@ -171,6 +230,7 @@ app.layout = html.Div(
 
 @app.callback(
     Output("STAID", "value"),
+    Output("station_ID", "options"),
     [
         Input("location_map", "clickData"),
     ],
@@ -178,7 +238,7 @@ app.layout = html.Div(
 def update_STAID(clickData):
     if not clickData:
         raise PreventUpdate
-    return str(clickData["points"][0]["customdata"])
+    return [str(clickData["points"][0]["customdata"])]
 
 
 @app.callback(
