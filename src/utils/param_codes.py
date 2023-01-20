@@ -183,6 +183,12 @@ station_list = [
     "433606110440501",
 ]
 
+access_level_codes = [
+    {"label": "0-Public", "value": "0"},
+    {"label": "1-Coop", "value": "1"},
+    {"label": "2-USGS", "value": "2"},
+]
+
 # {
 #     "p00004": "Stream width, feet",
 #     "p00010": "Temperature, water, degrees Celsius",
