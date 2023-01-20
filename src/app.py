@@ -15,7 +15,7 @@ app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
 STAID_coord = pd.read_csv("data/JHA_STAID_INFO.csv")
 mapbox_access_token = "pk.eyJ1Ijoic2xlZXB5Y2F0IiwiYSI6ImNsOXhiZng3cDA4cmkzdnFhOWhxdDEwOHQifQ.SU3dYPdC5aFVgOJWGzjq2w"
 
-
+# Define how to create the location map.  Need here to use for initial map in content.
 def create_map(lat="dec_lat_va", long="dec_long_va"):
     fig = go.Figure(
         go.Scattermapbox(
@@ -46,13 +46,14 @@ def create_map(lat="dec_lat_va", long="dec_long_va"):
 
 navbar = dbc.Navbar(
     [
-        dbc.NavbarBrand("Test"),
+        dbc.NavbarBrand("USGS"),
         dbc.Nav([dbc.NavLink("Item 1"), dbc.NavLink("Item 2")]),
     ],
     sticky="top",
     color="dark",
     dark=True,
     style={"width": "100%"},
+    id="navbar",
 )
 
 # the style arguments for the sidebar. We use position:fixed and a fixed width
@@ -61,7 +62,7 @@ SIDEBAR_STYLE = {
     "top": "2rem",
     "left": 0,
     "bottom": 0,
-    "width": "16rem",
+    "width": "20rem",
     "padding": "2rem 1rem",
     "background-color": "#f8f9fa",
 }
@@ -80,6 +81,18 @@ sidebar = html.Div(
             vertical=True,
             pills=True,
         ),
+        html.Br(),
+        html.Div(
+            [
+                html.P("Data Access Level"),
+                dcc.Dropdown(
+                    id="access_dropdown",
+                    value="0",
+                    options=pc.access_level_codes,
+                    persistence=True,
+                ),
+            ]
+        ),
         html.Div(
             [
                 html.P("Station ID: "),
@@ -87,6 +100,7 @@ sidebar = html.Div(
                     id="station_ID",
                     value="433641110441501",
                     options=pc.station_list,
+                    persistence=True,
                 ),
             ],
         ),
@@ -98,17 +112,22 @@ sidebar = html.Div(
                     start_date=datetime.now().date() - timedelta(days=1460),
                     end_date=datetime.now().date(),
                     initial_visible_month=datetime.now(),
+                    persistence=True,
                     style={
-                        "font-size": "6px",
-                        "display": "inline-block",
-                        "border-radius": "2px",
-                        "border": "1px solid #ccc",
+                        # "font-size": "inherit",
+                        # "display": "inline-block",
+                        # "border": "1px solid #ccc",
                         "color": "#333",
-                        "border-spacing": "0",
-                        "border-collapse": "separate",
+                        # "border-collapse": "separate",
+                        # "display": "flex",
                     },
                 ),
             ],
+            # style={
+            #     # "width": "",
+            #     # "height": "",
+            #     "font-size": "6",
+            # },
         ),
     ],
     id="sidebar",
@@ -118,14 +137,14 @@ sidebar = html.Div(
 # the styles for the main content position it to the right of the sidebar and
 # add some padding.
 CONTENT_STYLE = {
-    "margin-left": "18rem",
+    "margin-left": "20rem",
     "margin-right": "2rem",
     "padding": "2rem 1rem",
     "background-color": "#f8f9fa",
 }
 
 content = html.Div(
-    [
+    children=[
         html.H1(
             id="H1",
             children="The QCinator, it's coming for your data!",
@@ -139,6 +158,7 @@ content = html.Div(
                     id="param_select",
                     options=pc.param_labels,
                     value="p00400",
+                    persistence=True,
                 ),
             ],
             style={"width": "49%", "display": "inline-block"},
@@ -170,7 +190,12 @@ content = html.Div(
         dcc.Store(id="STAID", storage_type="memory", data="12323840"),
     ],
     id="page-content",
-    style=CONTENT_STYLE,
+    style={
+        # "margin-left": "2rem",
+        # "margin-right": "2rem",
+        "padding": "2rem 1rem",
+        "background-color": "#f8f9fa",
+    },
 )
 
 application = app.server  # Important for debugging and using Flask!
@@ -182,10 +207,18 @@ app.layout = html.Div(
         html.Div(
             [
                 sidebar,
-                content,
+                html.Div(  # nasty workaround for getting links to work.
+                    [
+                        content,
+                    ],
+                    id="content_container",
+                    style=CONTENT_STYLE,
+                ),
             ],
+            id="page-wrapper",
         ),
-    ]
+    ],
+    id="root",
 )
 
 
@@ -216,7 +249,7 @@ def render_page_content(pathname):
             html.H1("404: Not found", className="text-danger"),
             html.Hr(),
             html.P(f"The pathname {pathname} was not recognised..."),
-        ]
+        ],
     )
 
 
@@ -226,10 +259,11 @@ def render_page_content(pathname):
         Input("station_ID", "value"),
         Input("date_range", "start_date"),
         Input("date_range", "end_date"),
+        Input("access_dropdown", "value"),
     ],
 )
-def get_qw_data(site, start, end):
-    df = nwis.get_record(sites=site, service="qwdata", start=start, end=end, access="3")
+def get_qw_data(site, start, end, access):
+    df = nwis.get_record(sites=site, service="qwdata", start=start, end=end, access=access)
     return df.to_json()
 
 
