@@ -10,7 +10,7 @@ from utils import utils
 import json
 from datetime import date, datetime, timedelta
 
-app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 STAID_coord = pd.read_csv("data/JHA_STAID_INFO.csv")
 mapbox_access_token = "pk.eyJ1Ijoic2xlZXB5Y2F0IiwiYSI6ImNsOXhiZng3cDA4cmkzdnFhOWhxdDEwOHQifQ.SU3dYPdC5aFVgOJWGzjq2w"
@@ -47,163 +47,10 @@ def create_map(lat="dec_lat_va", long="dec_long_va"):
 navbar = dbc.Navbar(
     [
         dbc.NavbarBrand("USGS"),
-        dbc.Nav([dbc.NavLink("Item 1"), dbc.NavLink("Item 2")]),
+        dbc.Nav([dbc.NavLink("Item 1"), dbc.NavLink("Item 2")], className="navbar-navbar"),
     ],
-    style={
-        "align-items": "center",
-        # "display": "flex",
-        # "flex-flow": "row wrap",
-        "gap": "var(--gutter)",
-        "margin-left": "auto",
-        "margin-right": "auto",
-        "max-width": "var(--max-width)",
-        "padding-left": "var(--gutter)",
-        "padding-right": "var(--gutter)",
-        "width": "100%",
-    },
+    class_name="navbar",
 )
-
-# the style arguments for the sidebar. We use position:fixed and a fixed width
-# SIDEBAR_STYLE = {
-#     "position": "fixed",
-#     "top": "2rem",
-#     "left": 0,
-#     "bottom": 0,
-#     "width": "20rem",
-#     "padding": "2rem 1rem",
-#     "background-color": "#f8f9fa",
-# }
-
-# sidebar = html.Div(
-#     [
-#         html.H2("Sidebar", className="display-4"),
-#         html.Hr(),
-#         html.P("A simple sidebar layout with navigation links", className="lead"),
-#         dbc.Nav(
-#             [
-#                 dbc.NavLink("Page 1", href="/page-1", id="page-1-link"),
-#                 dbc.NavLink("Page 2", href="/page-2", id="page-2-link"),
-#                 dbc.NavLink("Page 3", href="/page-3", id="page-3-link"),
-#             ],
-#             vertical=True,
-#             pills=True,
-#         ),
-#         html.Br(),
-#         html.Div(
-#             [
-#                 html.P("Data Access Level"),
-#                 dcc.Dropdown(
-#                     id="access_dropdown",
-#                     value="0",
-#                     options=pc.access_level_codes,
-#                     persistence=True,
-#                 ),
-#             ]
-#         ),
-#         html.Div(
-#             [
-#                 html.P("Station ID: "),
-#                 dcc.Dropdown(
-#                     id="station_ID",
-#                     value="433641110441501",
-#                     options=pc.station_list,
-#                     persistence=True,
-#                 ),
-#             ],
-#         ),
-#         html.Div(
-#             [
-#                 html.P("Select Date Range"),
-#                 dcc.DatePickerRange(
-#                     id="date_range",
-#                     start_date=datetime.now().date() - timedelta(days=1460),
-#                     end_date=datetime.now().date(),
-#                     initial_visible_month=datetime.now(),
-#                     persistence=True,
-#                     style={
-#                         # "font-size": "inherit",
-#                         # "display": "inline-block",
-#                         # "border": "1px solid #ccc",
-#                         "color": "#333",
-#                         # "border-collapse": "separate",
-#                         # "display": "flex",
-#                     },
-#                 ),
-#             ],
-#             # style={
-#             #     # "width": "",
-#             #     # "height": "",
-#             #     "font-size": "6",
-#             # },
-#         ),
-#     ],
-#     id="sidebar",
-#     style=SIDEBAR_STYLE,
-# )
-
-# the styles for the main content position it to the right of the sidebar and
-# add some padding.
-# CONTENT_STYLE = {
-#     "margin-left": "20rem",
-#     "margin-right": "2rem",
-#     "padding": "2rem 1rem",
-#     "background-color": "#f8f9fa",
-# }
-
-# content = html.Div(
-#     children=[
-#         html.H1(
-#             id="H1",
-#             children="The QCinator, it's coming for your data!",
-#             style={"textAlign": "center", "marginTop": 40, "marginBottom": 40},
-#         ),
-#         dcc.Graph(id="location_map", figure=create_map()),
-#         html.Div(
-#             [
-#                 "Select parameter by name: ",
-#                 dcc.Dropdown(
-#                     id="param_select",
-#                     options=pc.param_labels,
-#                     value="p00400",
-#                     persistence=True,
-#                 ),
-#             ],
-#             style={"width": "49%", "display": "inline-block"},
-#         ),
-#         dcc.Graph(id="scatter_plot"),
-#         html.Div(
-#             [
-#                 "Select X axis parameter: ",
-#                 dcc.Dropdown(
-#                     id="param_select_X",
-#                     options=pc.param_labels,
-#                     value="p00400",
-#                 ),
-#             ]
-#         ),
-#         html.Div(
-#             [
-#                 "Select Y axis parameter: ",
-#                 dcc.Dropdown(
-#                     id="param_select_Y",
-#                     options=pc.param_labels,
-#                     value="p00400",
-#                 ),
-#             ]
-#         ),
-#         dcc.Graph(id="plot_X_vs_Y", style={"display": "inline-block"}),
-#         dcc.Store(id="memory_data", storage_type="memory"),
-#         dcc.Store(id="filtered_data", storage_type="memory"),
-#         dcc.Store(id="STAID", storage_type="memory", data="12323840"),
-#     ],
-#     id="page-content",
-#     style={
-#         # "margin-left": "2rem",
-#         # "margin-right": "2rem",
-#         "padding": "2rem 1rem",
-#         "background-color": "#f8f9fa",
-#     },
-# )
 
 sidebar_select = html.Aside(
     [
@@ -265,18 +112,18 @@ sidebar_select = html.Aside(
     ],
     className="sidebar",
     style={
-        "align-self": "start",
-        # "grid-area": "sidebar",
-        "padding-left": "3rem",
-        "padding-right": "3rem",
-        "flex-direction": "column",
-        "width": "100%",
-        "display": "flex",
-        "max-height": "var(--max-height)",
-        "position": "sticky",
-        "top": "var(--offset)",
-        "--offset": "var(--main-document-header-height)",
-        "--max-height": "calc(100vh - var(--offset))",
+        # "align-self": "start",
+        # # "grid-area": "sidebar",
+        # "padding-left": "3rem",
+        # "padding-right": "3rem",
+        # "flex-direction": "column",
+        # "width": "100%",
+        # "display": "flex",
+        # "max-height": "auto",
+        # "position": "sticky",
+        # "top": "var(--offset)",
+        # "--offset": "var(--main-document-header-height)",
+        # "--max-height": "calc(100vh - var(--offset))",
     },
 )
 
@@ -329,12 +176,12 @@ content = html.Main(
     className="main-content",
     style={
         # "grid-area": "main",
-        "padding-left": "3rem",
-        "padding-right": "3rem",
-        "flex-direction": "column",
-        "width": "100%",
-        "display": "flex",
-        "min-height": "80vh",
+        # "padding-left": "3rem",
+        # "padding-right": "3rem",
+        # "flex-direction": "column",
+        # "width": "100%",
+        "display": "grid",
+        "min-height": "1200px",
     },
 )
 
@@ -346,46 +193,22 @@ app.layout = html.Div(
             [
                 dcc.Location(id="url"),
                 html.Div(
-                    [navbar],
-                    className="header-container",
-                    style={
-                        "position": "sticky",
-                        "top": "0",
-                        "z-index": "var(--z-index-top)",
-                        "display": "block",
-                    },
+                    navbar,
+                    className="navbar-container",
                 ),
-                # navbar,
                 html.Div(
-                    children=[
-                        sidebar_select,
-                        # sidebar,
-                        content,
-                    ],
-                    className="main-wrapper",
-                    style={
-                        # "grid-gap": "1rem",
-                        "display": "grid",
-                        "gap": "1rem",
-                        # "grid-template-rows": "600px",
-                        "grid-template-columns": "minmax(0,1fr) minmax(0,2.5fr)",  # "200px 800px",
-                        "padding-left": "1rem",
-                        "padding-right": "1rem",
-                        "margin": "0 auto",
-                        "max-width": "var(--max-width)",
-                    },
+                    sidebar_select,
+                    className="sidebar-container",
+                ),
+                html.Div(
+                    content,
+                    className="main-content-container",
                 ),
             ],
             className="page-wrapper",
-            style={
-                "display": "block",
-            },
         ),
     ],
     className="root",
-    style={
-        "display": "block",
-    },
 )
 
 
