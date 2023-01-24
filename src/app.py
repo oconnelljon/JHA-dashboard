@@ -10,7 +10,7 @@ from utils import utils
 import json
 from datetime import date, datetime, timedelta
 
-app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])  # Include __name__, serves as reference for finding .css files.
 
 STAID_coord = pd.read_csv("data/JHA_STAID_INFO.csv")
 mapbox_access_token = "pk.eyJ1Ijoic2xlZXB5Y2F0IiwiYSI6ImNsOXhiZng3cDA4cmkzdnFhOWhxdDEwOHQifQ.SU3dYPdC5aFVgOJWGzjq2w"
@@ -44,30 +44,28 @@ def create_map(lat="dec_lat_va", long="dec_long_va"):
     return fig
 
 
-navbar = dbc.Navbar(
+navbar = html.Div(
     [
-        dbc.NavbarBrand("USGS"),
-        dbc.Nav([dbc.NavLink("Item 1"), dbc.NavLink("Item 2")]),
+        html.Div(
+            html.H5("USGS"),
+            className="navbar-brand-container",
+        ),
+        html.Div(
+            html.H5("Jackson Hole Airport"),
+            className="navbar-JHA-container",
+        ),
+        html.Div(
+            html.Ul(
+                [html.Li(dbc.NavLink("Item 1")), html.Li(dbc.NavLink("Item 2"))],
+                className="navlink-list",
+            ),
+            className="navbar-link-container",
+        ),
     ],
-    sticky="top",
-    color="dark",
-    dark=True,
-    style={"width": "100%"},
-    id="navbar",
+    className="navbar",
 )
 
-# the style arguments for the sidebar. We use position:fixed and a fixed width
-SIDEBAR_STYLE = {
-    "position": "fixed",
-    "top": "2rem",
-    "left": 0,
-    "bottom": 0,
-    "width": "20rem",
-    "padding": "2rem 1rem",
-    "background-color": "#f8f9fa",
-}
-
-sidebar = html.Div(
+sidebar_select = html.Aside(
     [
         html.H2("Sidebar", className="display-4"),
         html.Hr(),
@@ -123,28 +121,13 @@ sidebar = html.Div(
                     },
                 ),
             ],
-            # style={
-            #     # "width": "",
-            #     # "height": "",
-            #     "font-size": "6",
-            # },
         ),
     ],
-    id="sidebar",
-    style=SIDEBAR_STYLE,
+    className="sidebar",
 )
 
-# the styles for the main content position it to the right of the sidebar and
-# add some padding.
-CONTENT_STYLE = {
-    "margin-left": "20rem",
-    "margin-right": "2rem",
-    "padding": "2rem 1rem",
-    "background-color": "#f8f9fa",
-}
-
-content = html.Div(
-    children=[
+content = html.Main(
+    [
         html.H1(
             id="H1",
             children="The QCinator, it's coming for your data!",
@@ -189,68 +172,34 @@ content = html.Div(
         dcc.Store(id="filtered_data", storage_type="memory"),
         dcc.Store(id="STAID", storage_type="memory", data="12323840"),
     ],
-    id="page-content",
-    style={
-        # "margin-left": "2rem",
-        # "margin-right": "2rem",
-        "padding": "2rem 1rem",
-        "background-color": "#f8f9fa",
-    },
+    className="main-content",
 )
 
 application = app.server  # Important for debugging and using Flask!
 
 app.layout = html.Div(
     [
-        dcc.Location(id="url"),
-        navbar,
         html.Div(
             [
-                sidebar,
-                html.Div(  # nasty workaround for getting links to work.
-                    [
-                        content,
-                    ],
-                    id="content_container",
-                    style=CONTENT_STYLE,
+                dcc.Location(id="url"),
+                dbc.Nav(
+                    navbar,
+                    className="navbar-container",
+                ),
+                html.Div(
+                    sidebar_select,
+                    className="sidebar-container",
+                ),
+                html.Div(
+                    content,
+                    className="main-content-container",
                 ),
             ],
-            id="page-wrapper",
+            className="page-container",
         ),
     ],
-    id="root",
+    className="root",
 )
-
-
-# this callback uses the current pathname to set the active state of the
-# corresponding nav link to true, allowing users to tell see page they are on
-@app.callback(
-    [Output(f"page-{i}-link", "active") for i in range(1, 4)],
-    [Input("url", "pathname")],
-)
-def toggle_active_links(pathname):
-    if pathname == "/":
-        # Treat page 1 as the homepage / index
-        return True, False, False
-    return [pathname == f"/page-{i}" for i in range(1, 4)]
-
-
-@app.callback(Output("page-content", "children"), [Input("url", "pathname")])
-def render_page_content(pathname):
-    if pathname in ["/", "/page-1"]:
-        return content
-    elif pathname == "/page-2":
-        return html.P("This is the content of page 2. Yay!")
-    elif pathname == "/page-3":
-        return html.P("Oh cool, this is page 3!")
-    # If the user tries to reach a different page, return a 404 message
-    return html.Div(
-        [
-            html.H1("404: Not found", className="text-danger"),
-            html.Hr(),
-            html.P(f"The pathname {pathname} was not recognised..."),
-        ],
-    )
 
 
 @app.callback(
