@@ -48,16 +48,16 @@ def create_map(lat="dec_lat_va", long="dec_long_va"):
 navbar = html.Div(
     [
         html.Div(
-            html.H5("USGS"),
+            html.Div("USGS"),
             className="navbar-brand-container",
         ),
         html.Div(
-            html.H5("Jackson Hole Airport"),
+            html.Div("Jackson Hole Airport"),
             className="navbar-JHA-container",
         ),
         html.Div(
             html.Ul(
-                [html.Li(dbc.NavLink("Item 1")), html.Li(dbc.NavLink("Item 2"))],
+                # [html.Li(dbc.NavLink("Item 1")), html.Li(dbc.NavLink("Item 2"))],
                 className="navlink-list",
             ),
             className="navbar-link-container",
@@ -68,18 +68,8 @@ navbar = html.Div(
 
 sidebar_select = html.Aside(
     [
-        html.H2("Sidebar", className="display-4"),
+        # html.H2("Sidebar", className="display-4"),
         html.Hr(),
-        html.P("A simple sidebar layout with navigation links", className="lead"),
-        # dbc.Nav(
-        #     [
-        #         dbc.NavLink("Page 1", href="/page-1", id="page-1-link"),
-        #         dbc.NavLink("Page 2", href="/page-2", id="page-2-link"),
-        #         dbc.NavLink("Page 3", href="/page-3", id="page-3-link"),
-        #     ],
-        #     vertical=True,
-        #     pills=True,
-        # ),
         html.Br(),
         html.Div(
             [
@@ -113,12 +103,7 @@ sidebar_select = html.Aside(
                     initial_visible_month=datetime.now(),
                     persistence=True,
                     style={
-                        # "font-size": "inherit",
-                        # "display": "inline-block",
-                        # "border": "1px solid #ccc",
                         "color": "#333",
-                        # "border-collapse": "separate",
-                        # "display": "flex",
                     },
                 ),
             ],
@@ -129,14 +114,8 @@ sidebar_select = html.Aside(
     className="sidebar",
 )
 
-content = html.Main(
+graph_content = html.Main(
     [
-        html.H1(
-            id="H1",
-            children="The QCinator, it's coming for your data!",
-            style={"textAlign": "center", "marginTop": 40, "marginBottom": 40},
-        ),
-        # dcc.Graph(id="location_map", figure=create_map(), className="location-map"),
         html.Div(
             [
                 "Select parameter by name: ",
@@ -175,7 +154,22 @@ content = html.Main(
         dcc.Store(id="filtered_data", storage_type="memory"),
         dcc.Store(id="STAID", storage_type="memory", data="12323840"),
     ],
-    className="main-content",
+    className="graph-content",
+)
+
+map_view = html.Div(dcc.Graph(id="map-tab", figure=create_map()), style={"height": "1500px"})
+
+tabs = dbc.Tabs(
+    [
+        dbc.Tab(
+            graph_content,
+            label="Graph view",
+        ),
+        dbc.Tab(
+            map_view,
+            label="Map view",
+        ),
+    ],
 )
 
 application = app.server  # Important for debugging and using Flask!
@@ -194,7 +188,11 @@ app.layout = html.Div(
                     className="sidebar-container",
                 ),
                 html.Div(
-                    content,
+                    html.Div(
+                        tabs,
+                        # graph_content,
+                        className="main-content-wrapper",
+                    ),
                     className="main-content-container",
                 ),
             ],
@@ -203,6 +201,25 @@ app.layout = html.Div(
     ],
     className="root",
 )
+
+
+@app.callback(Output("page-content", "children"), Input("url", "pathname"))
+def render_page_content(pathname):
+    if pathname == "/":
+        return html.P("This is the home page!")
+    elif pathname == "/calendar":
+        return html.P("This is your calendar... not much in the diary...")
+    elif pathname == "/messages":
+        return html.P("Here are all your messages")
+    # If the user tries to reach a different page, return a 404 message
+    return html.Div(
+        [
+            html.H1("404: Not found", className="text-danger"),
+            html.Hr(),
+            html.P(f"The pathname {pathname} was not recognised..."),
+        ],
+        className="p-3 bg-light rounded-3",
+    )
 
 
 @app.callback(
