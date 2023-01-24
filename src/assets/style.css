@@ -1,9 +1,5 @@
 /* Good colors: https://www.color-hex.com/color/335379 */
 
-.root {
-    /* display: grid; */
-}
-
 .page-container {
     display: grid;
     /* height limitation on second row */
@@ -21,9 +17,6 @@
     grid-area: header;
     z-index: 2000;
     display: block;
-    /* position: relative; */
-    /* display: inline-grid; */
-    /* justify-items: right; */
     color: #EEE;
     box-shadow:
         rgb(0 0 0 / 20%) 0px 2px 4px -1px,
@@ -54,7 +47,6 @@
     padding-bottom: 0px;
     margin-right: 0;
     margin-left: 0;
-    /* float: left; */
     color: inherit;
     margin-top: 0px;
     margin-bottom: 0px;
@@ -71,7 +63,6 @@
     display: grid;
     margin-top: 0px;
     margin-bottom: 0px;
-    /* background-color: #094412; */
 }
 
 .navlink-list {
@@ -102,4 +93,10 @@
     margin-left: 15px;
     border-radius: 5px;
     background-color: #eaedf1
+}
+
+.location-map {
+    min-height: 500px;
+    margin-right: 10px;
+    margin-left: 10px;
 }

@@ -30,15 +30,16 @@ def create_map(lat="dec_lat_va", long="dec_long_va"):
     fig.update_layout(
         autosize=True,
         hovermode="closest",
+        margin=dict(l=10, r=10, t=10, b=10),
         mapbox=dict(
             accesstoken=mapbox_access_token,
             bearing=0,
             center=dict(
-                lat=STAID_coord[lat].median(),
-                lon=STAID_coord[long].median(),
+                lat=43.603413,
+                lon=-110.739465,
             ),
             pitch=0,
-            zoom=10,
+            zoom=13.25,
         ),
     )
     return fig
@@ -70,15 +71,15 @@ sidebar_select = html.Aside(
         html.H2("Sidebar", className="display-4"),
         html.Hr(),
         html.P("A simple sidebar layout with navigation links", className="lead"),
-        dbc.Nav(
-            [
-                dbc.NavLink("Page 1", href="/page-1", id="page-1-link"),
-                dbc.NavLink("Page 2", href="/page-2", id="page-2-link"),
-                dbc.NavLink("Page 3", href="/page-3", id="page-3-link"),
-            ],
-            vertical=True,
-            pills=True,
-        ),
+        # dbc.Nav(
+        #     [
+        #         dbc.NavLink("Page 1", href="/page-1", id="page-1-link"),
+        #         dbc.NavLink("Page 2", href="/page-2", id="page-2-link"),
+        #         dbc.NavLink("Page 3", href="/page-3", id="page-3-link"),
+        #     ],
+        #     vertical=True,
+        #     pills=True,
+        # ),
         html.Br(),
         html.Div(
             [
@@ -122,6 +123,8 @@ sidebar_select = html.Aside(
                 ),
             ],
         ),
+        html.Br(),
+        dcc.Graph(id="sidebar-location-map", figure=create_map()),
     ],
     className="sidebar",
 )
@@ -133,7 +136,7 @@ content = html.Main(
             children="The QCinator, it's coming for your data!",
             style={"textAlign": "center", "marginTop": 40, "marginBottom": 40},
         ),
-        dcc.Graph(id="location_map", figure=create_map()),
+        # dcc.Graph(id="location_map", figure=create_map(), className="location-map"),
         html.Div(
             [
                 "Select parameter by name: ",
