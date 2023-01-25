@@ -284,20 +284,20 @@ def x_vs_y(station, param_x: str, param_y: str, data):
                 mode="markers",
                 x=df[param_x],
                 y=df[param_y],
-                name="pH",
+                # name="pH",
             ),
         ],
     )
 
-    x_title = pc.parameters.get(param_x)
-    y_title = pc.parameters.get(param_y)
+    x_title = str(pc.parameters.get(param_x))
+    y_title = str(pc.parameters.get(param_y))
     if len(x_title) > 30:
         x_title = utils.title_wrapper(x_title)
     if len(y_title) > 30:
         y_title = utils.title_wrapper(y_title)
 
     fig.update_layout(
-        title=f"Station: {station}",
+        # title=f"Station: {station}",
         title_x=0.5,
         xaxis_title=x_title,
         yaxis_title=y_title,
