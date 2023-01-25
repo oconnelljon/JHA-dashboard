@@ -93,7 +93,7 @@
 }
 
 .main-content-wrapper {
-    display: grid;
+    /* display: grid; */
     min-height: 1200px;
     margin-top: 15px;
     margin-right: 15px;

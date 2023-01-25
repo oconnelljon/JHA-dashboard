@@ -116,27 +116,27 @@ sidebar_select = html.Aside(
     className="sidebar",
 )
 
-graph_content = html.Main(
+scatter_time_container = html.Div(
     [
         html.Div(
             [
-                html.Div(
-                    [
-                        "Select parameter by name: ",
-                        dcc.Dropdown(
-                            id="param_select",
-                            options=pc.param_labels,
-                            value="p00400",
-                            persistence=True,
-                        ),
-                    ],
-                    style={"width": "49%", "display": "inline-block"},
+                "Select parameter by name: ",
+                dcc.Dropdown(
+                    id="param_select",
+                    options=pc.param_labels,
+                    value="p00400",
+                    persistence=True,
                 ),
-                dcc.Graph(id="scatter_plot", className="scatter-plot"),
             ],
-            className="scatter-container",
+            style={"width": "49%", "display": "inline-block"},
         ),
-        html.Br(),
+        dcc.Graph(id="scatter_plot", className="scatter-plot"),
+    ],
+    className="scatter-time-container",
+)
+
+scatter_params_container = html.Div(
+    [
         html.Div(
             [
                 "Select X axis parameter: ",
@@ -145,7 +145,8 @@ graph_content = html.Main(
                     options=pc.param_labels,
                     value="p00400",
                 ),
-            ]
+            ],
+            style={"width": "49%", "display": "inline-block"},
         ),
         html.Div(
             [
@@ -155,37 +156,45 @@ graph_content = html.Main(
                     options=pc.param_labels,
                     value="p00400",
                 ),
-            ]
+            ],
+            style={"width": "49%", "display": "inline-block"},
         ),
         dcc.Graph(id="plot_X_vs_Y", style={"display": "inline-block"}),
-        dcc.Store(id="memory_data", storage_type="memory"),
-        dcc.Store(id="filtered_data", storage_type="memory"),
-        dcc.Store(id="STAID", storage_type="memory", data="12323840"),
     ],
-    # className="graph-content",
+    className="scatter-params-container",
 )
 
-map_view = html.Div(dcc.Graph(id="map-tab", figure=create_map()), style={"height": "1500px"})
+# expand on this for map view tab
+map_view = html.Div(
+    dcc.Graph(id="map-tab", figure=create_map()),
+    style={"height": "1500px"},
+)
 
 tabs = dbc.Tabs(
     [
-        dbc.Tab(
-            graph_content,  # located in tabpanel tab-0 "Graph view"
+        dbc.Tab(  # located in tabpanel tab-0 aka "Graph view"
+            [
+                scatter_time_container,
+                scatter_params_container,
+            ],
             label="Graph view",
         ),
-        dbc.Tab(
-            map_view,  # located in tabpanel tab-1 "Map view"
+        dbc.Tab(  # located in tabpanel tab-1 aka "Map view"
+            map_view,
             label="Map view",
         ),
     ],
     className="tabs-container",  # container for Tabs buttons only
-    # tabs-content created by dbc.Tabs and holds the dbc.Tab objects
+    # tabs-content Div container created by dbc.Tabs and holds the dbc.Tab objects
 )
 
 application = app.server  # Important for debugging and using Flask!
 
 app.layout = html.Div(
     [
+        dcc.Store(id="memory_data", storage_type="memory"),
+        dcc.Store(id="filtered_data", storage_type="memory"),
+        dcc.Store(id="STAID", storage_type="memory", data="12323840"),
         html.Div(
             [
                 dcc.Location(id="url"),
@@ -200,7 +209,6 @@ app.layout = html.Div(
                 html.Div(
                     html.Div(
                         tabs,
-                        # graph_content,
                         className="main-content-wrapper",
                     ),
                     className="main-content-container",
