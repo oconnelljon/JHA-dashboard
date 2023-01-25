@@ -232,9 +232,12 @@ app.layout = html.Div(
 )
 def get_qw_data(sites, start, end, access):
     df = nwis.get_record(sites=sites, service="qwdata", start=start, end=end, access=access, datetime_index=False)  # parameterCd=99162, no "p" when querying.
-    for station in sites:
-        df.loc[df.index.get_level_values("site_no") == station, "STAID"] = station
-    df["STAID"] = df["STAID"].astype(str)
+    if isinstance(df.index, pd.MultiIndex):
+        for station in sites:
+            df.loc[df.index.get_level_values("site_no") == station, "STAID"] = station
+    else:
+        df["STAID"] = df["site_no"]
+        # df["STAID"] = df["STAID"].astype(str)
     return df.to_json()
 
 
@@ -248,17 +251,27 @@ def get_qw_data(sites, start, end, access):
 def plot_parameter(param, data, sample_code=9):
     df = pd.read_json(data)
     df["STAID"] = df["STAID"].astype(str)
+    df["sample_dt"] = pd.to_datetime(df["sample_dt"], format="%Y-%m-%d")
     try:
         sample_code = int(sample_code)
         df = df.loc[df["samp_type_cd"] == sample_code]
     except ValueError:
         df = df.loc[df["samp_type_cd"] == sample_code]
-    fig = px.scatter(
-        df,
-        x="sample_dt",
-        y=param,
-        color="STAID",
-    )
+
+    try:
+        fig = px.scatter(
+            df,
+            x="sample_dt",
+            y=param,
+            color="STAID",
+        )
+    except ValueError:
+        fig = px.scatter(
+            df,
+            x="sample_dt",
+            y=param,
+            color="STAID",
+        )
     fig.update_layout(
         title="",
         xaxis_title="Date",
@@ -278,16 +291,21 @@ def plot_parameter(param, data, sample_code=9):
 )
 def x_vs_y(station, param_x: str, param_y: str, data):
     df = pd.read_json(data)
-    fig = go.Figure(
-        [
-            go.Scatter(
-                mode="markers",
-                x=df[param_x],
-                y=df[param_y],
-                # name="pH",
-            ),
-        ],
-    )
+    df["STAID"] = df["STAID"].astype(str)
+    try:
+        fig = px.scatter(
+            df,
+            x=param_x,
+            y=param_y,
+            color="STAID",
+        )
+    except ValueError:
+        fig = px.scatter(
+            df,
+            x=param_x,
+            y=param_y,
+            color="STAID",
+        )
 
     x_title = str(pc.parameters.get(param_x))
     y_title = str(pc.parameters.get(param_y))
