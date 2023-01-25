@@ -5,6 +5,7 @@ import dash_bootstrap_components as dbc
 import dataretrieval.nwis as nwis
 import utils.param_codes as pc
 import plotly.graph_objects as go
+import plotly.express as px
 import pandas as pd
 from utils import utils
 import json
@@ -90,6 +91,7 @@ sidebar_select = html.Aside(
                     value="433641110441501",
                     options=pc.station_list,
                     persistence=True,
+                    multi=True,
                 ),
             ],
         ),
@@ -118,17 +120,23 @@ graph_content = html.Main(
     [
         html.Div(
             [
-                "Select parameter by name: ",
-                dcc.Dropdown(
-                    id="param_select",
-                    options=pc.param_labels,
-                    value="p00400",
-                    persistence=True,
+                html.Div(
+                    [
+                        "Select parameter by name: ",
+                        dcc.Dropdown(
+                            id="param_select",
+                            options=pc.param_labels,
+                            value="p00400",
+                            persistence=True,
+                        ),
+                    ],
+                    style={"width": "49%", "display": "inline-block"},
                 ),
+                dcc.Graph(id="scatter_plot", className="scatter-plot"),
             ],
-            style={"width": "49%", "display": "inline-block"},
+            className="scatter-container",
         ),
-        dcc.Graph(id="scatter_plot"),
+        html.Br(),
         html.Div(
             [
                 "Select X axis parameter: ",
@@ -154,7 +162,7 @@ graph_content = html.Main(
         dcc.Store(id="filtered_data", storage_type="memory"),
         dcc.Store(id="STAID", storage_type="memory", data="12323840"),
     ],
-    className="graph-content",
+    # className="graph-content",
 )
 
 map_view = html.Div(dcc.Graph(id="map-tab", figure=create_map()), style={"height": "1500px"})
@@ -162,14 +170,16 @@ map_view = html.Div(dcc.Graph(id="map-tab", figure=create_map()), style={"height
 tabs = dbc.Tabs(
     [
         dbc.Tab(
-            graph_content,
+            graph_content,  # located in tabpanel tab-0 "Graph view"
             label="Graph view",
         ),
         dbc.Tab(
-            map_view,
+            map_view,  # located in tabpanel tab-1 "Map view"
             label="Map view",
         ),
     ],
+    className="tabs-container",  # container for Tabs buttons only
+    # tabs-content created by dbc.Tabs and holds the dbc.Tab objects
 )
 
 application = app.server  # Important for debugging and using Flask!
@@ -203,25 +213,6 @@ app.layout = html.Div(
 )
 
 
-@app.callback(Output("page-content", "children"), Input("url", "pathname"))
-def render_page_content(pathname):
-    if pathname == "/":
-        return html.P("This is the home page!")
-    elif pathname == "/calendar":
-        return html.P("This is your calendar... not much in the diary...")
-    elif pathname == "/messages":
-        return html.P("Here are all your messages")
-    # If the user tries to reach a different page, return a 404 message
-    return html.Div(
-        [
-            html.H1("404: Not found", className="text-danger"),
-            html.Hr(),
-            html.P(f"The pathname {pathname} was not recognised..."),
-        ],
-        className="p-3 bg-light rounded-3",
-    )
-
-
 @app.callback(
     Output("memory_data", "data"),
     [
@@ -231,8 +222,11 @@ def render_page_content(pathname):
         Input("access_dropdown", "value"),
     ],
 )
-def get_qw_data(site, start, end, access):
-    df = nwis.get_record(sites=site, service="qwdata", start=start, end=end, access=access)
+def get_qw_data(sites, start, end, access):
+    df = nwis.get_record(sites=sites, service="qwdata", start=start, end=end, access=access, datetime_index=False)  # parameterCd=99162, no "p" when querying.
+    for station in sites:
+        df.loc[df.index.get_level_values("site_no") == station, "STAID"] = station
+    df["STAID"] = df["STAID"].astype(str)
     return df.to_json()
 
 
@@ -245,20 +239,17 @@ def get_qw_data(site, start, end, access):
 )
 def plot_parameter(param, data, sample_code=9):
     df = pd.read_json(data)
+    df["STAID"] = df["STAID"].astype(str)
     try:
         sample_code = int(sample_code)
         df = df.loc[df["samp_type_cd"] == sample_code]
     except ValueError:
         df = df.loc[df["samp_type_cd"] == sample_code]
-    fig = go.Figure(
-        [
-            go.Scatter(
-                mode="markers",
-                x=df.index,
-                y=df[param],
-                name="pH",
-            ),
-        ],
+    fig = px.scatter(
+        df,
+        x="sample_dt",
+        y=param,
+        color="STAID",
     )
     fig.update_layout(
         title="",
