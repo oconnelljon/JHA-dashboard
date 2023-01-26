@@ -161,8 +161,6 @@ app.layout = html.Div(
     [
         dcc.Store(id="staid_coords", storage_type="memory"),
         dcc.Store(id="memory_data", storage_type="memory"),
-        dcc.Store(id="combined_data_coords", storage_type="memory"),
-        dcc.Store(id="STAID", storage_type="memory", data="12323840"),
         # State("map_view_cache", "data"),
         html.Div(
             [
@@ -194,10 +192,11 @@ app.layout = html.Div(
     Output("map-tab-graph", "children"),
     [
         Input("memory_data", "data"),
+        Input("param_select", "value"),
         # Input("staid_coords", "data"),
     ],
 )
-def create_map(mem_data):
+def create_map(mem_data, param):
     MAPBOX_ACCESS_TOKEN = "pk.eyJ1Ijoic2xlZXB5Y2F0IiwiYSI6ImNsOXhiZng3cDA4cmkzdnFhOWhxdDEwOHQifQ.SU3dYPdC5aFVgOJWGzjq2w"
     mem_df = pd.read_json(mem_data)
     # df = pd.read_json(mem_data)
@@ -207,7 +206,7 @@ def create_map(mem_data):
         mem_df,
         lat="dec_lat_va",
         lon="dec_long_va",
-        # color=param,
+        color=param,
         color_continuous_scale=px.colors.cyclical.IceFire,
         # size_max=9,
         # zoom=10,
@@ -240,6 +239,7 @@ def create_map(mem_data):
             zoom=13.25,
         ),
     )
+    fig.update_traces(marker={"size": 12})
     return dcc.Graph(id="location-map", figure=fig)
 
 
@@ -281,13 +281,15 @@ def get_qw_data(coord_data, start, end, access):
 @app.callback(
     Output("scatter_plot", "figure"),
     [
-        Input("param_select", "value"),
         Input("memory_data", "data"),
+        Input("station_ID", "value"),
+        Input("param_select", "value"),
     ],
 )
-def plot_parameter(param, data, sample_code=9):
+def plot_parameter(data, stations, param, sample_code=9):
     df = pd.read_json(data)
     df["STAID"] = df["STAID"].astype(str)
+    df = df.loc[df["STAID"].isin(stations)]
     df["sample_dt"] = pd.to_datetime(df["sample_dt"], format="%Y-%m-%d")
     try:
         sample_code = int(sample_code)
@@ -314,15 +316,16 @@ def plot_parameter(param, data, sample_code=9):
 @app.callback(
     Output("plot_X_vs_Y", "figure"),
     [
-        # Input("station_ID", "value"),
+        Input("memory_data", "data"),
+        Input("station_ID", "value"),
         Input("param_select_X", "value"),
         Input("param_select_Y", "value"),
-        Input("memory_data", "data"),
     ],
 )
-def x_vs_y(param_x: str, param_y: str, data):
+def x_vs_y(data, stations, param_x: str, param_y: str):
     df = pd.read_json(data)
     df["STAID"] = df["STAID"].astype(str)
+    df = df.loc[df["STAID"].isin(stations)]
     fig = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
     fig = px.scatter(
         df,
