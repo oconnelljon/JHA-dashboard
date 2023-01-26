@@ -69,9 +69,6 @@ navbar = html.Div(
 
 sidebar_select = html.Aside(
     [
-        # html.H2("Sidebar", className="display-4"),
-        html.Hr(),
-        html.Br(),
         html.Div(
             [
                 html.P("Data Access Level"),
@@ -258,20 +255,14 @@ def plot_parameter(param, data, sample_code=9):
     except ValueError:
         df = df.loc[df["samp_type_cd"] == sample_code]
 
-    try:
-        fig = px.scatter(
-            df,
-            x="sample_dt",
-            y=param,
-            color="STAID",
-        )
-    except ValueError:
-        fig = px.scatter(
-            df,
-            x="sample_dt",
-            y=param,
-            color="STAID",
-        )
+    fig = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
+    fig = px.scatter(
+        df,
+        x="sample_dt",
+        y=param,
+        color="STAID",
+    )
+
     fig.update_layout(
         title="",
         xaxis_title="Date",
@@ -283,29 +274,22 @@ def plot_parameter(param, data, sample_code=9):
 @app.callback(
     Output("plot_X_vs_Y", "figure"),
     [
-        Input("station_ID", "value"),
+        # Input("station_ID", "value"),
         Input("param_select_X", "value"),
         Input("param_select_Y", "value"),
         Input("memory_data", "data"),
     ],
 )
-def x_vs_y(station, param_x: str, param_y: str, data):
+def x_vs_y(param_x: str, param_y: str, data):
     df = pd.read_json(data)
     df["STAID"] = df["STAID"].astype(str)
-    try:
-        fig = px.scatter(
-            df,
-            x=param_x,
-            y=param_y,
-            color="STAID",
-        )
-    except ValueError:
-        fig = px.scatter(
-            df,
-            x=param_x,
-            y=param_y,
-            color="STAID",
-        )
+    fig = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
+    fig = px.scatter(
+        df,
+        x=param_x,
+        y=param_y,
+        color="STAID",
+    )
 
     x_title = str(pc.parameters.get(param_x))
     y_title = str(pc.parameters.get(param_y))
