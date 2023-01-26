@@ -12,39 +12,7 @@ import json
 from datetime import date, datetime, timedelta
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])  # Include __name__, serves as reference for finding .css files.
-
-STAID_coord = pd.read_csv("data/JHA_STAID_INFO.csv")
-mapbox_access_token = "pk.eyJ1Ijoic2xlZXB5Y2F0IiwiYSI6ImNsOXhiZng3cDA4cmkzdnFhOWhxdDEwOHQifQ.SU3dYPdC5aFVgOJWGzjq2w"
-
-# Define how to create the location map.  Need here to use for initial map in content.
-def create_map(lat="dec_lat_va", long="dec_long_va"):
-    fig = go.Figure(
-        go.Scattermapbox(
-            lat=STAID_coord[lat],
-            lon=STAID_coord[long],
-            mode="markers",
-            marker=go.scattermapbox.Marker(size=9),
-            text=STAID_coord[["site_no"]],
-            customdata=STAID_coord["site_no"],
-        )
-    )
-    fig.update_layout(
-        autosize=True,
-        hovermode="closest",
-        margin=dict(l=10, r=10, t=10, b=10),
-        mapbox=dict(
-            accesstoken=mapbox_access_token,
-            bearing=0,
-            center=dict(
-                lat=43.603413,
-                lon=-110.739465,
-            ),
-            pitch=0,
-            zoom=13.25,
-        ),
-    )
-    return fig
-
+STAID_coords = pd.read_csv("data/JHA_STAID_INFO.csv")
 
 navbar = html.Div(
     [
@@ -107,17 +75,9 @@ sidebar_select = html.Aside(
                 ),
             ],
         ),
-        html.Br(),
-        dcc.Graph(id="sidebar-location-map", figure=create_map()),
-    ],
-    className="sidebar",
-)
-
-scatter_time_container = html.Div(
-    [
         html.Div(
             [
-                "Select parameter by name: ",
+                "Time plot parameter: ",
                 dcc.Dropdown(
                     id="param_select",
                     options=pc.param_labels,
@@ -125,8 +85,38 @@ scatter_time_container = html.Div(
                     persistence=True,
                 ),
             ],
-            style={"width": "49%", "display": "inline-block"},
+            # style={"width": "49%", "display": "inline-block"},
         ),
+        html.Div(
+            [
+                "Scatter X parameter: ",
+                dcc.Dropdown(
+                    id="param_select_X",
+                    options=pc.param_labels,
+                    value="p00400",
+                ),
+            ],
+            # style={"width": "49%", "display": "inline-block"},
+        ),
+        html.Div(
+            [
+                "Scatter Y parameter: ",
+                dcc.Dropdown(
+                    id="param_select_Y",
+                    options=pc.param_labels,
+                    value="p00400",
+                ),
+            ],
+            # style={"width": "49%", "display": "inline-block"},
+        ),
+        html.Br(),
+        # dcc.Graph(id="sidebar-location-map", figure=create_map()),
+    ],
+    className="sidebar",
+)
+
+scatter_time_container = html.Div(
+    [
         dcc.Graph(id="scatter_plot", className="scatter-plot"),
     ],
     className="scatter-time-container",
@@ -134,53 +124,33 @@ scatter_time_container = html.Div(
 
 scatter_params_container = html.Div(
     [
-        html.Div(
-            [
-                "Select X axis parameter: ",
-                dcc.Dropdown(
-                    id="param_select_X",
-                    options=pc.param_labels,
-                    value="p00400",
-                ),
-            ],
-            style={"width": "49%", "display": "inline-block"},
-        ),
-        html.Div(
-            [
-                "Select Y axis parameter: ",
-                dcc.Dropdown(
-                    id="param_select_Y",
-                    options=pc.param_labels,
-                    value="p00400",
-                ),
-            ],
-            style={"width": "49%", "display": "inline-block"},
-        ),
-        dcc.Graph(id="plot_X_vs_Y", style={"display": "inline-block"}),
+        dcc.Graph(id="plot_X_vs_Y"),
     ],
     className="scatter-params-container",
 )
 
 # expand on this for map view tab
 map_view = html.Div(
-    dcc.Graph(id="map-tab", figure=create_map()),
-    style={"height": "1500px"},
+    id="map-tab-graph",
 )
 
-tabs = dbc.Tabs(
+tabs = dcc.Tabs(
     [
-        dbc.Tab(  # located in tabpanel tab-0 aka "Graph view"
+        dcc.Tab(  # located in tabpanel tab-0 aka "Graph view"
             [
                 scatter_time_container,
                 scatter_params_container,
             ],
             label="Graph view",
+            className="tab0-graph-view",
         ),
-        dbc.Tab(  # located in tabpanel tab-1 aka "Map view"
+        dcc.Tab(  # located in tabpanel tab-1 aka "Map view"
             map_view,
             label="Map view",
         ),
     ],
+    id="tabs-main-container",  # dash appends -parent to this ID and creates a parent to hold tabs-main-container child
+    # parent_className="tabs-tab-container",  # Contains tabs and tab content
     className="tabs-container",  # container for Tabs buttons only
     # tabs-content Div container created by dbc.Tabs and holds the dbc.Tab objects
 )
@@ -189,9 +159,11 @@ application = app.server  # Important for debugging and using Flask!
 
 app.layout = html.Div(
     [
+        dcc.Store(id="staid_coords", storage_type="memory"),
         dcc.Store(id="memory_data", storage_type="memory"),
         dcc.Store(id="filtered_data", storage_type="memory"),
         dcc.Store(id="STAID", storage_type="memory", data="12323840"),
+        dcc.State(id="map_view_cache", "data"),
         html.Div(
             [
                 dcc.Location(id="url"),
@@ -216,6 +188,52 @@ app.layout = html.Div(
     ],
     className="root",
 )
+
+
+@app.callback(
+    Output("map-tab-graph", "children"),
+    [
+        Input("staid_coords", "data"),
+    ],
+)
+def create_map(coords, lat="dec_lat_va", long="dec_long_va"):
+    MAPBOX_ACCESS_TOKEN = "pk.eyJ1Ijoic2xlZXB5Y2F0IiwiYSI6ImNsOXhiZng3cDA4cmkzdnFhOWhxdDEwOHQifQ.SU3dYPdC5aFVgOJWGzjq2w"
+    df = pd.read_json(coords)
+    fig = go.Figure(
+        go.Scattermapbox(
+            lat=df[lat],
+            lon=df[long],
+            mode="markers",
+            marker=go.scattermapbox.Marker(size=9),
+            text=df[["site_no"]],
+            customdata=df["site_no"],
+        )
+    )
+    fig.update_layout(
+        autosize=True,
+        hovermode="closest",
+        margin=dict(l=10, r=10, t=10, b=10),
+        mapbox=dict(
+            accesstoken=MAPBOX_ACCESS_TOKEN,
+            bearing=0,
+            center=dict(
+                lat=43.603413,
+                lon=-110.739465,
+            ),
+            pitch=0,
+            zoom=13.25,
+        ),
+    )
+    return dcc.Graph(id="location-map", figure=fig)
+
+
+@app.callback(
+    Output("staid_coords", "data"),
+    Input("access_dropdown", "value"),
+)
+def load_local_staids(local_csv: str):
+    df = pd.read_csv("data/JHA_STAID_INFO.csv")
+    return df.to_json()
 
 
 @app.callback(
