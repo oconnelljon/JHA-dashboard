@@ -161,9 +161,9 @@ app.layout = html.Div(
     [
         dcc.Store(id="staid_coords", storage_type="memory"),
         dcc.Store(id="memory_data", storage_type="memory"),
-        dcc.Store(id="filtered_data", storage_type="memory"),
+        dcc.Store(id="combined_data_coords", storage_type="memory"),
         dcc.Store(id="STAID", storage_type="memory", data="12323840"),
-        dcc.State(id="map_view_cache", "data"),
+        # State("map_view_cache", "data"),
         html.Div(
             [
                 dcc.Location(id="url"),
@@ -193,22 +193,38 @@ app.layout = html.Div(
 @app.callback(
     Output("map-tab-graph", "children"),
     [
+        # Input("memory_data", "data"),
         Input("staid_coords", "data"),
     ],
 )
-def create_map(coords, lat="dec_lat_va", long="dec_long_va"):
+def create_map(coord_data):
     MAPBOX_ACCESS_TOKEN = "pk.eyJ1Ijoic2xlZXB5Y2F0IiwiYSI6ImNsOXhiZng3cDA4cmkzdnFhOWhxdDEwOHQifQ.SU3dYPdC5aFVgOJWGzjq2w"
-    df = pd.read_json(coords)
-    fig = go.Figure(
-        go.Scattermapbox(
-            lat=df[lat],
-            lon=df[long],
-            mode="markers",
-            marker=go.scattermapbox.Marker(size=9),
-            text=df[["site_no"]],
-            customdata=df["site_no"],
-        )
+    coord_df = pd.read_json(coord_data)
+    # df = pd.read_json(mem_data)
+
+    fig = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
+    fig = px.scatter_mapbox(
+        coord_df,
+        lat="dec_lat_va",
+        lon="dec_long_va",
+        # color=param,
+        color_continuous_scale=px.colors.cyclical.IceFire,
+        # size_max=9,
+        # zoom=10,
     )
+
+    # go.Figure(
+    #     go.Scattermapbox(
+    #         lat=df[lat],
+    #         lon=df[long],
+    #         mode="markers",
+    #         marker=go.scattermapbox.Marker(size=9),
+    #         color=param,
+    #         color_continuous_scale=px.colors.cyclical.IceFire,
+    #         text=df[["site_no"]],
+    #         customdata=df["site_no"],
+    #     )
+    # )
     fig.update_layout(
         autosize=True,
         hovermode="closest",
@@ -240,19 +256,24 @@ def load_local_staids(local_csv: str):
     Output("memory_data", "data"),
     [
         Input("station_ID", "value"),
+        Input("staid_coords", "data"),
         Input("date_range", "start_date"),
         Input("date_range", "end_date"),
         Input("access_dropdown", "value"),
     ],
 )
-def get_qw_data(sites, start, end, access):
+def get_qw_data(sites, coord_data, start, end, access):
+    coords = pd.read_json(coord_data)
     df = nwis.get_record(sites=sites, service="qwdata", start=start, end=end, access=access, datetime_index=False)  # parameterCd=99162, no "p" when querying.
     if isinstance(df.index, pd.MultiIndex):
         for station in sites:
             df.loc[df.index.get_level_values("site_no") == station, "STAID"] = station
     else:
         df["STAID"] = df["site_no"]
-        # df["STAID"] = df["STAID"].astype(str)
+    df["STAID"] = df["STAID"].astype(str)
+    coords["STAID"] = coords["STAID"].astype(str)
+    # df2 = df.copy()
+    df = pd.merge(df, coords, on="STAID", how="left")
     return df.to_json()
 
 
