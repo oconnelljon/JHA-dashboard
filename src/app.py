@@ -193,18 +193,18 @@ app.layout = html.Div(
 @app.callback(
     Output("map-tab-graph", "children"),
     [
-        # Input("memory_data", "data"),
-        Input("staid_coords", "data"),
+        Input("memory_data", "data"),
+        # Input("staid_coords", "data"),
     ],
 )
-def create_map(coord_data):
+def create_map(mem_data):
     MAPBOX_ACCESS_TOKEN = "pk.eyJ1Ijoic2xlZXB5Y2F0IiwiYSI6ImNsOXhiZng3cDA4cmkzdnFhOWhxdDEwOHQifQ.SU3dYPdC5aFVgOJWGzjq2w"
-    coord_df = pd.read_json(coord_data)
+    mem_df = pd.read_json(mem_data)
     # df = pd.read_json(mem_data)
 
     fig = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
     fig = px.scatter_mapbox(
-        coord_df,
+        mem_df,
         lat="dec_lat_va",
         lon="dec_long_va",
         # color=param,
@@ -255,18 +255,19 @@ def load_local_staids(local_csv: str):
 @app.callback(
     Output("memory_data", "data"),
     [
-        Input("station_ID", "value"),
+        # Input("station_ID", "value"),
         Input("staid_coords", "data"),
         Input("date_range", "start_date"),
         Input("date_range", "end_date"),
         Input("access_dropdown", "value"),
     ],
 )
-def get_qw_data(sites, coord_data, start, end, access):
+def get_qw_data(coord_data, start, end, access):
     coords = pd.read_json(coord_data)
-    df = nwis.get_record(sites=sites, service="qwdata", start=start, end=end, access=access, datetime_index=False)  # parameterCd=99162, no "p" when querying.
+    site_list = coords["STAID"].astype(str).tolist()
+    df = nwis.get_record(sites=site_list, service="qwdata", start=start, end=end, access=access, datetime_index=False)  # parameterCd=99162, no "p" when querying.
     if isinstance(df.index, pd.MultiIndex):
-        for station in sites:
+        for station in site_list:
             df.loc[df.index.get_level_values("site_no") == station, "STAID"] = station
     else:
         df["STAID"] = df["site_no"]
