@@ -190,25 +190,29 @@ app.layout = html.Div(
     [
         Input("memory_data", "data"),
         Input("param_select", "value"),
+        Input("date_range", "end_date"),
         # Input("staid_coords", "data"),
     ],
 )
-def map_view_map(mem_data, param):
+def map_view_map(mem_data, param, end_date):
     MAPBOX_ACCESS_TOKEN = "pk.eyJ1Ijoic2xlZXB5Y2F0IiwiYSI6ImNsOXhiZng3cDA4cmkzdnFhOWhxdDEwOHQifQ.SU3dYPdC5aFVgOJWGzjq2w"
     mem_df = pd.read_json(mem_data)
+    mem_df = mem_df.astype({"STAID": str, "Latitude": float, "Longitude": float, "Datetime": str})
 
     fig = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
     fig = px.scatter_mapbox(
         mem_df,
-        lat="dec_lat_va",
-        lon="dec_long_va",
+        lat="Latitude",
+        lon="Longitude",
         color=param,
-        color_continuous_scale=px.colors.cyclical.IceFire,
+        color_continuous_scale=px.colors.sequential.Sunset,
         hover_name="STAID",
+        hover_data=["Latitude", "Longitude", "Datetime", param],
     )
+    # mem_df = mem_df.astype({"STAID": str, "Latitude": str, "Longitude": str, "Datetime": str})
     fig.update_layout(
         autosize=True,
-        title=pc.parameters.get(param),
+        title=f"Most recent values before {end_date} for {pc.parameters.get(param)}",
         legend={"title_text": ""},
         hovermode="closest",
         margin=dict(l=10, r=10, t=50, b=10),
@@ -261,6 +265,8 @@ def get_qw_data(coord_data, start, end, access):
     coords["STAID"] = coords["STAID"].astype(str)
     # df2 = df.copy()
     df = pd.merge(df, coords, on="STAID", how="left")
+    df.rename({"dec_long_va": "Longitude", "dec_lat_va": "Latitude"}, axis=1, inplace=True)
+    df["Datetime"] = df["sample_dt"] + " " + df["sample_tm"]
     return df.to_json()
 
 
@@ -273,22 +279,31 @@ def get_qw_data(coord_data, start, end, access):
     ],
 )
 def plot_parameter(data, stations, param, sample_code=9):
-    df = pd.read_json(data)
-    df["STAID"] = df["STAID"].astype(str)
-    df = df.loc[df["STAID"].isin(stations)]
-    df["sample_dt"] = pd.to_datetime(df["sample_dt"], format="%Y-%m-%d")
+    mem_df = pd.read_json(data)
+    # mem_df["STAID"] = mem_df["STAID"].astype(str)
+    mem_df = mem_df.astype({"STAID": str, "Latitude": float, "Longitude": float, "Datetime": str})
+
+    mem_df = mem_df.loc[mem_df["STAID"].isin(stations)]
+    mem_df["sample_dt"] = pd.to_datetime(mem_df["sample_dt"], format="%Y-%m-%d")
     try:
         sample_code = int(sample_code)
-        df = df.loc[df["samp_type_cd"] == sample_code]
+        mem_df = mem_df.loc[mem_df["samp_type_cd"] == sample_code]
     except ValueError:
-        df = df.loc[df["samp_type_cd"] == sample_code]
+        mem_df = mem_df.loc[mem_df["samp_type_cd"] == sample_code]
 
     fig = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
     fig = px.scatter(
-        df,
+        mem_df,
         x="sample_dt",
         y=param,
         color="STAID",
+        # hover_name="STAID",
+        # hover_data=["STAID", "Datetime", param],
+        hover_data=dict(
+            STAID=True,
+            Datetime=True,
+            sample_dt=False,
+        ),
     )
 
     fig.update_layout(
@@ -309,15 +324,19 @@ def plot_parameter(data, stations, param, sample_code=9):
     ],
 )
 def x_vs_y(data, stations, param_x: str, param_y: str):
-    df = pd.read_json(data)
-    df["STAID"] = df["STAID"].astype(str)
-    df = df.loc[df["STAID"].isin(stations)]
+    mem_df = pd.read_json(data)
+    mem_df = mem_df.astype({"STAID": str, "Latitude": float, "Longitude": float, "Datetime": str})
+    mem_df = mem_df.loc[mem_df["STAID"].isin(stations)]
     fig = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
     fig = px.scatter(
-        df,
+        mem_df,
         x=param_x,
         y=param_y,
         color="STAID",
+        hover_data=dict(
+            STAID=True,
+            Datetime=True,
+        ),
     )
 
     x_title = str(pc.parameters.get(param_x))
