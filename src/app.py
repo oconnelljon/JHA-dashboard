@@ -32,7 +32,7 @@ navbar = html.Div(
             className="navbar-link-container",
         ),
     ],
-    className="navbar",
+    className="navbar-container",
 )
 
 sidebar_select = html.Aside(
@@ -46,7 +46,8 @@ sidebar_select = html.Aside(
                     options=pc.access_level_codes,
                     persistence=True,
                 ),
-            ]
+            ],
+            className="data-access-container",
         ),
         html.Div(
             [
@@ -59,6 +60,7 @@ sidebar_select = html.Aside(
                     multi=True,
                 ),
             ],
+            className="station-select-container",
         ),
         html.Div(
             [
@@ -74,10 +76,11 @@ sidebar_select = html.Aside(
                     },
                 ),
             ],
+            className="daterange-container",
         ),
         html.Div(
             [
-                "Time plot parameter: ",
+                "Time plot and map view parameter: ",
                 dcc.Dropdown(
                     id="param_select",
                     options=pc.param_labels,
@@ -85,6 +88,7 @@ sidebar_select = html.Aside(
                     persistence=True,
                 ),
             ],
+            className="select-time-param-container",
             # style={"width": "49%", "display": "inline-block"},
         ),
         html.Div(
@@ -96,7 +100,7 @@ sidebar_select = html.Aside(
                     value="p00400",
                 ),
             ],
-            # style={"width": "49%", "display": "inline-block"},
+            className="select-x-container",
         ),
         html.Div(
             [
@@ -107,12 +111,11 @@ sidebar_select = html.Aside(
                     value="p00400",
                 ),
             ],
-            # style={"width": "49%", "display": "inline-block"},
+            className="select-y-container",
         ),
-        html.Br(),
         # dcc.Graph(id="sidebar-location-map", figure=create_map()),
     ],
-    className="sidebar",
+    className="sidebar-container",
 )
 
 scatter_time_container = html.Div(
@@ -165,18 +168,12 @@ app.layout = html.Div(
         html.Div(
             [
                 dcc.Location(id="url"),
-                dbc.Nav(
-                    navbar,
-                    className="navbar-container",
-                ),
-                html.Div(
-                    sidebar_select,
-                    className="sidebar-container",
-                ),
-                html.Div(
+                navbar,
+                sidebar_select,
+                html.Main(
                     html.Div(
                         tabs,
-                        className="main-content-wrapper",
+                        className="tabs-content-container",
                     ),
                     className="main-content-container",
                 ),
@@ -196,10 +193,9 @@ app.layout = html.Div(
         # Input("staid_coords", "data"),
     ],
 )
-def create_map(mem_data, param):
+def map_view_map(mem_data, param):
     MAPBOX_ACCESS_TOKEN = "pk.eyJ1Ijoic2xlZXB5Y2F0IiwiYSI6ImNsOXhiZng3cDA4cmkzdnFhOWhxdDEwOHQifQ.SU3dYPdC5aFVgOJWGzjq2w"
     mem_df = pd.read_json(mem_data)
-    # df = pd.read_json(mem_data)
 
     fig = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
     fig = px.scatter_mapbox(
@@ -208,26 +204,14 @@ def create_map(mem_data, param):
         lon="dec_long_va",
         color=param,
         color_continuous_scale=px.colors.cyclical.IceFire,
-        # size_max=9,
-        # zoom=10,
+        hover_name="STAID",
     )
-
-    # go.Figure(
-    #     go.Scattermapbox(
-    #         lat=df[lat],
-    #         lon=df[long],
-    #         mode="markers",
-    #         marker=go.scattermapbox.Marker(size=9),
-    #         color=param,
-    #         color_continuous_scale=px.colors.cyclical.IceFire,
-    #         text=df[["site_no"]],
-    #         customdata=df["site_no"],
-    #     )
-    # )
     fig.update_layout(
         autosize=True,
+        title=pc.parameters.get(param),
+        legend={"title_text": ""},
         hovermode="closest",
-        margin=dict(l=10, r=10, t=10, b=10),
+        margin=dict(l=10, r=10, t=50, b=10),
         mapbox=dict(
             accesstoken=MAPBOX_ACCESS_TOKEN,
             bearing=0,
@@ -239,7 +223,9 @@ def create_map(mem_data, param):
             zoom=13.25,
         ),
     )
-    fig.update_traces(marker={"size": 12})
+    fig.update_traces(
+        marker={"size": 12},
+    )
     return dcc.Graph(id="location-map", figure=fig)
 
 
