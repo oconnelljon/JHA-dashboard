@@ -2,11 +2,12 @@
 
 .page-container {
     display: grid;
-    position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
+    justify-content: stretch;
+    /* position: fixed; */
+    /* top: 0; */
+    /* right: 0; */
+    /* bottom: 0; */
+    /* left: 0; */
     /* height limitation on second row */
     grid-template-rows: 55px calc(100vh - 55px);
     /* 2 rows, 55px tall for header and rest for container */
@@ -21,9 +22,10 @@
 .navbar-container {
     grid-area: header;
     z-index: 2000;
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    grid-template-areas: "left-header center-header right-header";
+    display: flex;
+    justify-content: space-between;
+    /* grid-template-columns: 1fr 1fr 1fr; */
+    /* grid-template-areas: "left-header center-header right-header"; */
     /* height: 100%;
     width: 100%; */
     padding-top: 0px;
@@ -55,22 +57,22 @@
 }
 
 .navbar-brand-container {
-    display: flex;
-    grid-area: left-header;
+    /* display: flex; */
+    /* grid-area: left-header; */
     font-size: 2rem;
 
 }
 
 .navbar-JHA-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    /* display: flex; */
+    /* align-items: center; */
+    /* justify-content: center; */
     font-size: 2rem;
 }
 
 .navbar-link-container {
-    grid-area: right-header;
-    display: grid;
+    /* grid-area: right-header; */
+    /* display: grid; */
     margin-top: 0px;
     margin-bottom: 0px;
 }
@@ -91,7 +93,9 @@
 .main-content-container {
     grid-area: content;
     display: flex;
-    flex-direction: column;
+    /* align-items: stretch; */
+    /* flex-direction: column; */
+    /* align-self: stretch; */
     padding-top: 10px;
     column-gap: 20px;
     background-color: rgb(161, 161, 161);
@@ -99,13 +103,19 @@
     /* overflow condition on parent */
 }
 
+tabs-main-container {}
+
 .tabs-content-container {
-    /* display: grid; */
+    /* flex-grow: 1; */
+    flex: 1;
+    min-width: 0;
+    /* display: flex; */
+    /* align-items: stretch; */
     /* min-height: 100%; */
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    height: auto;
+    /* display: flex; */
+    /* flex-direction: column; */
+    /* min-height: 100vh; */
+    /* height: auto; */
     margin-right: 15px;
     margin-bottom: 15px;
     margin-left: 15px;
@@ -113,15 +123,47 @@
     background-color: #eaedf1
 }
 
+.tab-parent {
+    display: flex;
+    align-items: stretch;
+    min-height: 100%;
+    /* flex-direction: column; */
+    /* min-height: 100vh; */
+    /* height: 100%; */
+}
+
 /* tab-content is created by dbc.Tabs and is not explicetly defined in app.py*/
 .tab-content {
+    flex: 1;
     display: flex;
-    flex-direction: column;
+    align-items: stretch;
+    /* flex-direction: column; */
+    /* min-height: 100vh; */
+    /* height: auto; */
     margin-top: 15px;
     margin-right: 15px;
     margin-bottom: 15px;
     margin-left: 15px;
-    border-radius: 5px;
+    /* border-radius: 5px; */
+}
+
+.map-view-container {
+    display: flex;
+    align-items: stretch;
+    flex: 1;
+}
+
+.scatter-time-container {
+    width: 50%
+}
+
+.scatter-params-container {
+    width: 50%
+}
+
+.THEGRAPH {
+    flex: 1;
+    min-width: 0;
 }
 
 /* .tab-content>.active {
@@ -133,15 +175,17 @@
     display: flex;
 } */
 
-.location-map {
-    min-height: 500px;
-    margin-right: 10px;
-    margin-left: 10px;
-}
 
 /* Tab1 Map view section */
 .map-tab-graph {
-    display: flex;
-    width: 100%;
-    height: 100%;
+    /* display: flex; */
+    /* width: 100%;
+    height: 100%; */
+}
+
+.location-map {
+    /* flex: 1; */
+    /* min-height: 500px; */
+    /* margin-right: 10px;
+    margin-left: 10px; */
 }

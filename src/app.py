@@ -10,6 +10,7 @@ import pandas as pd
 from utils import utils
 import json
 from datetime import date, datetime, timedelta
+from typing import List
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])  # Include __name__, serves as reference for finding .css files.
 STAID_coords = pd.read_csv("data/JHA_STAID_INFO.csv")
@@ -133,12 +134,14 @@ scatter_params_container = html.Div(
 )
 
 # expand on this for map view tab
-map_view = html.Div(
-    id="map-tab-graph",
-)
+map_view = html.Div(id="map-tab-graph", className="map-view-container")
 
 tabs = dcc.Tabs(
     [
+        dcc.Tab(  # located in tabpanel tab-1 aka "Map view"
+            map_view,
+            label="Map view",
+        ),
         dcc.Tab(  # located in tabpanel tab-0 aka "Graph view"
             [
                 scatter_time_container,
@@ -147,12 +150,8 @@ tabs = dcc.Tabs(
             label="Graph view",
             className="tab0-graph-view",
         ),
-        dcc.Tab(  # located in tabpanel tab-1 aka "Map view"
-            map_view,
-            label="Map view",
-        ),
     ],
-    id="tabs-main-container",  # dash appends -parent to this ID and creates a parent to hold tabs-main-container child
+    # id="tabs-main-container",  # dash appends -parent to this ID and creates a parent to hold tabs-main-container child
     # parent_className="tabs-tab-container",  # Contains tabs and tab content
     className="tabs-container",  # container for Tabs buttons only
     # tabs-content Div container created by dbc.Tabs and holds the dbc.Tab objects
@@ -191,7 +190,6 @@ app.layout = html.Div(
         Input("memory_data", "data"),
         Input("param_select", "value"),
         Input("date_range", "end_date"),
-        # Input("staid_coords", "data"),
     ],
 )
 def map_view_map(mem_data, param, end_date):
@@ -208,20 +206,21 @@ def map_view_map(mem_data, param, end_date):
         color_continuous_scale=px.colors.sequential.Sunset,
         hover_name="STAID",
         hover_data=["Latitude", "Longitude", "Datetime", param],
+        mapbox_style="streets",
     )
     # mem_df = mem_df.astype({"STAID": str, "Latitude": str, "Longitude": str, "Datetime": str})
     fig.update_layout(
         autosize=True,
         title=f"Most recent values before {end_date} for {pc.parameters.get(param)}",
-        legend={"title_text": ""},
+        legend_title="",
         hovermode="closest",
         margin=dict(l=10, r=10, t=50, b=10),
         mapbox=dict(
             accesstoken=MAPBOX_ACCESS_TOKEN,
             bearing=0,
             center=dict(
-                lat=43.603413,
-                lon=-110.739465,
+                lat=43.608685,
+                lon=-110.736564,
             ),
             pitch=0,
             zoom=13.25,
@@ -230,7 +229,7 @@ def map_view_map(mem_data, param, end_date):
     fig.update_traces(
         marker={"size": 12},
     )
-    return dcc.Graph(id="location-map", figure=fig)
+    return dcc.Graph(id="location-map", figure=fig, className="THEGRAPH", responsive=True)  # style={"width": "60vw", "height": "70vh"}
 
 
 @app.callback(
@@ -245,7 +244,6 @@ def load_local_staids(local_csv: str):
 @app.callback(
     Output("memory_data", "data"),
     [
-        # Input("station_ID", "value"),
         Input("staid_coords", "data"),
         Input("date_range", "start_date"),
         Input("date_range", "end_date"),
@@ -278,15 +276,30 @@ def get_qw_data(coord_data, start, end, access):
         Input("param_select", "value"),
     ],
 )
-def plot_parameter(data, stations, param, sample_code=9):
+def plot_parameter(data, stations: List, param: str, sample_code: int = 9):
+    """Plots parameter as a function of time.
+
+    Parameters
+    ----------
+    data : JSON
+        JSON object from memory_data cache
+    stations : List
+        List of STAIDS from station_ID multi-dropdown
+    param : str
+        Parameter code, e.g. p00400 from param_select dropdown
+    sample_code : int, optional
+        Sample code to filter data set, by default 9
+
+    Returns
+    -------
+    px.scatter() figure to scatter_plot location
+    """
     mem_df = pd.read_json(data)
-    # mem_df["STAID"] = mem_df["STAID"].astype(str)
     mem_df = mem_df.astype({"STAID": str, "Latitude": float, "Longitude": float, "Datetime": str})
 
     mem_df = mem_df.loc[mem_df["STAID"].isin(stations)]
     mem_df["sample_dt"] = pd.to_datetime(mem_df["sample_dt"], format="%Y-%m-%d")
     try:
-        sample_code = int(sample_code)
         mem_df = mem_df.loc[mem_df["samp_type_cd"] == sample_code]
     except ValueError:
         mem_df = mem_df.loc[mem_df["samp_type_cd"] == sample_code]
@@ -307,6 +320,7 @@ def plot_parameter(data, stations, param, sample_code=9):
     )
 
     fig.update_layout(
+        margin=dict(l=10, r=10, t=50, b=10),
         title="",
         xaxis_title="Date",
         yaxis_title=pc.parameters.get(param),
