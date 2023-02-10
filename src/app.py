@@ -197,22 +197,35 @@ def map_view_map(mem_data, param, end_date):
     mem_df = pd.read_json(mem_data)
     mem_df = mem_df.astype({"STAID": str, "Latitude": float, "Longitude": float, "Datetime": str})
 
-    fig = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
-    fig = px.scatter_mapbox(
-        mem_df,
-        lat="Latitude",
-        lon="Longitude",
-        color=param,
-        color_continuous_scale=px.colors.sequential.Sunset,
-        hover_name="STAID",
-        hover_data=["Latitude", "Longitude", "Datetime", param],
-        mapbox_style="streets",
+    # fig = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
+    fig = go.Figure(
+        data=px.scatter_mapbox(
+            mem_df,
+            lat="Latitude",
+            lon="Longitude",
+            color=param,
+            color_continuous_scale=px.colors.sequential.Sunset,
+            hover_name="STAID",
+            hover_data=["Latitude", "Longitude", "Datetime", param],
+            mapbox_style="streets",
+        ),
+        # layout={"legend": go.layout.Legend(title="git sum")},
+    )
+    fig.update_traces(
+        marker={"size": 12},
     )
     # mem_df = mem_df.astype({"STAID": str, "Latitude": str, "Longitude": str, "Datetime": str})
     fig.update_layout(
+        # coloraxis_showscale=False,
+        # overwrite=True,
         autosize=True,
         title=f"Most recent values before {end_date} for {pc.parameters.get(param)}",
-        legend_title="",
+        coloraxis_colorbar=dict(
+            title="",
+        ),
+        # legend=dict(title="mouse mouse"),
+        # legend=go.layout.Legend(title="git sum"),
+        # legend_title_text="git sum",
         hovermode="closest",
         margin=dict(l=10, r=10, t=50, b=10),
         mapbox=dict(
@@ -226,9 +239,7 @@ def map_view_map(mem_data, param, end_date):
             zoom=13.25,
         ),
     )
-    fig.update_traces(
-        marker={"size": 12},
-    )
+
     return dcc.Graph(id="location-map", figure=fig, className="THEGRAPH", responsive=True)  # style={"width": "60vw", "height": "70vh"}
 
 
