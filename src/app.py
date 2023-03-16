@@ -3,17 +3,47 @@ from dash import html, dcc, Input, Output, State
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 import dataretrieval.nwis as nwis
+
+import utils.qwpretreival as qwp
 import utils.param_codes as pc
 import plotly.graph_objects as go
 import plotly.express as px
 import pandas as pd
 from utils import utils
 import json
+import requests
+import io
 from datetime import date, datetime, timedelta
 from typing import List
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])  # Include __name__, serves as reference for finding .css files.
-STAID_coords = pd.read_csv("data/JHA_STAID_INFO.csv")
+# app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
+STAID_coords = pd.read_csv("src/data/JHA_STAID_INFO.csv")
+
+
+def process_coords():
+    coords = pd.read_csv("src/data/JHA_STAID_INFO.csv")
+    coords["STAID"] = "USGS-" + coords["STAID"].astype(str)
+    return coords
+
+
+staid_coords = process_coords()
+staid_list = staid_coords["STAID"].to_list()
+response = requests.post(
+    url="https://www.waterqualitydata.us/data/Result/search?",
+    data={
+        "siteid": [staid_list],
+        "startDateLo": "01-01-2020",
+        "startDateHi": "12-31-2020",
+        "service": "results",
+    },
+)
+decode_response = io.StringIO(response.content.decode("utf-8"))
+
+dataframe = pd.read_csv(decode_response)
+print(dataframe)
+dataframe["STAID"] = dataframe["STAID"].astype(str)
+
 
 navbar = html.Div(
     [
@@ -185,6 +215,28 @@ app.layout = html.Div(
 
 
 @app.callback(
+    Output("memory_data", "data"),
+    [
+        Input("staid_coords", "data"),
+        Input("date_range", "start_date"),
+        Input("date_range", "end_date"),
+        Input("access_dropdown", "value"),
+    ],
+)
+def get_qwp_data(coord_data, start, end):
+    staids = process_coords(coord_data=coord_data)
+    response = requests.post(url="https://www.waterqualitydata.us/data/Result/search?", data={"siteid": [staids], "startDateLo": start, "startDateHi": end, "service": "results"})
+    decode_response = io.StringIO(response.content.decode("utf-8"))
+
+    dataframe = pd.read_csv(decode_response)
+    dataframe["STAID"] = dataframe["STAID"].astype(str)
+    return dataframe.to_json()
+    # coords["STAID"] = coords["STAID"].astype(str)
+    # df2 = df.copy()
+    # dataframe = pd.merge(dataframe, coords, on="STAID", how="left")
+
+
+@app.callback(
     Output("map-tab-graph", "children"),
     [
         Input("memory_data", "data"),
@@ -248,35 +300,35 @@ def map_view_map(mem_data, param, end_date):
     Input("access_dropdown", "value"),
 )
 def load_local_staids(local_csv: str):
-    df = pd.read_csv("data/JHA_STAID_INFO.csv")
+    df = pd.read_csv("src/data/JHA_STAID_INFO.csv")
     return df.to_json()
 
 
-@app.callback(
-    Output("memory_data", "data"),
-    [
-        Input("staid_coords", "data"),
-        Input("date_range", "start_date"),
-        Input("date_range", "end_date"),
-        Input("access_dropdown", "value"),
-    ],
-)
-def get_qw_data(coord_data, start, end, access):
-    coords = pd.read_json(coord_data)
-    site_list = coords["STAID"].astype(str).tolist()
-    df = nwis.get_record(sites=site_list, service="qwdata", start=start, end=end, access=access, datetime_index=False)  # parameterCd=99162, no "p" when querying.
-    if isinstance(df.index, pd.MultiIndex):
-        for station in site_list:
-            df.loc[df.index.get_level_values("site_no") == station, "STAID"] = station
-    else:
-        df["STAID"] = df["site_no"]
-    df["STAID"] = df["STAID"].astype(str)
-    coords["STAID"] = coords["STAID"].astype(str)
-    # df2 = df.copy()
-    df = pd.merge(df, coords, on="STAID", how="left")
-    df.rename({"dec_long_va": "Longitude", "dec_lat_va": "Latitude"}, axis=1, inplace=True)
-    df["Datetime"] = df["sample_dt"] + " " + df["sample_tm"]
-    return df.to_json()
+# @app.callback(
+#     Output("memory_data", "data"),
+#     [
+#         Input("staid_coords", "data"),
+#         Input("date_range", "start_date"),
+#         Input("date_range", "end_date"),
+#         Input("access_dropdown", "value"),
+#     ],
+# )
+# def get_nwis_qw_data(coord_data, start, end, access):
+#     coords = pd.read_json(coord_data)
+#     site_list = coords["STAID"].astype(str).tolist()
+#     df = nwis.get_record(sites=site_list, service="qwdata", start=start, end=end, access=access, datetime_index=False)  # parameterCd=99162, no "p" when querying.
+#     if isinstance(df.index, pd.MultiIndex):
+#         for station in site_list:
+#             df.loc[df.index.get_level_values("site_no") == station, "STAID"] = station
+#     else:
+#         df["STAID"] = df["site_no"]
+#     df["STAID"] = df["STAID"].astype(str)
+#     coords["STAID"] = coords["STAID"].astype(str)
+#     # df2 = df.copy()
+#     df = pd.merge(df, coords, on="STAID", how="left")
+#     df.rename({"dec_long_va": "Longitude", "dec_lat_va": "Latitude"}, axis=1, inplace=True)
+#     df["Datetime"] = df["sample_dt"] + " " + df["sample_tm"]
+#     return df.to_json()
 
 
 @app.callback(
@@ -389,4 +441,5 @@ def x_vs_y(data, stations, param_x: str, param_y: str):
 
 
 if __name__ == "__main__":
+    # app.run_server()
     app.run_server(debug=True)
