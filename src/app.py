@@ -23,26 +23,29 @@ STAID_coords = pd.read_csv("src/data/JHA_STAID_INFO.csv")
 
 def process_coords():
     coords = pd.read_csv("src/data/JHA_STAID_INFO.csv")
-    coords["STAID"] = "USGS-" + coords["STAID"].astype(str)
+    coords["staid"] = "USGS-" + coords["staid"].astype(str)  # Need to concat "USGS-" to the start of the staid for qwp query
     return coords
 
 
 staid_coords = process_coords()
-staid_list = staid_coords["STAID"].to_list()
+staid_list = staid_coords["staid"].to_list()
 response = requests.post(
     url="https://www.waterqualitydata.us/data/Result/search?",
     data={
         "siteid": [staid_list],
-        "startDateLo": "01-01-2005",
-        "startDateHi": "12-31-2023",
+        "startDateLo": "01-01-2020",
+        "startDateHi": "12-31-2020",
         "service": "results",
     },
 )
 
 decode_response = io.StringIO(response.content.decode("utf-8"))
 dataframe = pd.read_csv(decode_response)
-dataframe["STAID"] = dataframe["STAID"].astype(str)
-
+dataframe.rename(columns={"MonitoringLocationIdentifier": "staid"}, inplace=True)
+# dataframe["staid"] = dataframe["staid"].str.slice(5,19)
+# This is all the available data for all the stations.  Hopefully.
+# Query at the start, then sort intermediates to pass to Callbacks
+ALL_DATA = pd.merge(dataframe, staid_coords, on="staid", how="left")
 
 navbar = html.Div(
     [
