@@ -41,16 +41,16 @@ response = requests.post(
         "startDateHi": "12-31-2022",
         "service": "results",
     },
+    headers={"user-agent": "python"},
 )
 
 decode_response = io.StringIO(response.content.decode("utf-8"))
-# pcodes have leading 0's, treat as strings to keep them around.
-dataframe = pd.read_csv(decode_response, dtype={"USGSPCode": str})  # , parse_dates=["ActivityStartDate"]
+dataframe = pd.read_csv(decode_response, dtype={"USGSPCode": str})
 dataframe["USGSPCode"] = "p" + dataframe["USGSPCode"]
 dataframe.rename(columns={"MonitoringLocationIdentifier": "staid"}, inplace=True)
 dataframe["datetime"] = dataframe["ActivityStartDate"] + " " + dataframe["ActivityStartTime/Time"]
-# dataframe["USGSPCode"] = dataframe["USGSPCode"].astype(str)
-# dataframe["staid"] = dataframe["staid"].str.slice(5,19)
+
+
 # This is all the available data for all the stations.  Hopefully.
 # Query at the start, then sort intermediates to pass to Callbacks
 ALL_DATA = pd.merge(dataframe, staid_coords, on="staid", how="left")
@@ -79,18 +79,18 @@ navbar = html.Div(
 
 sidebar_select = html.Aside(
     [
-        html.Div(
-            [
-                html.P("Data Access Level"),
-                dcc.Dropdown(
-                    id="access_dropdown",
-                    value="0",
-                    options=pc.access_level_codes,
-                    persistence=True,
-                ),
-            ],
-            className="data-access-container",
-        ),
+        # html.Div(
+        #     [
+        #         html.P("Data Access Level"),
+        #         dcc.Dropdown(
+        #             id="access_dropdown",
+        #             value="0",
+        #             options=pc.access_level_codes,
+        #             persistence=True,
+        #         ),
+        #     ],
+        #     className="data-access-container",
+        # ),
         html.Div(
             [
                 html.P("Station ID: "),
@@ -98,7 +98,7 @@ sidebar_select = html.Aside(
                     id="station_ID",
                     value=DEFAULT_STAID,
                     options=pc.station_list,
-                    persistence=True,
+                    persistence=False,
                     multi=True,
                 ),
             ],
@@ -202,10 +202,8 @@ application = app.server  # Important for debugging and using Flask!
 
 app.layout = html.Div(
     [
-        # dcc.Store(id="staid_coords", storage_type="memory"),
         dcc.Store(id="memory-time-plot", storage_type="memory"),
         dcc.Store(id="memory-scatter-plot", storage_type="memory"),
-        # State("map_view_cache", "data"),
         html.Div(
             [
                 dcc.Location(id="url"),
@@ -240,7 +238,12 @@ def filter_timeplot_data(staid, start_date, end_date, param):
         # Return a default if nothing is selected
         return ALL_DATA.loc[(ALL_DATA["staid"] == DEFAULT_STAID) & ALL_DATA["USGSPCode"] == DEFAULT_PCODE].to_json()
 
-    filtered = ALL_DATA.loc[(ALL_DATA["ActivityStartDate"] >= str(default_start_date)) & (ALL_DATA["staid"].isin(staid)) & (ALL_DATA["USGSPCode"] == param)]
+#     filtered = ALL_DATA.loc[(ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= str(end_date)) & (ALL_DATA["staid"].isin([staid])) & (ALL_DATA["USGSPCode"] == param)]
+    pcode_mask = (ALL_DATA["USGSPCode"] == param)
+    staid_date_mask = (ALL_DATA["staid"].isin([staid])) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date)
+
+    # mask = ((ALL_DATA["staid"].isin([staid])) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date) | (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y))
+    filtered = ALL_DATA.loc[staid_date_mask & pcode_mask]
 
     return filtered.to_json()
 
@@ -260,8 +263,13 @@ def filter_scatter_data(staid, start_date, end_date, param_x, param_y):
         # Return a default if nothing is selected
         return ALL_DATA.loc[(ALL_DATA["staid"] == DEFAULT_STAID) & ALL_DATA["USGSPCode"] == DEFAULT_PCODE].to_json()
 
-    filtered = ALL_DATA.loc[(ALL_DATA["ActivityStartDate"] >= str(default_start_date)) & (ALL_DATA["staid"].isin(staid)) & (ALL_DATA["USGSPCode"] == param_x) & (ALL_DATA["USGSPCode"] == param_y)]
+    pcode_mask = (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y)
+    staid_date_mask = (ALL_DATA["staid"].isin([staid])) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date)
 
+    # mask = ((ALL_DATA["staid"].isin([staid])) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date) | (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y))
+    filtered = ALL_DATA.loc[staid_date_mask & pcode_mask]
+    # filtered = ALL_DATA.loc[(ALL_DATA["staid"].isin([staid])) & (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y)]
+# (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date) & 
     return filtered.to_json()
 
 
@@ -398,11 +406,11 @@ def map_view_map(mem_data, param, end_date):
     Output("scatter_plot", "figure"),
     [
         Input("memory-time-plot", "data"),
-        Input("station_ID", "value"),
-        Input("param_select", "value"),
+        # Input("station_ID", "value"),
+        # Input("param_select", "value"),
     ],
 )
-def plot_parameter(mem_data, stations: List, param: str, sample_code: int = 9):
+def plot_parameter(mem_data):  #, stations: List, param: str, sample_code: int = 9
     """Plots parameter as a function of time.
 
     Parameters
@@ -423,27 +431,27 @@ def plot_parameter(mem_data, stations: List, param: str, sample_code: int = 9):
     if mem_data is None:
         raise PreventUpdate
     mem_df = pd.read_json(mem_data)
-    mem_df = mem_df.astype({"staid": str, "dec_lat_va": float, "dec_long_va": float, "datetime": str})
+    # mem_df = mem_df.astype({"staid": str, "dec_lat_va": float, "dec_long_va": float, "datetime": str})
 
-    mem_df = mem_df.loc[mem_df["staid"].isin(stations)]
-    mem_df["datetime"] = pd.to_datetime(mem_df["datetime"], format="%Y-%m-%d")
-    try:
-        mem_df = mem_df.loc[mem_df["USGSPCode"] == sample_code]
-    except ValueError:
-        mem_df = mem_df.loc[mem_df["USGSPCode"] == sample_code]
+    # mem_df = mem_df.loc[mem_df["staid"].isin(stations)]
+    mem_df["datetime"] = pd.to_datetime(mem_df["datetime"], format="%Y-%m-%d %H:%M")
+    # try:
+    #     mem_df = mem_df.loc[mem_df["USGSPCode"] == sample_code]
+    # except ValueError:
+    #     mem_df = mem_df.loc[mem_df["USGSPCode"] == sample_code]
 
     fig = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
     fig = px.scatter(
         mem_df,
         x="datetime",
-        y=mem_df.loc[mem_df["USGSPCode"] == sample_code],
+        y="ResultMeasureValue",
         color="staid",
         # hover_name="STAID",
         # hover_data=["STAID", "Datetime", param],
         hover_data=dict(
-            STAID=True,
-            Datetime=True,
-            sample_dt=False,
+            staid=True,
+            datetime=True,
+            # sample_dt=False,
         ),
     )
 
@@ -451,7 +459,7 @@ def plot_parameter(mem_data, stations: List, param: str, sample_code: int = 9):
         margin=dict(l=10, r=10, t=50, b=10),
         title="",
         xaxis_title="Date",
-        yaxis_title=pc.parameters.get(param),
+        yaxis_title=pc.parameters.get(mem_df["USGSPCode"].iloc[0]),
     )
     return fig
 
@@ -460,27 +468,27 @@ def plot_parameter(mem_data, stations: List, param: str, sample_code: int = 9):
     Output("plot_X_vs_Y", "figure"),
     [
         Input("memory-scatter-plot", "data"),
-        Input("station_ID", "value"),
+        # Input("station_ID", "value"),
         Input("param_select_X", "value"),
         Input("param_select_Y", "value"),
     ],
 )
-def x_vs_y(mem_data, stations, param_x: str, param_y: str):
-    if mem_data is None:
-        raise PreventUpdate
+def x_vs_y(mem_data, param_x: str, param_y: str):  # , stations
     mem_df = pd.read_json(mem_data)
+    if mem_df.empty:
+        raise PreventUpdate
     # mem_df = mem_df.astype({"staid": str, "dec_lat_va": float, "dec_long_va": float, "datetime": str})
-    mem_df = mem_df.loc[mem_df["staid"].isin(stations)]
+    # mem_df = mem_df.loc[mem_df["staid"].isin(stations)]
     fig = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
     fig = px.scatter(
         mem_df,
         x=mem_df["ResultMeasureValue"].loc[mem_df["USGSPCode"] == param_x],
         y=mem_df["ResultMeasureValue"].loc[mem_df["USGSPCode"] == param_y],
-        color="staid",
-        hover_data=dict(
-            staid=True,
-            datetime=True,
-        ),
+        # color=mem_df["ResultMeasureValue"].loc[mem_df["USGSPCode"] == param_x],
+        # hover_data=dict(
+        #     staid=True,
+        #     datetime=True,
+        # ),
     )
 
     x_title = str(pc.parameters.get(param_x))
