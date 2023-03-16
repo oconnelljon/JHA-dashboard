@@ -18,7 +18,11 @@ from typing import List
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])  # Include __name__, serves as reference for finding .css files.
 # app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
-STAID_coords = pd.read_csv("src/data/JHA_STAID_INFO.csv")
+STAID_COORDS = pd.read_csv("src/data/JHA_STAID_INFO.csv")
+DEFAULT_PCODE = "p00400"
+DEFAULT_STAID = "USGS-433641110441501"
+# default_start_year = datetime.today().date() - timedelta(days=365)
+default_start_date = (pd.Timestamp.today() - pd.DateOffset(years=2)).date()
 
 
 def process_coords():
@@ -33,19 +37,24 @@ response = requests.post(
     url="https://www.waterqualitydata.us/data/Result/search?",
     data={
         "siteid": [staid_list],
-        "startDateLo": "01-01-2020",
-        "startDateHi": "12-31-2020",
+        "startDateLo": default_start_date.strftime("%m-%d-%Y"),
+        "startDateHi": "12-31-2022",
         "service": "results",
     },
 )
 
 decode_response = io.StringIO(response.content.decode("utf-8"))
-dataframe = pd.read_csv(decode_response)
+# pcodes have leading 0's, treat as strings to keep them around.
+dataframe = pd.read_csv(decode_response, dtype={"USGSPCode": str})  # , parse_dates=["ActivityStartDate"]
+dataframe["USGSPCode"] = "p" + dataframe["USGSPCode"]
 dataframe.rename(columns={"MonitoringLocationIdentifier": "staid"}, inplace=True)
+dataframe["datetime"] = dataframe["ActivityStartDate"] + " " + dataframe["ActivityStartTime/Time"]
+# dataframe["USGSPCode"] = dataframe["USGSPCode"].astype(str)
 # dataframe["staid"] = dataframe["staid"].str.slice(5,19)
 # This is all the available data for all the stations.  Hopefully.
 # Query at the start, then sort intermediates to pass to Callbacks
 ALL_DATA = pd.merge(dataframe, staid_coords, on="staid", how="left")
+
 
 navbar = html.Div(
     [
@@ -87,7 +96,7 @@ sidebar_select = html.Aside(
                 html.P("Station ID: "),
                 dcc.Dropdown(
                     id="station_ID",
-                    value="433641110441501",
+                    value=DEFAULT_STAID,
                     options=pc.station_list,
                     persistence=True,
                     multi=True,
@@ -117,7 +126,7 @@ sidebar_select = html.Aside(
                 dcc.Dropdown(
                     id="param_select",
                     options=pc.param_labels,
-                    value="p00400",
+                    value=DEFAULT_PCODE,
                     persistence=True,
                 ),
             ],
@@ -130,7 +139,7 @@ sidebar_select = html.Aside(
                 dcc.Dropdown(
                     id="param_select_X",
                     options=pc.param_labels,
-                    value="p00400",
+                    value=DEFAULT_PCODE,
                 ),
             ],
             className="select-x-container",
@@ -141,7 +150,7 @@ sidebar_select = html.Aside(
                 dcc.Dropdown(
                     id="param_select_Y",
                     options=pc.param_labels,
-                    value="p00400",
+                    value=DEFAULT_PCODE,
                 ),
             ],
             className="select-y-container",
@@ -194,7 +203,8 @@ application = app.server  # Important for debugging and using Flask!
 app.layout = html.Div(
     [
         # dcc.Store(id="staid_coords", storage_type="memory"),
-        dcc.Store(id="memory_data", storage_type="memory"),
+        dcc.Store(id="memory-time-plot", storage_type="memory"),
+        dcc.Store(id="memory-scatter-plot", storage_type="memory"),
         # State("map_view_cache", "data"),
         html.Div(
             [
@@ -216,23 +226,71 @@ app.layout = html.Div(
 )
 
 
-@app.callback(
-    Output("memory_data", "data"),
+@app.callback(Output('memory-time-plot', 'data'),
     [
-        Input("staid_coords", "data"),
+        # Input("staid_coords", "data"),
+        Input("station_ID", "value"),
         Input("date_range", "start_date"),
         Input("date_range", "end_date"),
-        Input("access_dropdown", "value"),
+        Input("param_select", "value")
     ],
 )
-def get_qwp_data(coord_data, start, end):
-    staids = process_coords(coord_data=coord_data)
-    response = requests.post(url="https://www.waterqualitydata.us/data/Result/search?", data={"siteid": [staids], "startDateLo": start, "startDateHi": end, "service": "results"})
-    decode_response = io.StringIO(response.content.decode("utf-8"))
+def filter_timeplot_data(staid, start_date, end_date, param):
+    if not staid:
+        # Return a default if nothing is selected
+        return ALL_DATA.loc[(ALL_DATA["staid"] == DEFAULT_STAID) & ALL_DATA["USGSPCode"] == DEFAULT_PCODE].to_json()
 
-    dataframe = pd.read_csv(decode_response)
-    dataframe["STAID"] = dataframe["STAID"].astype(str)
-    return dataframe.to_json()
+    filtered = ALL_DATA.loc[(ALL_DATA["ActivityStartDate"] >= str(default_start_date)) & (ALL_DATA["staid"].isin(staid)) & (ALL_DATA["USGSPCode"] == param)]
+
+    return filtered.to_json()
+
+
+@app.callback(Output('memory-scatter-plot', 'data'),
+    [
+        # Input("staid_coords", "data"),
+        Input("station_ID", "value"),
+        Input("date_range", "start_date"),
+        Input("date_range", "end_date"),
+        Input("param_select_X", "value"),
+        Input("param_select_Y", "value"),
+    ],
+)
+def filter_scatter_data(staid, start_date, end_date, param_x, param_y):
+    if not staid:
+        # Return a default if nothing is selected
+        return ALL_DATA.loc[(ALL_DATA["staid"] == DEFAULT_STAID) & ALL_DATA["USGSPCode"] == DEFAULT_PCODE].to_json()
+
+    filtered = ALL_DATA.loc[(ALL_DATA["ActivityStartDate"] >= str(default_start_date)) & (ALL_DATA["staid"].isin(staid)) & (ALL_DATA["USGSPCode"] == param_x) & (ALL_DATA["USGSPCode"] == param_y)]
+
+    return filtered.to_json()
+
+
+# @app.callback(Output('memory-table', 'data'),
+#               Input('memory-output', 'data'))
+# def on_data_set_table(data):
+#     if data is None:
+#         raise PreventUpdate
+
+#     return data
+
+
+# @app.callback(
+#     Output("memory_data", "data"),
+#     [
+#         Input("staid_coords", "data"),
+#         Input("date_range", "start_date"),
+#         Input("date_range", "end_date"),
+#         Input("access_dropdown", "value"),
+#     ],
+# )
+# def get_qwp_data(coord_data, start, end):
+#     staids = process_coords(coord_data=coord_data)
+#     response = requests.post(url="https://www.waterqualitydata.us/data/Result/search?", data={"siteid": [staids], "startDateLo": start, "startDateHi": end, "service": "results"})
+#     decode_response = io.StringIO(response.content.decode("utf-8"))
+
+#     dataframe = pd.read_csv(decode_response)
+#     dataframe["STAID"] = dataframe["STAID"].astype(str)
+#     return dataframe.to_json()
     # coords["STAID"] = coords["STAID"].astype(str)
     # df2 = df.copy()
     # dataframe = pd.merge(dataframe, coords, on="STAID", how="left")
@@ -241,26 +299,29 @@ def get_qwp_data(coord_data, start, end):
 @app.callback(
     Output("map-tab-graph", "children"),
     [
-        Input("memory_data", "data"),
+        Input("memory-time-plot", "data"),
         Input("param_select", "value"),
         Input("date_range", "end_date"),
     ],
 )
 def map_view_map(mem_data, param, end_date):
+    # This is technically a secret, but anyone can request this from mapbox so I'm not converened about it.
     MAPBOX_ACCESS_TOKEN = "pk.eyJ1Ijoic2xlZXB5Y2F0IiwiYSI6ImNsOXhiZng3cDA4cmkzdnFhOWhxdDEwOHQifQ.SU3dYPdC5aFVgOJWGzjq2w"
+    if mem_data is None:
+        raise PreventUpdate
     mem_df = pd.read_json(mem_data)
-    mem_df = mem_df.astype({"STAID": str, "Latitude": float, "Longitude": float, "Datetime": str})
+    mem_df = mem_df.astype({"staid": str, "dec_lat_va": float, "dec_long_va": float, "datetime": str})
 
     # fig = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
     fig = go.Figure(
         data=px.scatter_mapbox(
             mem_df,
-            lat="Latitude",
-            lon="Longitude",
-            color=param,
+            lat="dec_lat_va",
+            lon="dec_long_va",
+            color="ResultMeasureValue",
             color_continuous_scale=px.colors.sequential.Sunset,
-            hover_name="STAID",
-            hover_data=["Latitude", "Longitude", "Datetime", param],
+            hover_name="staid",
+            hover_data=["dec_lat_va", "dec_long_va", "datetime"],  # , param
             mapbox_style="streets",
         ),
         # layout={"legend": go.layout.Legend(title="git sum")},
@@ -297,13 +358,13 @@ def map_view_map(mem_data, param, end_date):
     return dcc.Graph(id="location-map", figure=fig, className="THEGRAPH", responsive=True)  # style={"width": "60vw", "height": "70vh"}
 
 
-@app.callback(
-    Output("staid_coords", "data"),
-    Input("access_dropdown", "value"),
-)
-def load_local_staids(local_csv: str):
-    df = pd.read_csv("src/data/JHA_STAID_INFO.csv")
-    return df.to_json()
+# @app.callback(
+#     Output("staid_coords", "data"),
+#     Input("access_dropdown", "value"),
+# )
+# def load_local_staids(local_csv: str):
+#     df = pd.read_csv("src/data/JHA_STAID_INFO.csv")
+#     return df.to_json()
 
 
 # @app.callback(
@@ -336,18 +397,18 @@ def load_local_staids(local_csv: str):
 @app.callback(
     Output("scatter_plot", "figure"),
     [
-        Input("memory_data", "data"),
+        Input("memory-time-plot", "data"),
         Input("station_ID", "value"),
         Input("param_select", "value"),
     ],
 )
-def plot_parameter(data, stations: List, param: str, sample_code: int = 9):
+def plot_parameter(mem_data, stations: List, param: str, sample_code: int = 9):
     """Plots parameter as a function of time.
 
     Parameters
     ----------
     data : JSON
-        JSON object from memory_data cache
+        JSON object from memory-output cache
     stations : List
         List of STAIDS from station_ID multi-dropdown
     param : str
@@ -359,22 +420,24 @@ def plot_parameter(data, stations: List, param: str, sample_code: int = 9):
     -------
     px.scatter() figure to scatter_plot location
     """
-    mem_df = pd.read_json(data)
-    mem_df = mem_df.astype({"STAID": str, "Latitude": float, "Longitude": float, "Datetime": str})
+    if mem_data is None:
+        raise PreventUpdate
+    mem_df = pd.read_json(mem_data)
+    mem_df = mem_df.astype({"staid": str, "dec_lat_va": float, "dec_long_va": float, "datetime": str})
 
-    mem_df = mem_df.loc[mem_df["STAID"].isin(stations)]
-    mem_df["sample_dt"] = pd.to_datetime(mem_df["sample_dt"], format="%Y-%m-%d")
+    mem_df = mem_df.loc[mem_df["staid"].isin(stations)]
+    mem_df["datetime"] = pd.to_datetime(mem_df["datetime"], format="%Y-%m-%d")
     try:
-        mem_df = mem_df.loc[mem_df["samp_type_cd"] == sample_code]
+        mem_df = mem_df.loc[mem_df["USGSPCode"] == sample_code]
     except ValueError:
-        mem_df = mem_df.loc[mem_df["samp_type_cd"] == sample_code]
+        mem_df = mem_df.loc[mem_df["USGSPCode"] == sample_code]
 
     fig = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
     fig = px.scatter(
         mem_df,
-        x="sample_dt",
-        y=param,
-        color="STAID",
+        x="datetime",
+        y=mem_df.loc[mem_df["USGSPCode"] == sample_code],
+        color="staid",
         # hover_name="STAID",
         # hover_data=["STAID", "Datetime", param],
         hover_data=dict(
@@ -396,25 +459,27 @@ def plot_parameter(data, stations: List, param: str, sample_code: int = 9):
 @app.callback(
     Output("plot_X_vs_Y", "figure"),
     [
-        Input("memory_data", "data"),
+        Input("memory-scatter-plot", "data"),
         Input("station_ID", "value"),
         Input("param_select_X", "value"),
         Input("param_select_Y", "value"),
     ],
 )
-def x_vs_y(data, stations, param_x: str, param_y: str):
-    mem_df = pd.read_json(data)
-    mem_df = mem_df.astype({"STAID": str, "Latitude": float, "Longitude": float, "Datetime": str})
-    mem_df = mem_df.loc[mem_df["STAID"].isin(stations)]
+def x_vs_y(mem_data, stations, param_x: str, param_y: str):
+    if mem_data is None:
+        raise PreventUpdate
+    mem_df = pd.read_json(mem_data)
+    # mem_df = mem_df.astype({"staid": str, "dec_lat_va": float, "dec_long_va": float, "datetime": str})
+    mem_df = mem_df.loc[mem_df["staid"].isin(stations)]
     fig = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
     fig = px.scatter(
         mem_df,
-        x=param_x,
-        y=param_y,
-        color="STAID",
+        x=mem_df["ResultMeasureValue"].loc[mem_df["USGSPCode"] == param_x],
+        y=mem_df["ResultMeasureValue"].loc[mem_df["USGSPCode"] == param_y],
+        color="staid",
         hover_data=dict(
-            STAID=True,
-            Datetime=True,
+            staid=True,
+            datetime=True,
         ),
     )
 
