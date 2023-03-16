@@ -33,15 +33,14 @@ response = requests.post(
     url="https://www.waterqualitydata.us/data/Result/search?",
     data={
         "siteid": [staid_list],
-        "startDateLo": "01-01-2020",
-        "startDateHi": "12-31-2020",
+        "startDateLo": "01-01-2005",
+        "startDateHi": "12-31-2023",
         "service": "results",
     },
 )
-decode_response = io.StringIO(response.content.decode("utf-8"))
 
+decode_response = io.StringIO(response.content.decode("utf-8"))
 dataframe = pd.read_csv(decode_response)
-print(dataframe)
 dataframe["STAID"] = dataframe["STAID"].astype(str)
 
 
@@ -191,7 +190,7 @@ application = app.server  # Important for debugging and using Flask!
 
 app.layout = html.Div(
     [
-        dcc.Store(id="staid_coords", storage_type="memory"),
+        # dcc.Store(id="staid_coords", storage_type="memory"),
         dcc.Store(id="memory_data", storage_type="memory"),
         # State("map_view_cache", "data"),
         html.Div(
