@@ -15,6 +15,7 @@ import requests
 import io
 from datetime import date, datetime, timedelta
 from typing import List
+from array import array
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])  # Include __name__, serves as reference for finding .css files.
 app.title = "JHA-USGS Dashboard"
@@ -247,6 +248,7 @@ def filter_timeplot_data(staid, start_date, end_date, param):
 
     # mask = ((ALL_DATA["staid"].isin([staid])) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date) | (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y))
     filtered = ALL_DATA.loc[staid_date_mask & pcode_mask]
+    x_data = ALL_DATA.loc[:,["staid", "datetime", "ResultMeasureValue", "USGSPCode"]]
     return filtered.to_json()
 
 
@@ -340,13 +342,17 @@ def map_view_map(mem_data, param, end_date):
         marker={"size": 12},
     )
     # mem_df = mem_df.astype({"STAID": str, "Latitude": str, "Longitude": str, "Datetime": str})
+    if len(mem_df["ResultMeasure/MeasureUnitCode"].array) == 0:
+        color_bar_title = ""
+    else:
+        color_bar_title = mem_df["ResultMeasure/MeasureUnitCode"].array[0]
     fig.update_layout(
         # coloraxis_showscale=False,
         # overwrite=True,
         autosize=True,
         title=f"Most recent values before {end_date} for {pc.PARAMETERS.get(param)}",
         coloraxis_colorbar=dict(
-            title="",
+            title=color_bar_title,
         ),
         # legend=dict(title="mouse mouse"),
         # legend=go.layout.Legend(title="git sum"),
@@ -439,14 +445,21 @@ def x_vs_y(mem_data, param_x: str, param_y: str):
     y_data = mem_df.loc[mem_df["USGSPCode"] == param_y]
     # y_data = y_data.loc[:,["staid", "datetime", "ResultMeasureValue", "USGSPCode"]]  # Can take out later, just helping debug now.
     combined = pd.merge(x_data, y_data, on="datetime")
-    combined.rename(columns={"staid_x": "staid"})
+    combined.rename(columns={"staid_x": "staid"}, inplace=True)
+    combined_x = combined["ResultMeasureValue_x"].array
+    combined_y = combined["ResultMeasureValue_y"].array
+    combined_color = "staid"
+    if combined.empty:
+        combined_color = array("f", [1.0])
+        combined_x = array("f", [float("NaN")])
+        combined_y = array("f", [float("NaN")])
 
     fig = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
     fig = px.scatter(
         combined,
-        x=combined["ResultMeasureValue_x"].array,
-        y=combined["ResultMeasureValue_y"].array,
-        color="staid_x",
+        x=combined_x,
+        y=combined_y,
+        color=combined_color,
         # hover_data=dict(
         #     staid=True,
         #     datetime=True,
@@ -465,6 +478,9 @@ def x_vs_y(mem_data, param_x: str, param_y: str):
         title_x=0.5,
         xaxis_title=x_title,
         yaxis_title=y_title,
+        coloraxis_colorbar=dict(
+            title="No Data",
+        ),
     )
     fig.update_xaxes(
         constrain="domain",
