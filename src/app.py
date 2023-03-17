@@ -368,42 +368,6 @@ def map_view_map(mem_data, param, end_date):
     return dcc.Graph(id="location-map", figure=fig, className="THEGRAPH", responsive=True)  # style={"width": "60vw", "height": "70vh"}
 
 
-# @app.callback(
-#     Output("staid_coords", "data"),
-#     Input("access_dropdown", "value"),
-# )
-# def load_local_staids(local_csv: str):
-#     df = pd.read_csv("src/data/JHA_STAID_INFO.csv")
-#     return df.to_json()
-
-
-# @app.callback(
-#     Output("memory_data", "data"),
-#     [
-#         Input("staid_coords", "data"),
-#         Input("date_range", "start_date"),
-#         Input("date_range", "end_date"),
-#         Input("access_dropdown", "value"),
-#     ],
-# )
-# def get_nwis_qw_data(coord_data, start, end, access):
-#     coords = pd.read_json(coord_data)
-#     site_list = coords["STAID"].astype(str).tolist()
-#     df = nwis.get_record(sites=site_list, service="qwdata", start=start, end=end, access=access, datetime_index=False)  # parameterCd=99162, no "p" when querying.
-#     if isinstance(df.index, pd.MultiIndex):
-#         for station in site_list:
-#             df.loc[df.index.get_level_values("site_no") == station, "STAID"] = station
-#     else:
-#         df["STAID"] = df["site_no"]
-#     df["STAID"] = df["STAID"].astype(str)
-#     coords["STAID"] = coords["STAID"].astype(str)
-#     # df2 = df.copy()
-#     df = pd.merge(df, coords, on="STAID", how="left")
-#     df.rename({"dec_long_va": "Longitude", "dec_lat_va": "Latitude"}, axis=1, inplace=True)
-#     df["Datetime"] = df["sample_dt"] + " " + df["sample_tm"]
-#     return df.to_json()
-
-
 @app.callback(
     Output("scatter_plot", "figure"),
     [
@@ -433,14 +397,7 @@ def plot_parameter(mem_data, param):  #, stations: List, param: str, sample_code
     if mem_data is None:
         raise PreventUpdate
     mem_df = pd.read_json(mem_data)
-    # mem_df = mem_df.astype({"staid": str, "dec_lat_va": float, "dec_long_va": float, "datetime": str})
-
-    # mem_df = mem_df.loc[mem_df["staid"].isin(stations)]
     mem_df["datetime"] = pd.to_datetime(mem_df["datetime"], format="%Y-%m-%d %H:%M")
-    # try:
-    #     mem_df = mem_df.loc[mem_df["USGSPCode"] == sample_code]
-    # except ValueError:
-    #     mem_df = mem_df.loc[mem_df["USGSPCode"] == sample_code]
 
     fig = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
     fig = px.scatter(
@@ -470,27 +427,26 @@ def plot_parameter(mem_data, param):  #, stations: List, param: str, sample_code
     Output("plot_X_vs_Y", "figure"),
     [
         Input("memory-scatter-plot", "data"),
-        # Input("station_ID", "value"),
         Input("param_select_X", "value"),
         Input("param_select_Y", "value"),
     ],
 )
-def x_vs_y(mem_data, param_x: str, param_y: str):  # , stations
+def x_vs_y(mem_data, param_x: str, param_y: str):
     mem_df = pd.read_json(mem_data)
-    # mem_df = mem_df.astype({"staid": str, "dec_lat_va": float, "dec_long_va": float, "datetime": str})
-    # mem_df = mem_df.loc[mem_df["staid"].isin(stations)]
     x_data = mem_df.loc[mem_df["USGSPCode"] == param_x]
-    x_data = x_data.loc[:,["staid", "datetime", "ResultMeasureValue", "USGSPCode"]]
+    # x_data = x_data.loc[:,["staid", "datetime", "ResultMeasureValue", "USGSPCode"]]  # Can take out later, just helping debug now.
 
     y_data = mem_df.loc[mem_df["USGSPCode"] == param_y]
-    y_data = y_data.loc[:,["staid", "datetime", "ResultMeasureValue", "USGSPCode"]]
+    # y_data = y_data.loc[:,["staid", "datetime", "ResultMeasureValue", "USGSPCode"]]  # Can take out later, just helping debug now.
     combined = pd.merge(x_data, y_data, on="datetime")
+    combined.rename(columns={"staid_x": "staid"})
+
     fig = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
     fig = px.scatter(
         combined,
         x=combined["ResultMeasureValue_x"].array,
         y=combined["ResultMeasureValue_y"].array,
-        # color=mem_df["ResultMeasureValue"].loc[mem_df["USGSPCode"] == param_x],
+        color="staid_x",
         # hover_data=dict(
         #     staid=True,
         #     datetime=True,
