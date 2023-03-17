@@ -17,10 +17,11 @@ from datetime import date, datetime, timedelta
 from typing import List
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])  # Include __name__, serves as reference for finding .css files.
+app.title = "JHA-USGS Dashboard"
 # app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
 STAID_COORDS = pd.read_csv("src/data/JHA_STAID_INFO.csv")
 DEFAULT_PCODE = "p00400"
-DEFAULT_STAID = "USGS-433641110441501"
+DEFAULT_STAID = "USGS-433615110440001"
 # default_start_year = datetime.today().date() - timedelta(days=365)
 default_start_date = (pd.Timestamp.today() - pd.DateOffset(years=2)).date()
 
@@ -37,8 +38,9 @@ response = requests.post(
     url="https://www.waterqualitydata.us/data/Result/search?",
     data={
         "siteid": [staid_list],
-        "startDateLo": default_start_date.strftime("%m-%d-%Y"),
-        "startDateHi": "12-31-2022",
+        # "startDateLo": default_start_date.strftime("%m-%d-%Y"),
+        "startDateLo": "01-01-2020",
+        "startDateHi": "12-31-2023",
         "service": "results",
     },
     headers={"user-agent": "python"},
@@ -97,7 +99,7 @@ sidebar_select = html.Aside(
                 dcc.Dropdown(
                     id="station_ID",
                     value=DEFAULT_STAID,
-                    options=pc.station_list,
+                    options=pc.STATION_LIST,
                     persistence=False,
                     multi=True,
                 ),
@@ -125,7 +127,7 @@ sidebar_select = html.Aside(
                 "Time plot and map view parameter: ",
                 dcc.Dropdown(
                     id="param_select",
-                    options=pc.param_labels,
+                    options=pc.PARAM_LABELS,
                     value=DEFAULT_PCODE,
                     persistence=True,
                 ),
@@ -138,7 +140,7 @@ sidebar_select = html.Aside(
                 "Scatter X parameter: ",
                 dcc.Dropdown(
                     id="param_select_X",
-                    options=pc.param_labels,
+                    options=pc.PARAM_LABELS,
                     value=DEFAULT_PCODE,
                 ),
             ],
@@ -149,7 +151,7 @@ sidebar_select = html.Aside(
                 "Scatter Y parameter: ",
                 dcc.Dropdown(
                     id="param_select_Y",
-                    options=pc.param_labels,
+                    options=pc.PARAM_LABELS,
                     value=DEFAULT_PCODE,
                 ),
             ],
@@ -234,23 +236,22 @@ app.layout = html.Div(
     ],
 )
 def filter_timeplot_data(staid, start_date, end_date, param):
+    # .isin() method needs a list for querying properly.
+    if isinstance(staid, str):
+        staid = [staid]
     if not staid:
-        # Return a default if nothing is selected
-        return ALL_DATA.loc[(ALL_DATA["staid"] == DEFAULT_STAID) & ALL_DATA["USGSPCode"] == DEFAULT_PCODE].to_json()
-
-#     filtered = ALL_DATA.loc[(ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= str(end_date)) & (ALL_DATA["staid"].isin([staid])) & (ALL_DATA["USGSPCode"] == param)]
+        staid = pc.STATION_LIST
+    # filtered = ALL_DATA.loc[(ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= str(end_date)) & (ALL_DATA["staid"].isin([staid])) & (ALL_DATA["USGSPCode"] == param)]
     pcode_mask = (ALL_DATA["USGSPCode"] == param)
-    staid_date_mask = (ALL_DATA["staid"].isin([staid])) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date)
+    staid_date_mask = (ALL_DATA["staid"].isin(staid)) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date)
 
     # mask = ((ALL_DATA["staid"].isin([staid])) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date) | (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y))
     filtered = ALL_DATA.loc[staid_date_mask & pcode_mask]
-
     return filtered.to_json()
 
 
 @app.callback(Output('memory-scatter-plot', 'data'),
     [
-        # Input("staid_coords", "data"),
         Input("station_ID", "value"),
         Input("date_range", "start_date"),
         Input("date_range", "end_date"),
@@ -259,17 +260,18 @@ def filter_timeplot_data(staid, start_date, end_date, param):
     ],
 )
 def filter_scatter_data(staid, start_date, end_date, param_x, param_y):
+    # .isin() method needs a list for querying properly.
+    if isinstance(staid, str):
+        staid = [staid]
     if not staid:
-        # Return a default if nothing is selected
-        return ALL_DATA.loc[(ALL_DATA["staid"] == DEFAULT_STAID) & ALL_DATA["USGSPCode"] == DEFAULT_PCODE].to_json()
-
+        staid = pc.STATION_LIST
     pcode_mask = (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y)
-    staid_date_mask = (ALL_DATA["staid"].isin([staid])) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date)
+    staid_date_mask = (ALL_DATA["staid"].isin(staid)) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date)
 
     # mask = ((ALL_DATA["staid"].isin([staid])) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date) | (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y))
     filtered = ALL_DATA.loc[staid_date_mask & pcode_mask]
     # filtered = ALL_DATA.loc[(ALL_DATA["staid"].isin([staid])) & (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y)]
-# (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date) & 
+    # (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date) & 
     return filtered.to_json()
 
 
@@ -342,7 +344,7 @@ def map_view_map(mem_data, param, end_date):
         # coloraxis_showscale=False,
         # overwrite=True,
         autosize=True,
-        title=f"Most recent values before {end_date} for {pc.parameters.get(param)}",
+        title=f"Most recent values before {end_date} for {pc.PARAMETERS.get(param)}",
         coloraxis_colorbar=dict(
             title="",
         ),
@@ -407,10 +409,10 @@ def map_view_map(mem_data, param, end_date):
     [
         Input("memory-time-plot", "data"),
         # Input("station_ID", "value"),
-        # Input("param_select", "value"),
+        Input("param_select", "value"),
     ],
 )
-def plot_parameter(mem_data):  #, stations: List, param: str, sample_code: int = 9
+def plot_parameter(mem_data, param):  #, stations: List, param: str, sample_code: int = 9
     """Plots parameter as a function of time.
 
     Parameters
@@ -459,7 +461,7 @@ def plot_parameter(mem_data):  #, stations: List, param: str, sample_code: int =
         margin=dict(l=10, r=10, t=50, b=10),
         title="",
         xaxis_title="Date",
-        yaxis_title=pc.parameters.get(mem_df["USGSPCode"].iloc[0]),
+        yaxis_title=pc.PARAMETERS.get(param),  # mem_df["USGSPCode"].iloc[0]
     )
     return fig
 
@@ -475,15 +477,19 @@ def plot_parameter(mem_data):  #, stations: List, param: str, sample_code: int =
 )
 def x_vs_y(mem_data, param_x: str, param_y: str):  # , stations
     mem_df = pd.read_json(mem_data)
-    if mem_df.empty:
-        raise PreventUpdate
     # mem_df = mem_df.astype({"staid": str, "dec_lat_va": float, "dec_long_va": float, "datetime": str})
     # mem_df = mem_df.loc[mem_df["staid"].isin(stations)]
+    x_data = mem_df.loc[mem_df["USGSPCode"] == param_x]
+    x_data = x_data.loc[:,["staid", "datetime", "ResultMeasureValue", "USGSPCode"]]
+
+    y_data = mem_df.loc[mem_df["USGSPCode"] == param_y]
+    y_data = y_data.loc[:,["staid", "datetime", "ResultMeasureValue", "USGSPCode"]]
+    combined = pd.merge(x_data, y_data, on="datetime")
     fig = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
     fig = px.scatter(
-        mem_df,
-        x=mem_df["ResultMeasureValue"].loc[mem_df["USGSPCode"] == param_x],
-        y=mem_df["ResultMeasureValue"].loc[mem_df["USGSPCode"] == param_y],
+        combined,
+        x=combined["ResultMeasureValue_x"].array,
+        y=combined["ResultMeasureValue_y"].array,
         # color=mem_df["ResultMeasureValue"].loc[mem_df["USGSPCode"] == param_x],
         # hover_data=dict(
         #     staid=True,
@@ -491,8 +497,8 @@ def x_vs_y(mem_data, param_x: str, param_y: str):  # , stations
         # ),
     )
 
-    x_title = str(pc.parameters.get(param_x))
-    y_title = str(pc.parameters.get(param_y))
+    x_title = str(pc.PARAMETERS.get(param_x))
+    y_title = str(pc.PARAMETERS.get(param_y))
     if len(x_title) > 30:
         x_title = utils.title_wrapper(x_title)
     if len(y_title) > 30:
