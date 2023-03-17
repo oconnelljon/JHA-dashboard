@@ -43,7 +43,7 @@ sidebar_select = html.Aside(
                 dcc.Dropdown(
                     id="access_dropdown",
                     value="0",
-                    options=pc.access_level_codes,
+                    options=pc.ACCESS_LEVEL_CODES,
                     persistence=True,
                 ),
             ]
@@ -54,7 +54,7 @@ sidebar_select = html.Aside(
                 dcc.Dropdown(
                     id="station_ID",
                     value="433641110441501",
-                    options=pc.station_list,
+                    options=pc.STATION_LIST,
                     persistence=True,
                     multi=True,
                 ),
@@ -80,7 +80,7 @@ sidebar_select = html.Aside(
                 "Time plot parameter: ",
                 dcc.Dropdown(
                     id="param_select",
-                    options=pc.param_labels,
+                    options=pc.PARAM_LABELS,
                     value="p00400",
                     persistence=True,
                 ),
@@ -92,7 +92,7 @@ sidebar_select = html.Aside(
                 "Scatter X parameter: ",
                 dcc.Dropdown(
                     id="param_select_X",
-                    options=pc.param_labels,
+                    options=pc.PARAM_LABELS,
                     value="p00400",
                 ),
             ],
@@ -103,7 +103,7 @@ sidebar_select = html.Aside(
                 "Scatter Y parameter: ",
                 dcc.Dropdown(
                     id="param_select_Y",
-                    options=pc.param_labels,
+                    options=pc.PARAM_LABELS,
                     value="p00400",
                 ),
             ],
@@ -308,7 +308,7 @@ def plot_parameter(data, stations, param, sample_code=9):
     fig.update_layout(
         title="",
         xaxis_title="Date",
-        yaxis_title=pc.parameters.get(param),
+        yaxis_title=pc.PARAMETERS.get(param),
     )
     return fig
 
@@ -334,8 +334,8 @@ def x_vs_y(data, stations, param_x: str, param_y: str):
         color="STAID",
     )
 
-    x_title = str(pc.parameters.get(param_x))
-    y_title = str(pc.parameters.get(param_y))
+    x_title = str(pc.PARAMETERS.get(param_x))
+    y_title = str(pc.PARAMETERS.get(param_y))
     if len(x_title) > 30:
         x_title = utils.title_wrapper(x_title)
     if len(y_title) > 30:
