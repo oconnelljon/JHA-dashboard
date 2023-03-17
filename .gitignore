@@ -130,3 +130,6 @@ dmypy.json
 .vscode/launch.json
 .gitignore
 .vscode/settings.json
+
+# MS Office temp files
+~$*
