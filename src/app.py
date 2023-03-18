@@ -158,6 +158,26 @@ sidebar_select = html.Aside(
             ],
             className="select-y-container",
         ),
+        html.Div(
+            [
+                dbc.Button("Download", color="primary", id="download-button", n_clicks=0),
+                dbc.Modal(
+                    [
+                        dbc.ModalBody(
+                            [
+                                dbc.Label("Start Date"),
+                                dbc.Button("Download", color="primary", id="download-modal-button", n_clicks=0),
+                                dcc.Download(id="download-dataframe-csv"),
+                                dbc.Button("Cancel", id="cancel-button", n_clicks=0),
+                            ],
+                        )
+                    ],
+                    id="download-modal",
+                    is_open = False,
+                ),
+            ],
+            className="download_button_container",
+        )
         # dcc.Graph(id="sidebar-location-map", figure=create_map()),
     ],
     className="sidebar-container",
@@ -227,13 +247,32 @@ app.layout = html.Div(
 )
 
 
-@app.callback(Output('memory-time-plot', 'data'),
+@app.callback(
+        Output("download-dataframe-csv", "data"),
+        Input("download-modal-button", "n_clicks"),
+        prevent_initial_call=True,
+)
+def user_download(n_clicks):
+    return dcc.send_data_frame(ALL_DATA.to_csv, "You_data.csv")
+
+
+@app.callback(
+    Output("download-modal", "is_open"),
+    [Input("download-button", "n_clicks"), Input("cancel-button", "n_clicks")],
+    [State("download-modal", "is_open")],
+)
+def toggle_modal(n1, n2, is_open):
+    return not is_open if n1 or n2 else is_open
+
+
+@app.callback(
+    Output("memory-time-plot", "data"),
     [
         # Input("staid_coords", "data"),
         Input("station_ID", "value"),
         Input("date_range", "start_date"),
         Input("date_range", "end_date"),
-        Input("param_select", "value")
+        Input("param_select", "value"),
     ],
 )
 def filter_timeplot_data(staid, start_date, end_date, param):
@@ -243,16 +282,17 @@ def filter_timeplot_data(staid, start_date, end_date, param):
     if not staid:
         staid = pc.STATION_LIST
     # filtered = ALL_DATA.loc[(ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= str(end_date)) & (ALL_DATA["staid"].isin([staid])) & (ALL_DATA["USGSPCode"] == param)]
-    pcode_mask = (ALL_DATA["USGSPCode"] == param)
+    pcode_mask = ALL_DATA["USGSPCode"] == param
     staid_date_mask = (ALL_DATA["staid"].isin(staid)) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date)
 
     # mask = ((ALL_DATA["staid"].isin([staid])) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date) | (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y))
     filtered = ALL_DATA.loc[staid_date_mask & pcode_mask]
-    x_data = ALL_DATA.loc[:,["staid", "datetime", "ResultMeasureValue", "USGSPCode"]]
+    x_data = ALL_DATA.loc[:, ["staid", "datetime", "ResultMeasureValue", "USGSPCode"]]
     return filtered.to_json()
 
 
-@app.callback(Output('memory-scatter-plot', 'data'),
+@app.callback(
+    Output("memory-scatter-plot", "data"),
     [
         Input("station_ID", "value"),
         Input("date_range", "start_date"),
@@ -273,7 +313,7 @@ def filter_scatter_data(staid, start_date, end_date, param_x, param_y):
     # mask = ((ALL_DATA["staid"].isin([staid])) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date) | (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y))
     filtered = ALL_DATA.loc[staid_date_mask & pcode_mask]
     # filtered = ALL_DATA.loc[(ALL_DATA["staid"].isin([staid])) & (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y)]
-    # (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date) & 
+    # (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date) &
     return filtered.to_json()
 
 
@@ -303,9 +343,9 @@ def filter_scatter_data(staid, start_date, end_date, param_x, param_y):
 #     dataframe = pd.read_csv(decode_response)
 #     dataframe["STAID"] = dataframe["STAID"].astype(str)
 #     return dataframe.to_json()
-    # coords["STAID"] = coords["STAID"].astype(str)
-    # df2 = df.copy()
-    # dataframe = pd.merge(dataframe, coords, on="STAID", how="left")
+# coords["STAID"] = coords["STAID"].astype(str)
+# df2 = df.copy()
+# dataframe = pd.merge(dataframe, coords, on="STAID", how="left")
 
 
 @app.callback(
@@ -382,7 +422,7 @@ def map_view_map(mem_data, param, end_date):
         Input("param_select", "value"),
     ],
 )
-def plot_parameter(mem_data, param):  #, stations: List, param: str, sample_code: int = 9
+def plot_parameter(mem_data, param):  # , stations: List, param: str, sample_code: int = 9
     """Plots parameter as a function of time.
 
     Parameters
