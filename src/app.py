@@ -52,6 +52,8 @@ dataframe = pd.read_csv(decode_response, dtype={"USGSPCode": str})
 dataframe["USGSPCode"] = "p" + dataframe["USGSPCode"]
 dataframe.rename(columns={"MonitoringLocationIdentifier": "staid"}, inplace=True)
 dataframe["datetime"] = dataframe["ActivityStartDate"] + " " + dataframe["ActivityStartTime/Time"]
+dataframe["ValueAndUnits"] = dataframe["ResultMeasureValue"].astype(str) + " " + dataframe["ResultMeasure/MeasureUnitCode"].astype(str)
+dataframe.loc[dataframe["ValueAndUnits"] == "nan nan"] = "No Value"
 
 
 # This is all the available data for all the stations.  Hopefully.
@@ -178,13 +180,13 @@ sidebar_select = html.Aside(
                                         dcc.Download(id="download-dataframe-csv"),
                                         dbc.Button("Cancel", id="cancel-button", n_clicks=0),
                                     ],
-                                    id="modal-button-container"
-                                )
+                                    id="modal-button-container",
+                                ),
                             ],
                         )
                     ],
                     id="download-modal-container",
-                    is_open = False,
+                    is_open=False,
                 ),
             ],
             className="sidebar-download-container",
@@ -260,9 +262,9 @@ app.layout = html.Div(
 
 
 @app.callback(
-        Output("download-dataframe-csv", "data"),
-        Input("download-modal-button", "n_clicks"),
-        prevent_initial_call=True,
+    Output("download-dataframe-csv", "data"),
+    Input("download-modal-button", "n_clicks"),
+    prevent_initial_call=True,
 )
 def user_download(n_clicks):
     return dcc.send_data_frame(ALL_DATA.to_csv, "You_data.csv")
@@ -369,23 +371,33 @@ def filter_scatter_data(staid, start_date, end_date, param_x, param_y):
     ],
 )
 def map_view_map(mem_data, param, end_date):
-    # This is technically a secret, but anyone can request this from mapbox so I'm not converened about it.
+    # This is technically a secret, but anyone can request this from mapbox so I'm not concerened about it.
     MAPBOX_ACCESS_TOKEN = "pk.eyJ1Ijoic2xlZXB5Y2F0IiwiYSI6ImNsOXhiZng3cDA4cmkzdnFhOWhxdDEwOHQifQ.SU3dYPdC5aFVgOJWGzjq2w"
     if mem_data is None:
         raise PreventUpdate
     mem_df = pd.read_json(mem_data)
-    mem_df = mem_df.astype({"staid": str, "dec_lat_va": float, "dec_long_va": float, "datetime": str})
-
+    # mem_df = mem_df.astype({"staid": str, "dec_lat_va": float, "dec_long_va": float, "datetime": str})
+    mem_df.rename(
+        columns={
+            "staid": "Station ID",
+            "dec_lat_va": "Latitude",
+            "dec_long_va": "Longitude",
+            "datetime": "Sample Date",
+            "ValueAndUnits": "Result",
+        },
+        inplace=True,
+    )
+    # mem_df = mem_df[["Station ID", "Sample Date", "Result", "Latitude", "Longitude", "ResultMeasureValue", "ResultMeasure/MeasureUnitCode"]]
     # fig = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
     fig = go.Figure(
         data=px.scatter_mapbox(
             mem_df,
-            lat="dec_lat_va",
-            lon="dec_long_va",
+            lat="Latitude",
+            lon="Longitude",
             color="ResultMeasureValue",
             color_continuous_scale=px.colors.sequential.Sunset,
-            hover_name="staid",
-            hover_data=["dec_lat_va", "dec_long_va", "datetime"],  # , param
+            hover_name="Station ID",
+            hover_data={"Result": True, "Sample Date": True, "Latitude": True, "Longitude": True, "ResultMeasureValue": False},
             mapbox_style="streets",
         ),
         # layout={"legend": go.layout.Legend(title="git sum")},
