@@ -60,7 +60,6 @@
     /* display: flex; */
     /* grid-area: left-header; */
     font-size: 2rem;
-
 }
 
 .navbar-JHA-container {
@@ -84,12 +83,25 @@
 
 .sidebar-container {
     grid-area: nav;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    /* align-self: stretch; */
     background-color: #f8f9fa;
     padding-top: 10px;
     padding-left: 10px;
     padding-right: 10px;
 }
 
+.sidebar-container .sidebar-download-container{
+    margin-top: auto;
+    align-self: center;
+    margin-bottom: 10px;
+}
+
+.sidebar-sub-container {
+    align-self: stretch;
+}
 .main-content-container {
     grid-area: content;
     display: flex;
@@ -102,8 +114,6 @@
     overflow: auto;
     /* overflow condition on parent */
 }
-
-tabs-main-container {}
 
 .tabs-content-container {
     /* flex-grow: 1; */

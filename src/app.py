@@ -105,7 +105,8 @@ sidebar_select = html.Aside(
                     multi=True,
                 ),
             ],
-            className="station-select-container",
+            className="sidebar-sub-container",
+            id="station-select-container",
         ),
         html.Div(
             [
@@ -121,7 +122,8 @@ sidebar_select = html.Aside(
                     },
                 ),
             ],
-            className="daterange-container",
+            className="sidebar-sub-container",
+            id="daterange-container",
         ),
         html.Div(
             [
@@ -133,7 +135,8 @@ sidebar_select = html.Aside(
                     persistence=True,
                 ),
             ],
-            className="select-time-param-container",
+            className="sidebar-sub-container",
+            id="select-time-param-container",
             # style={"width": "49%", "display": "inline-block"},
         ),
         html.Div(
@@ -145,7 +148,8 @@ sidebar_select = html.Aside(
                     value=DEFAULT_PCODE,
                 ),
             ],
-            className="select-x-container",
+            className="sidebar-sub-container",
+            id="select-x-container",
         ),
         html.Div(
             [
@@ -156,7 +160,8 @@ sidebar_select = html.Aside(
                     value=DEFAULT_PCODE,
                 ),
             ],
-            className="select-y-container",
+            className="sidebar-sub-container",
+            id="select-y-container",
         ),
         html.Div(
             [
@@ -176,7 +181,8 @@ sidebar_select = html.Aside(
                     is_open = False,
                 ),
             ],
-            className="download_button_container",
+            className="sidebar-download-container",
+            id="download-button-container",
         )
         # dcc.Graph(id="sidebar-location-map", figure=create_map()),
     ],
