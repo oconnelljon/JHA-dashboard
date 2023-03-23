@@ -163,6 +163,7 @@ sidebar_select = html.Aside(
             className="sidebar-sub-container",
             id="select-y-container",
         ),
+        # Download button/modal section
         html.Div(
             [
                 dbc.Button("Download", color="primary", id="download-button", n_clicks=0),
@@ -170,14 +171,19 @@ sidebar_select = html.Aside(
                     [
                         dbc.ModalBody(
                             [
-                                dbc.Label("Start Date"),
-                                dbc.Button("Download", color="primary", id="download-modal-button", n_clicks=0),
-                                dcc.Download(id="download-dataframe-csv"),
-                                dbc.Button("Cancel", id="cancel-button", n_clicks=0),
+                                dbc.Label("Download all data."),
+                                html.Div(
+                                    [
+                                        dbc.Button("Download", color="primary", id="download-modal-button", n_clicks=0),
+                                        dcc.Download(id="download-dataframe-csv"),
+                                        dbc.Button("Cancel", id="cancel-button", n_clicks=0),
+                                    ],
+                                    id="modal-button-container"
+                                )
                             ],
                         )
                     ],
-                    id="download-modal",
+                    id="download-modal-container",
                     is_open = False,
                 ),
             ],
@@ -263,9 +269,9 @@ def user_download(n_clicks):
 
 
 @app.callback(
-    Output("download-modal", "is_open"),
+    Output("download-modal-container", "is_open"),
     [Input("download-button", "n_clicks"), Input("cancel-button", "n_clicks")],
-    [State("download-modal", "is_open")],
+    [State("download-modal-container", "is_open")],
 )
 def toggle_modal(n1, n2, is_open):
     return not is_open if n1 or n2 else is_open

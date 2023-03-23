@@ -3,12 +3,6 @@
 .page-container {
     display: grid;
     justify-content: stretch;
-    /* position: fixed; */
-    /* top: 0; */
-    /* right: 0; */
-    /* bottom: 0; */
-    /* left: 0; */
-    /* height limitation on second row */
     grid-template-rows: 55px calc(100vh - 55px);
     /* 2 rows, 55px tall for header and rest for container */
     grid-template-columns: 310px 1fr;
@@ -24,10 +18,6 @@
     z-index: 2000;
     display: flex;
     justify-content: space-between;
-    /* grid-template-columns: 1fr 1fr 1fr; */
-    /* grid-template-areas: "left-header center-header right-header"; */
-    /* height: 100%;
-    width: 100%; */
     padding-top: 0px;
     padding-bottom: 0px;
     padding-right: 15px;
@@ -40,38 +30,15 @@
     background-color: #033f7a;
 }
 
-/* .navbar {
-    display: grid;
-    grid-template-columns: 200px auto auto;
-    grid-template-areas: "left-header center-header right-header";
-    height: 100%;
-    width: 100%;
-    padding-top: 0px;
-    padding-bottom: 0px;
-    padding-right: 15px;
-    padding-left: 15px; */
-/* margin-top: 0px;
-    margin-bottom: 0px; */
-/* margin-right: auto; */
-/* margin-bottom: auto; */
-}
-
 .navbar-brand-container {
-    /* display: flex; */
-    /* grid-area: left-header; */
     font-size: 2rem;
 }
 
 .navbar-JHA-container {
-    /* display: flex; */
-    /* align-items: center; */
-    /* justify-content: center; */
     font-size: 2rem;
 }
 
 .navbar-link-container {
-    /* grid-area: right-header; */
-    /* display: grid; */
     margin-top: 0px;
     margin-bottom: 0px;
 }
@@ -86,7 +53,6 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    /* align-self: stretch; */
     background-color: #f8f9fa;
     padding-top: 10px;
     padding-left: 10px;
@@ -102,12 +68,28 @@
 .sidebar-sub-container {
     align-self: stretch;
 }
+
+.modal-content {
+    width: auto;
+}
+
+#download-modal-container {
+    display: flex;
+    position: absolute;
+    left: 50%;
+    top: 40%;
+}
+
+#modal-button-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    column-gap: 2em;
+}
+
 .main-content-container {
     grid-area: content;
     display: flex;
-    /* align-items: stretch; */
-    /* flex-direction: column; */
-    /* align-self: stretch; */
     padding-top: 10px;
     column-gap: 20px;
     background-color: rgb(161, 161, 161);
@@ -175,16 +157,6 @@
     flex: 1;
     min-width: 0;
 }
-
-/* .tab-content>.active {
-    display: flex;
-    width: 100%;
-} */
-
-/* .scatter-plot {
-    display: flex;
-} */
-
 
 /* Tab1 Map view section */
 .map-tab-graph {
