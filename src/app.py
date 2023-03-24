@@ -53,13 +53,13 @@ dataframe["USGSPCode"] = "p" + dataframe["USGSPCode"]
 dataframe.rename(columns={"MonitoringLocationIdentifier": "staid"}, inplace=True)
 dataframe["datetime"] = dataframe["ActivityStartDate"] + " " + dataframe["ActivityStartTime/Time"]
 dataframe["ValueAndUnits"] = dataframe["ResultMeasureValue"].astype(str) + " " + dataframe["ResultMeasure/MeasureUnitCode"].astype(str)
-dataframe.loc[dataframe["ValueAndUnits"] == "nan nan"] = "No Value"
+dataframe.loc[dataframe["ValueAndUnits"] == "nan nan", "ValueAndUnits"] = "No Value"
 
 
 # This is all the available data for all the stations.  Hopefully.
 # Query at the start, then sort intermediates to pass to Callbacks
 ALL_DATA = pd.merge(dataframe, staid_coords, on="staid", how="left")
-
+ALL_DATA.sort_values(by="datetime", ascending=True, inplace=True)
 
 navbar = html.Div(
     [
@@ -300,9 +300,11 @@ def filter_timeplot_data(staid, start_date, end_date, param):
     staid_date_mask = (ALL_DATA["staid"].isin(staid)) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date)
 
     # mask = ((ALL_DATA["staid"].isin([staid])) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date) | (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y))
-    filtered = ALL_DATA.loc[staid_date_mask & pcode_mask]
-    x_data = ALL_DATA.loc[:, ["staid", "datetime", "ResultMeasureValue", "USGSPCode"]]
-    return filtered.to_json()
+    filtered_all_data = ALL_DATA.loc[staid_date_mask & pcode_mask]
+    # x_data = ALL_DATA.loc[:, ["staid", "datetime", "ResultMeasureValue", "USGSPCode"]]
+    
+
+    return filtered_all_data.to_json()
 
 
 @app.callback(
