@@ -55,7 +55,17 @@ dataframe["datetime"] = dataframe["ActivityStartDate"] + " " + dataframe["Activi
 dataframe["ValueAndUnits"] = dataframe["ResultMeasureValue"].astype(str) + " " + dataframe["ResultMeasure/MeasureUnitCode"].astype(str)
 dataframe.loc[dataframe["ValueAndUnits"] == "nan nan", "ValueAndUnits"] = "No Value"
 dataframe.loc[(dataframe["ValueAndUnits"] == "No Value") & (dataframe["ResultDetectionConditionText"] == "Not Detected"), "ValueAndUnits"] = "Not Detected"
+dataframe["param_label"] = dataframe["CharacteristicName"] + ", " + dataframe["ResultSampleFractionText"].fillna("") + ", " + dataframe["ResultMeasure/MeasureUnitCode"].fillna("")
+dataframe["param_label"] = dataframe["param_label"].str.replace(", , ", ", ")
+dataframe["param_label"] = dataframe["param_label"].str.replace("asNO3", "as NO3")
+dataframe["param_label"] = dataframe["param_label"].str.replace("asPO4", "as PO4")
+dataframe["param_label"] = dataframe["param_label"].str.replace("deg C, deg C", "deg C")
+dataframe["param_label"] = dataframe["param_label"].str.rstrip(", ")
 
+available_parameters = dataframe.drop_duplicates("param_label")
+# available_parameters = available_parameters[["USGSPCode", "param_label"]]
+available_param_dict = dict(zip(dataframe["USGSPCode"], dataframe["param_label"]))
+available_param_labels = [{"label": label, "value": pcode} for label, pcode in zip(dataframe["param_label"], dataframe["USGSPCode"])]
 
 # This is all the available data for all the stations.  Hopefully.
 # Query at the start, then sort intermediates to pass to Callbacks
@@ -102,7 +112,7 @@ sidebar_select = html.Aside(
                 html.P("Station ID: "),
                 dcc.Dropdown(
                     id="station_ID",
-                    value=DEFAULT_STAID,
+                    # value=DEFAULT_STAID,
                     options=pc.STATION_LIST,
                     persistence=False,
                     multi=True,
@@ -384,17 +394,18 @@ def map_view_map(mem_data, param, end_date):
             "staid": "Station ID",
             "dec_lat_va": "Latitude",
             "dec_long_va": "Longitude",
-            "datetime": "Sample Date",
+            # "datetime": "Sample Date",
             "ValueAndUnits": "Result",
         },
         inplace=True,
     )
-    mem_df = mem_df[["Station ID", "Sample Date", "Result", "Latitude", "Longitude", "ResultMeasureValue", "ResultMeasure/MeasureUnitCode"]]
-    begin_sampling_date = mem_df["Sample Date"].max() - pd.to_timedelta(30, "days")
+    mem_df = mem_df[["Station ID", "datetime", "Result", "Latitude", "Longitude", "ResultMeasureValue", "ResultMeasure/MeasureUnitCode"]]
+    begin_sampling_date = mem_df["datetime"].max() - pd.to_timedelta(30, "days")
     if begin_sampling_date is not pd.NaT:
-        date_filtered_mem_df = mem_df.loc[mem_df["Sample Date"] >= begin_sampling_date]
+        date_filtered_mem_df = mem_df.loc[mem_df["datetime"] >= begin_sampling_date].copy()
     else:
-        date_filtered_mem_df = mem_df
+        date_filtered_mem_df = mem_df.copy()
+    date_filtered_mem_df["Sample Date"] = date_filtered_mem_df["datetime"].astype(str)
     # date_filtered_mem_df[["Station ID", "Sample Date", "Result", "Latitude", "Longitude", "ResultMeasureValue", "ResultMeasure/MeasureUnitCode"]]
     # mem_df = mem_df[["Station ID", "Sample Date", "Result", "Latitude", "Longitude", "ResultMeasureValue", "ResultMeasure/MeasureUnitCode"]]
     # fig = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
