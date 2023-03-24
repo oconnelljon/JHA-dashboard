@@ -54,6 +54,7 @@ dataframe.rename(columns={"MonitoringLocationIdentifier": "staid"}, inplace=True
 dataframe["datetime"] = dataframe["ActivityStartDate"] + " " + dataframe["ActivityStartTime/Time"]
 dataframe["ValueAndUnits"] = dataframe["ResultMeasureValue"].astype(str) + " " + dataframe["ResultMeasure/MeasureUnitCode"].astype(str)
 dataframe.loc[dataframe["ValueAndUnits"] == "nan nan", "ValueAndUnits"] = "No Value"
+dataframe.loc[(dataframe["ValueAndUnits"] == "No Value") & (dataframe["ResultDetectionConditionText"] == "Not Detected"), "ValueAndUnits"] = "Not Detected"
 
 
 # This is all the available data for all the stations.  Hopefully.
@@ -302,7 +303,6 @@ def filter_timeplot_data(staid, start_date, end_date, param):
     # mask = ((ALL_DATA["staid"].isin([staid])) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date) | (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y))
     filtered_all_data = ALL_DATA.loc[staid_date_mask & pcode_mask]
     # x_data = ALL_DATA.loc[:, ["staid", "datetime", "ResultMeasureValue", "USGSPCode"]]
-    
 
     return filtered_all_data.to_json()
 
@@ -389,11 +389,18 @@ def map_view_map(mem_data, param, end_date):
         },
         inplace=True,
     )
+    mem_df = mem_df[["Station ID", "Sample Date", "Result", "Latitude", "Longitude", "ResultMeasureValue", "ResultMeasure/MeasureUnitCode"]]
+    begin_sampling_date = mem_df["Sample Date"].max() - pd.to_timedelta(30, "days")
+    if begin_sampling_date is not pd.NaT:
+        date_filtered_mem_df = mem_df.loc[mem_df["Sample Date"] >= begin_sampling_date]
+    else:
+        date_filtered_mem_df = mem_df
+    # date_filtered_mem_df[["Station ID", "Sample Date", "Result", "Latitude", "Longitude", "ResultMeasureValue", "ResultMeasure/MeasureUnitCode"]]
     # mem_df = mem_df[["Station ID", "Sample Date", "Result", "Latitude", "Longitude", "ResultMeasureValue", "ResultMeasure/MeasureUnitCode"]]
     # fig = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
     fig = go.Figure(
         data=px.scatter_mapbox(
-            mem_df,
+            date_filtered_mem_df,
             lat="Latitude",
             lon="Longitude",
             color="ResultMeasureValue",
@@ -408,10 +415,10 @@ def map_view_map(mem_data, param, end_date):
         marker={"size": 12},
     )
     # mem_df = mem_df.astype({"STAID": str, "Latitude": str, "Longitude": str, "Datetime": str})
-    if len(mem_df["ResultMeasure/MeasureUnitCode"].array) == 0:
+    if len(date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].array) == 0 or date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].loc[~date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].isnull()].empty:  #  or bool(date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].isnull().array[0])
         color_bar_title = ""
     else:
-        color_bar_title = mem_df["ResultMeasure/MeasureUnitCode"].array[0]
+        color_bar_title = date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].loc[~date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].isnull()].array[0]
     fig.update_layout(
         # coloraxis_showscale=False,
         # overwrite=True,
