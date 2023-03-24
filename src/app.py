@@ -158,7 +158,7 @@ sidebar_select = html.Aside(
                 "Scatter X parameter: ",
                 dcc.Dropdown(
                     id="param_select_X",
-                    options=pc.PARAM_LABELS,
+                    options=available_param_dict,
                     value=DEFAULT_PCODE,
                 ),
             ],
@@ -170,7 +170,7 @@ sidebar_select = html.Aside(
                 "Scatter Y parameter: ",
                 dcc.Dropdown(
                     id="param_select_Y",
-                    options=pc.PARAM_LABELS,
+                    options=available_param_dict,
                     value=DEFAULT_PCODE,
                 ),
             ],
