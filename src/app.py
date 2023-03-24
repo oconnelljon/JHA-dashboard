@@ -65,7 +65,8 @@ dataframe["param_label"] = dataframe["param_label"].str.rstrip(", ")
 available_parameters = dataframe.drop_duplicates("param_label")
 # available_parameters = available_parameters[["USGSPCode", "param_label"]]
 available_param_dict = dict(zip(dataframe["USGSPCode"], dataframe["param_label"]))
-available_param_labels = [{"label": label, "value": pcode} for label, pcode in zip(dataframe["param_label"], dataframe["USGSPCode"])]
+available_param_labels = [{"label": label, "value": pcode} for label, pcode in zip(available_parameters["param_label"], available_parameters["USGSPCode"])]
+# old_params = pc.PARAMETERS
 
 # This is all the available data for all the stations.  Hopefully.
 # Query at the start, then sort intermediates to pass to Callbacks
@@ -143,7 +144,7 @@ sidebar_select = html.Aside(
                 "Time plot and map view parameter: ",
                 dcc.Dropdown(
                     id="param_select",
-                    options=pc.PARAM_LABELS,
+                    options=available_param_dict,
                     value=DEFAULT_PCODE,
                     persistence=True,
                 ),
@@ -434,7 +435,7 @@ def map_view_map(mem_data, param, end_date):
         # coloraxis_showscale=False,
         # overwrite=True,
         autosize=True,
-        title=f"Most recent values before {end_date} for {pc.PARAMETERS.get(param)}",
+        title=f"Most recent values before {end_date} for {available_param_dict.get(param)}",
         coloraxis_colorbar=dict(
             title=color_bar_title,
         ),
@@ -508,7 +509,7 @@ def plot_parameter(mem_data, param):  # , stations: List, param: str, sample_cod
         margin=dict(l=10, r=10, t=50, b=10),
         title="",
         xaxis_title="Date",
-        yaxis_title=pc.PARAMETERS.get(param),  # mem_df["USGSPCode"].iloc[0]
+        yaxis_title=available_param_dict.get(param),  # mem_df["USGSPCode"].iloc[0]
     )
     return fig
 
@@ -550,8 +551,8 @@ def x_vs_y(mem_data, param_x: str, param_y: str):
         # ),
     )
 
-    x_title = str(pc.PARAMETERS.get(param_x))
-    y_title = str(pc.PARAMETERS.get(param_y))
+    x_title = str(available_param_dict.get(param_x))
+    y_title = str(available_param_dict.get(param_y))
     if len(x_title) > 30:
         x_title = utils.title_wrapper(x_title)
     if len(y_title) > 30:
