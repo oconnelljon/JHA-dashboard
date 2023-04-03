@@ -96,24 +96,11 @@ navbar = html.Div(
 
 sidebar_select = html.Aside(
     [
-        # html.Div(
-        #     [
-        #         html.P("Data Access Level"),
-        #         dcc.Dropdown(
-        #             id="access_dropdown",
-        #             value="0",
-        #             options=pc.access_level_codes,
-        #             persistence=True,
-        #         ),
-        #     ],
-        #     className="data-access-container",
-        # ),
         html.Div(
             [
                 html.P("Station ID: "),
                 dcc.Dropdown(
                     id="station_ID",
-                    # value=DEFAULT_STAID,
                     options=pc.STATION_LIST,
                     persistence=False,
                     multi=True,
@@ -151,7 +138,6 @@ sidebar_select = html.Aside(
             ],
             className="sidebar-sub-container",
             id="select-time-param-container",
-            # style={"width": "49%", "display": "inline-block"},
         ),
         html.Div(
             [
@@ -177,6 +163,7 @@ sidebar_select = html.Aside(
             className="sidebar-sub-container",
             id="select-y-container",
         ),
+        
         # Download button/modal section
         html.Div(
             [
@@ -241,10 +228,7 @@ tabs = dcc.Tabs(
             className="tab0-graph-view",
         ),
     ],
-    # id="tabs-main-container",  # dash appends -parent to this ID and creates a parent to hold tabs-main-container child
-    # parent_className="tabs-tab-container",  # Contains tabs and tab content
     className="tabs-container",  # container for Tabs buttons only
-    # tabs-content Div container created by dbc.Tabs and holds the dbc.Tab objects
 )
 
 application = app.server  # Important for debugging and using Flask!
@@ -294,7 +278,6 @@ def toggle_modal(n1, n2, is_open):
 @app.callback(
     Output("memory-time-plot", "data"),
     [
-        # Input("staid_coords", "data"),
         Input("station_ID", "value"),
         Input("date_range", "start_date"),
         Input("date_range", "end_date"),
@@ -342,37 +325,6 @@ def filter_scatter_data(staid, start_date, end_date, param_x, param_y):
     # filtered = ALL_DATA.loc[(ALL_DATA["staid"].isin([staid])) & (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y)]
     # (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date) &
     return filtered.to_json()
-
-
-# @app.callback(Output('memory-table', 'data'),
-#               Input('memory-output', 'data'))
-# def on_data_set_table(data):
-#     if data is None:
-#         raise PreventUpdate
-
-#     return data
-
-
-# @app.callback(
-#     Output("memory_data", "data"),
-#     [
-#         Input("staid_coords", "data"),
-#         Input("date_range", "start_date"),
-#         Input("date_range", "end_date"),
-#         Input("access_dropdown", "value"),
-#     ],
-# )
-# def get_qwp_data(coord_data, start, end):
-#     staids = process_coords(coord_data=coord_data)
-#     response = requests.post(url="https://www.waterqualitydata.us/data/Result/search?", data={"siteid": [staids], "startDateLo": start, "startDateHi": end, "service": "results"})
-#     decode_response = io.StringIO(response.content.decode("utf-8"))
-
-#     dataframe = pd.read_csv(decode_response)
-#     dataframe["STAID"] = dataframe["STAID"].astype(str)
-#     return dataframe.to_json()
-# coords["STAID"] = coords["STAID"].astype(str)
-# df2 = df.copy()
-# dataframe = pd.merge(dataframe, coords, on="STAID", how="left")
 
 
 @app.callback(
