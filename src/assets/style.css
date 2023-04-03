@@ -1,20 +1,15 @@
 /* Good colors: https://www.color-hex.com/color/335379 */
+html, body, .root, .page-container, #react-entry-point{
+    height: 100%;
+    margin: 0;
+}
 
 .page-container {
-    display: grid;
-    justify-content: stretch;
-    grid-template-rows: 55px calc(100vh - 55px);
-    /* 2 rows, 55px tall for header and rest for container */
-    grid-template-columns: 310px 1fr;
-    /* 2 columns, 300px for sidebar, auto for content container */
-    grid-template-areas:
-        /* Define content areas of the 4x4 grid */
-        "header header"
-        "nav content";
+    display: flex;
+    flex-direction: column;
 }
 
 .navbar-container {
-    grid-area: header;
     z-index: 2000;
     display: flex;
     justify-content: space-between;
@@ -48,8 +43,13 @@
     display: inline-flex;
 }
 
+.main-container {
+    display: flex;
+    background-color: rgb(161, 161, 161);
+    flex-grow: 1;
+}
+
 .sidebar-container {
-    grid-area: nav;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -67,6 +67,10 @@
 
 .sidebar-sub-container {
     align-self: stretch;
+}
+
+#location-map {
+    width: 550px;
 }
 
 .modal-content {
@@ -87,87 +91,44 @@
     column-gap: 2em;
 }
 
+.graph-content-container {
+    display: flex;
+    flex-grow: 1;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    background-color: #f8f9fa;
+    margin-top: 8px;
+    margin-left: 8px;
+    margin-right: 8px;
+    padding: 10px 10px 10px 10px;
+    height: min-content; /* override height: 100% inherited from parents */
+}
+
+/* 
 .main-content-container {
-    grid-area: content;
     display: flex;
     padding-top: 10px;
     column-gap: 20px;
     background-color: rgb(161, 161, 161);
     overflow: auto;
-    /* overflow condition on parent */
-}
-
-.tabs-content-container {
-    /* flex-grow: 1; */
-    flex: 1;
-    min-width: 0;
-    /* display: flex; */
-    /* align-items: stretch; */
-    /* min-height: 100%; */
-    /* display: flex; */
-    /* flex-direction: column; */
-    /* min-height: 100vh; */
-    /* height: auto; */
-    margin-right: 15px;
-    margin-bottom: 15px;
-    margin-left: 15px;
-    border-radius: 5px;
-    background-color: #eaedf1
-}
-
-.tab-parent {
-    display: flex;
-    align-items: stretch;
-    min-height: 100%;
-    /* flex-direction: column; */
-    /* min-height: 100vh; */
-    /* height: 100%; */
-}
-
-/* tab-content is created by dbc.Tabs and is not explicetly defined in app.py*/
-.tab-content {
-    flex: 1;
-    display: flex;
-    align-items: stretch;
-    /* flex-direction: column; */
-    /* min-height: 100vh; */
-    /* height: auto; */
-    margin-top: 15px;
-    margin-right: 15px;
-    margin-bottom: 15px;
-    margin-left: 15px;
-    /* border-radius: 5px; */
-}
-
+} */
+/* 
 .map-view-container {
     display: flex;
     align-items: stretch;
     flex: 1;
-}
-
+} */
+/* 
 .scatter-time-container {
     width: 50%
-}
-
+} */
+/* 
 .scatter-params-container {
     width: 50%
-}
-
+} */
+/* 
 .THEGRAPH {
     flex: 1;
     min-width: 0;
-}
-
-/* Tab1 Map view section */
-.map-tab-graph {
-    /* display: flex; */
-    /* width: 100%;
-    height: 100%; */
-}
-
-.location-map {
-    /* flex: 1; */
-    /* min-height: 500px; */
-    /* margin-right: 10px;
-    margin-left: 10px; */
-}
+} */

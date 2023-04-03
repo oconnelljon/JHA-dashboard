@@ -163,7 +163,10 @@ sidebar_select = html.Aside(
             className="sidebar-sub-container",
             id="select-y-container",
         ),
-        
+
+        # Map
+        html.Div(id="map-tab-graph", className="map-view-container"),
+
         # Download button/modal section
         html.Div(
             [
@@ -211,25 +214,7 @@ scatter_params_container = html.Div(
 )
 
 # expand on this for map view tab
-map_view = html.Div(id="map-tab-graph", className="map-view-container")
-
-tabs = dcc.Tabs(
-    [
-        dcc.Tab(  # located in tabpanel tab-1 aka "Map view"
-            map_view,
-            label="Map view",
-        ),
-        dcc.Tab(  # located in tabpanel tab-0 aka "Graph view"
-            [
-                scatter_time_container,
-                scatter_params_container,
-            ],
-            label="Graph view",
-            className="tab0-graph-view",
-        ),
-    ],
-    className="tabs-container",  # container for Tabs buttons only
-)
+# map_view = html.Div(id="map-tab-graph", className="map-view-container")
 
 application = app.server  # Important for debugging and using Flask!
 
@@ -241,13 +226,18 @@ app.layout = html.Div(
             [
                 dcc.Location(id="url"),
                 navbar,
-                sidebar_select,
                 html.Main(
-                    html.Div(
-                        tabs,
-                        className="tabs-content-container",
-                    ),
-                    className="main-content-container",
+                    [
+                        sidebar_select,
+                        html.Div(
+                            [
+                                scatter_time_container,
+                                scatter_params_container,
+                            ],
+                            className="graph-content-container",
+                        ),
+                    ],
+                    className="main-container",
                 ),
             ],
             className="page-container",
