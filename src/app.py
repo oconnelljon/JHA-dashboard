@@ -237,15 +237,14 @@ scatter_params_container = html.Div(
     className="scatter-params-container",
 )
 
-# expand on this for map view tab
-# map_view = html.Div(id="map-tab-graph", className="map-view-container")
 
 application = app.server  # Important for debugging and using Flask!
 
 app.layout = html.Div(
     [
-        dcc.Store(id="memory-time-plot", storage_type="memory"),
-        dcc.Store(id="memory-scatter-plot", storage_type="memory"),
+        dcc.Store(id="memory-time-plot", storage_type="memory"),  # Holds plotting data for map
+        dcc.Store(id="memory-time-plot-no-data", storage_type="memory"),  # Holds plotting data for map if no data found
+        dcc.Store(id="memory-scatter-plot", storage_type="memory"),  # Holds scatter plot x-y data
         html.Div(
             [
                 dcc.Location(id="url"),
@@ -315,7 +314,10 @@ def filter_timeplot_data(staid, start_date, end_date, param):
 
 
 @app.callback(
-    Output("memory-scatter-plot", "data"),
+    [
+        Output("memory-scatter-plot", "data"),
+        Output("memory-time-plot-no-data", "data"),
+    ],
     [
         Input("station_ID", "value"),
         Input("date_range", "start_date"),
@@ -337,23 +339,29 @@ def filter_scatter_data(staid, start_date, end_date, param_x, param_y):
     filtered = ALL_DATA.loc[staid_date_mask & pcode_mask]
     # filtered = ALL_DATA.loc[(ALL_DATA["staid"].isin([staid])) & (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y)]
     # (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date) &
-    return filtered.to_json()
+    if staid is None:
+        return filtered.to_json(), nodata_df_staids.to_json()
+    return filtered.to_json(), nodata_df_staids.loc[nodata_df_staids["Station ID"].isin(staid)].to_json()
 
 
 @app.callback(
     Output("map-tab-graph", "children"),
     [
         Input("memory-time-plot", "data"),
+        Input("memory-time-plot-no-data", "data"),
         Input("param_select", "value"),
         Input("date_range", "end_date"),
     ],
 )
-def map_view_map(mem_data, param, end_date):
+def map_view_map(mem_data, no_data, param, end_date):
     # This is technically a secret, but anyone can request this from mapbox so I'm not concerened about it.
     MAPBOX_ACCESS_TOKEN = "pk.eyJ1Ijoic2xlZXB5Y2F0IiwiYSI6ImNsOXhiZng3cDA4cmkzdnFhOWhxdDEwOHQifQ.SU3dYPdC5aFVgOJWGzjq2w"
     if mem_data is None:
         raise PreventUpdate
+    if no_data is None:
+        raise PreventUpdate
     mem_df = pd.read_json(mem_data)
+    no_data = pd.read_json(no_data)
     # mem_df = mem_df.astype({"staid": str, "dec_lat_va": float, "dec_long_va": float, "datetime": str})
     mem_df.rename(
         columns={
@@ -373,10 +381,11 @@ def map_view_map(mem_data, param, end_date):
     date_filtered_mem_df["Sample Date"] = date_filtered_mem_df["datetime"].astype(str)
     # date_filtered_mem_df[["Station ID", "Sample Date", "Result", "Latitude", "Longitude", "ResultMeasureValue", "ResultMeasure/MeasureUnitCode"]]
     # mem_df = mem_df[["Station ID", "Sample Date", "Result", "Latitude", "Longitude", "ResultMeasureValue", "ResultMeasure/MeasureUnitCode"]]
+
     fig1 = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
 
     fig1 = px.scatter_mapbox(
-        nodata_df_staids,
+        no_data,
         lat="Latitude",
         lon="Longitude",
         color="ResultMeasureValue",
@@ -399,6 +408,7 @@ def map_view_map(mem_data, param, end_date):
 
     fig1.add_trace(fig2.data[0])
     fig1.update_traces(marker={"size": 12})
+    fig2.update_traces(marker={"size": 11})
     # mem_df = mem_df.astype({"STAID": str, "Latitude": str, "Longitude": str, "Datetime": str})
     # Color bar Title, if not available, display nothing, else display units
     if len(date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].array) == 0 or date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].loc[~date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].isnull()].empty:  #  or bool(date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].isnull().array[0])
