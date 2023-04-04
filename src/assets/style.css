@@ -49,6 +49,7 @@ html, body, .root, .page-container, #react-entry-point{
     display: flex;
     background-color: rgb(161, 161, 161);
     flex-grow: 1;
+    height: calc(100vh - 50px);
 }
 
 .sidebar-container {
@@ -59,12 +60,16 @@ html, body, .root, .page-container, #react-entry-point{
     padding-top: 10px;
     padding-left: 10px;
     padding-right: 10px;
+    /* height: 100vh; */
+    /* overflow: auto; */
 }
 
 .sidebar-container .sidebar-download-container{
     margin-top: auto;
     align-self: center;
-    margin-bottom: 10px;
+    padding-bottom: 10px;
+    position: sticky;
+    bottom: 0;
 }
 
 .sidebar-sub-container {
