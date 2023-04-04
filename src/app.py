@@ -17,23 +17,22 @@ from datetime import date, datetime, timedelta
 from typing import List
 from array import array
 
+# Initialize App
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])  # Include __name__, serves as reference for finding .css files.
 app.title = "JHA-USGS Dashboard"
-STAID_COORDS = pd.read_csv("src/data/JHA_STAID_INFO.csv")
+
+# Set defaults, load local data
+# STAID_COORDS = pd.read_csv("src/data/JHA_STAID_INFO.csv")
 DEFAULT_PCODE = "p00400"
 DEFAULT_STAID = "USGS-433615110440001"
 # default_start_year = datetime.today().date() - timedelta(days=365)
 default_start_date = (pd.Timestamp.today() - pd.DateOffset(years=2)).date()
 
-
-def process_coords():
-    coords = pd.read_csv("src/data/JHA_STAID_INFO.csv")
-    coords["staid"] = "USGS-" + coords["staid"].astype(str)  # Need to concat "USGS-" to the start of the staid for qwp query
-    return coords
-
-
-staid_coords = process_coords()
+staid_coords = pd.read_csv("src/data/JHA_STAID_INFO.csv")
+staid_coords["staid"] = "USGS-" + staid_coords["staid"].astype(str)  # Need to concat "USGS-" to the start of the staid for qwp query
 staid_list = staid_coords["staid"].to_list()
+
+# Query QWP for data
 response = requests.post(
     url="https://www.waterqualitydata.us/data/Result/search?",
     data={
@@ -46,6 +45,7 @@ response = requests.post(
     headers={"user-agent": "python"},
 )
 
+# Load and scrub QWP data
 decode_response = io.StringIO(response.content.decode("utf-8"))
 dataframe = pd.read_csv(decode_response, dtype={"USGSPCode": str})
 dataframe["USGSPCode"] = "p" + dataframe["USGSPCode"]
@@ -61,19 +61,18 @@ dataframe["param_label"] = dataframe["param_label"].str.replace("asPO4", "as PO4
 dataframe["param_label"] = dataframe["param_label"].str.replace("deg C, deg C", "deg C")
 dataframe["param_label"] = dataframe["param_label"].str.rstrip(", ")
 
+# Create dictionary of parameter labels and values for the App to display
 available_parameters = dataframe.drop_duplicates("param_label")
-# available_parameters = available_parameters[["USGSPCode", "param_label"]]
 available_param_dict = dict(zip(dataframe["USGSPCode"], dataframe["param_label"]))
 available_param_labels = [{"label": label, "value": pcode} for label, pcode in zip(available_parameters["param_label"], available_parameters["USGSPCode"])]
-# old_params = pc.PARAMETERS
 
 # This is all the available data for all the stations.  Hopefully.
-# Query at the start, then sort intermediates to pass to Callbacks
+# Query all data at the start of the App, then sort intermediates to pass to Callbacks
 ALL_DATA = pd.merge(dataframe, staid_coords, on="staid", how="left")
 ALL_DATA.sort_values(by="datetime", ascending=True, inplace=True)
 
-# Setup a dataframe to handle missing values when plotting on the map.  Every well
-# should plot, and if no data is found, display a black marker and Result = No Data when hovering.
+# Setup a dataframe to handle missing values when plotting on the map.
+# Every well should plot, and if no data is found, display a black marker and Result = No Data when hovering.
 nodata_df = pd.DataFrame(
     {
         "staid": pc.STATION_LIST,
@@ -83,7 +82,6 @@ nodata_df = pd.DataFrame(
         "Result": ["No Data" for _ in pc.STATION_LIST],
     }
 )
-
 nodata_df_staids = pd.merge(nodata_df, staid_coords, on="staid", how="left")
 nodata_df_staids = nodata_df_staids.loc[
     :,
