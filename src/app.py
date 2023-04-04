@@ -73,6 +73,31 @@ available_param_labels = [{"label": label, "value": pcode} for label, pcode in z
 ALL_DATA = pd.merge(dataframe, staid_coords, on="staid", how="left")
 ALL_DATA.sort_values(by="datetime", ascending=True, inplace=True)
 
+# Setup a dataframe to handle missing values when plotting on the map.  Every well
+# should plot, and if no data is found, display a black marker and Result = No Data when hovering.
+nodata_df = pd.DataFrame(
+    {
+        "staid": pc.STATION_LIST,
+        "datetime": ["1970-01-01 00:00:00" for _ in pc.STATION_LIST],
+        "ResultMeasureValue": [float("NaN") for _ in pc.STATION_LIST],
+        # "USGSPCode": [param for _ in pc.STATION_LIST],
+        "Result": ["No Data" for _ in pc.STATION_LIST],
+    }
+)
+
+nodata_df_staids = pd.merge(nodata_df, staid_coords, on="staid", how="left")
+nodata_df_staids = nodata_df_staids.loc[
+    :,
+    ["staid", "datetime", "Result", "ResultMeasureValue", "dec_lat_va", "dec_long_va"],
+]
+nodata_df_staids = nodata_df_staids.rename(
+    columns={
+        "staid": "Station ID",
+        "dec_lat_va": "Latitude",
+        "dec_long_va": "Longitude",
+    }
+)
+
 navbar = html.Div(
     [
         html.Div(
@@ -163,10 +188,8 @@ sidebar_select = html.Aside(
             className="sidebar-sub-container",
             id="select-y-container",
         ),
-
         # Map
         html.Div(id="map-tab-graph", className="map-view-container"),
-
         # Download button/modal section
         html.Div(
             [
@@ -286,7 +309,17 @@ def filter_timeplot_data(staid, start_date, end_date, param):
 
     # mask = ((ALL_DATA["staid"].isin([staid])) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date) | (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y))
     filtered_all_data = ALL_DATA.loc[staid_date_mask & pcode_mask]
-    # x_data = ALL_DATA.loc[:, ["staid", "datetime", "ResultMeasureValue", "USGSPCode"]]
+    # x_data = filtered_all_data.loc[:, ["staid", "datetime", "ResultMeasureValue", "USGSPCode"]]
+
+    nodata_df = pd.DataFrame(
+        {
+            "staid": pc.STATION_LIST,
+            "datetime": ["1970-01-01 00:00:00" for _ in pc.STATION_LIST],
+            "ResultMeasureValue": [float("NaN") for _ in pc.STATION_LIST],
+            "USGSPCode": [param for _ in pc.STATION_LIST],
+            "Result": ["No Data" for _ in pc.STATION_LIST],
+        }
+    )
 
     return filtered_all_data.to_json()
 
@@ -337,7 +370,6 @@ def map_view_map(mem_data, param, end_date):
             "staid": "Station ID",
             "dec_lat_va": "Latitude",
             "dec_long_va": "Longitude",
-            # "datetime": "Sample Date",
             "ValueAndUnits": "Result",
         },
         inplace=True,
@@ -369,6 +401,7 @@ def map_view_map(mem_data, param, end_date):
         marker={"size": 12},
     )
     # mem_df = mem_df.astype({"STAID": str, "Latitude": str, "Longitude": str, "Datetime": str})
+    # Color bar Title, if not available, display nothing, else display units
     if len(date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].array) == 0 or date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].loc[~date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].isnull()].empty:  #  or bool(date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].isnull().array[0])
         color_bar_title = ""
     else:
