@@ -19,7 +19,6 @@ from array import array
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])  # Include __name__, serves as reference for finding .css files.
 app.title = "JHA-USGS Dashboard"
-# app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
 STAID_COORDS = pd.read_csv("src/data/JHA_STAID_INFO.csv")
 DEFAULT_PCODE = "p00400"
 DEFAULT_STAID = "USGS-433615110440001"
@@ -362,7 +361,6 @@ def map_view_map(mem_data, no_data, param, end_date):
         raise PreventUpdate
     mem_df = pd.read_json(mem_data)
     no_data = pd.read_json(no_data)
-    # mem_df = mem_df.astype({"staid": str, "dec_lat_va": float, "dec_long_va": float, "datetime": str})
     mem_df.rename(
         columns={
             "staid": "Station ID",
@@ -373,17 +371,23 @@ def map_view_map(mem_data, no_data, param, end_date):
         inplace=True,
     )
     mem_df = mem_df[["Station ID", "datetime", "Result", "Latitude", "Longitude", "ResultMeasureValue", "ResultMeasure/MeasureUnitCode"]]
+
+    #  Only plot the most recent data on the map.  Since sampling may not occur on the same day,
+    #  select the previous 30 days of data to plot.  This should yield 1 point for each well to plot if data is available.
     begin_sampling_date = mem_df["datetime"].max() - pd.to_timedelta(30, "days")
     if begin_sampling_date is not pd.NaT:
         date_filtered_mem_df = mem_df.loc[mem_df["datetime"] >= begin_sampling_date].copy()
     else:
         date_filtered_mem_df = mem_df.copy()
     date_filtered_mem_df["Sample Date"] = date_filtered_mem_df["datetime"].astype(str)
+
+    # Debugging helper lines.
     # date_filtered_mem_df[["Station ID", "Sample Date", "Result", "Latitude", "Longitude", "ResultMeasureValue", "ResultMeasure/MeasureUnitCode"]]
     # mem_df = mem_df[["Station ID", "Sample Date", "Result", "Latitude", "Longitude", "ResultMeasureValue", "ResultMeasure/MeasureUnitCode"]]
 
     fig1 = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
 
+    # Create figure 1 plot
     fig1 = px.scatter_mapbox(
         no_data,
         lat="Latitude",
@@ -395,6 +399,7 @@ def map_view_map(mem_data, no_data, param, end_date):
         mapbox_style="streets",
     )
 
+    # Create figure 2 plot
     fig2 = px.scatter_mapbox(
         date_filtered_mem_df,
         lat="Latitude",
@@ -406,26 +411,24 @@ def map_view_map(mem_data, no_data, param, end_date):
         mapbox_style="streets",
     )
 
-    fig1.add_trace(fig2.data[0])
+    fig1.add_trace(fig2.data[0])  # Overlay real data over No data plot
+
+    # Update marker sizes
     fig1.update_traces(marker={"size": 12})
     fig2.update_traces(marker={"size": 11})
-    # mem_df = mem_df.astype({"STAID": str, "Latitude": str, "Longitude": str, "Datetime": str})
+
     # Color bar Title, if not available, display nothing, else display units
     if len(date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].array) == 0 or date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].loc[~date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].isnull()].empty:  #  or bool(date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].isnull().array[0])
         color_bar_title = ""
     else:
         color_bar_title = date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].loc[~date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].isnull()].array[0]
+
     fig1.update_layout(
-        # coloraxis_showscale=False,
-        # overwrite=True,
         autosize=True,
-        title=f"Most recent values before {end_date} for {available_param_dict.get(param)}",
+        title=f"Most recent values before {end_date} for: \n{available_param_dict.get(param)}",
         coloraxis_colorbar=dict(
             title=color_bar_title,
         ),
-        # legend=dict(title="mouse mouse"),
-        # legend=go.layout.Legend(title="git sum"),
-        # legend_title_text="git sum",
         hovermode="closest",
         margin=dict(l=10, r=10, t=50, b=10),
         mapbox=dict(
@@ -447,23 +450,18 @@ def map_view_map(mem_data, no_data, param, end_date):
     Output("scatter_plot", "figure"),
     [
         Input("memory-time-plot", "data"),
-        # Input("station_ID", "value"),
         Input("param_select", "value"),
     ],
 )
-def plot_parameter(mem_data, param):  # , stations: List, param: str, sample_code: int = 9
+def plot_parameter(mem_data, param):
     """Plots parameter as a function of time.
 
     Parameters
     ----------
     data : JSON
         JSON object from memory-output cache
-    stations : List
-        List of STAIDS from station_ID multi-dropdown
     param : str
         Parameter code, e.g. p00400 from param_select dropdown
-    sample_code : int, optional
-        Sample code to filter data set, by default 9
 
     Returns
     -------
@@ -480,12 +478,9 @@ def plot_parameter(mem_data, param):  # , stations: List, param: str, sample_cod
         x="datetime",
         y="ResultMeasureValue",
         color="staid",
-        # hover_name="STAID",
-        # hover_data=["STAID", "Datetime", param],
         hover_data=dict(
             staid=True,
             datetime=True,
-            # sample_dt=False,
         ),
     )
 
@@ -493,7 +488,7 @@ def plot_parameter(mem_data, param):  # , stations: List, param: str, sample_cod
         margin=dict(l=10, r=10, t=50, b=10),
         title="",
         xaxis_title="Date",
-        yaxis_title=available_param_dict.get(param),  # mem_df["USGSPCode"].iloc[0]
+        yaxis_title=available_param_dict.get(param),
     )
     return fig
 
@@ -563,5 +558,4 @@ def x_vs_y(mem_data, param_x: str, param_y: str):
 
 
 if __name__ == "__main__":
-    # app.run_server()
     app.run_server(debug=True)
