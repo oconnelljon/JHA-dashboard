@@ -95,6 +95,7 @@ nodata_df_staids = nodata_df_staids.rename(
         "staid": "Station ID",
         "dec_lat_va": "Latitude",
         "dec_long_va": "Longitude",
+        "datetime": "Sample Date",
     }
 )
 
@@ -310,17 +311,6 @@ def filter_timeplot_data(staid, start_date, end_date, param):
     # mask = ((ALL_DATA["staid"].isin([staid])) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date) | (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y))
     filtered_all_data = ALL_DATA.loc[staid_date_mask & pcode_mask]
     # x_data = filtered_all_data.loc[:, ["staid", "datetime", "ResultMeasureValue", "USGSPCode"]]
-
-    nodata_df = pd.DataFrame(
-        {
-            "staid": pc.STATION_LIST,
-            "datetime": ["1970-01-01 00:00:00" for _ in pc.STATION_LIST],
-            "ResultMeasureValue": [float("NaN") for _ in pc.STATION_LIST],
-            "USGSPCode": [param for _ in pc.STATION_LIST],
-            "Result": ["No Data" for _ in pc.STATION_LIST],
-        }
-    )
-
     return filtered_all_data.to_json()
 
 
@@ -397,6 +387,21 @@ def map_view_map(mem_data, param, end_date):
         ),
         # layout={"legend": go.layout.Legend(title="git sum")},
     )
+    fig.add_trace(
+        px.scatter_mapbox(
+            nodata_df_staids,
+            lat="Latitude",
+            lon="Longitude",
+            color="ResultMeasureValue",
+            color_continuous_scale=px.colors.sequential.Sunset,
+            hover_name="Station ID",
+            hover_data={"Result": True, "Sample Date": True, "Latitude": True, "Longitude": True, "ResultMeasureValue": False},
+            mapbox_style="streets",
+            
+        ),
+        # layout={"legend": go.layout.Legend(title="git sum")},
+    )
+
     fig.update_traces(
         marker={"size": 12},
     )
