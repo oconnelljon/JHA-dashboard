@@ -373,45 +373,39 @@ def map_view_map(mem_data, param, end_date):
     date_filtered_mem_df["Sample Date"] = date_filtered_mem_df["datetime"].astype(str)
     # date_filtered_mem_df[["Station ID", "Sample Date", "Result", "Latitude", "Longitude", "ResultMeasureValue", "ResultMeasure/MeasureUnitCode"]]
     # mem_df = mem_df[["Station ID", "Sample Date", "Result", "Latitude", "Longitude", "ResultMeasureValue", "ResultMeasure/MeasureUnitCode"]]
-    # fig = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
-    fig = go.Figure(
-        data=px.scatter_mapbox(
-            date_filtered_mem_df,
-            lat="Latitude",
-            lon="Longitude",
-            color="ResultMeasureValue",
-            color_continuous_scale=px.colors.sequential.Sunset,
-            hover_name="Station ID",
-            hover_data={"Result": True, "Sample Date": True, "Latitude": True, "Longitude": True, "ResultMeasureValue": False},
-            mapbox_style="streets",
-        ),
-        # layout={"legend": go.layout.Legend(title="git sum")},
-    )
-    fig.add_trace(
-        px.scatter_mapbox(
-            nodata_df_staids,
-            lat="Latitude",
-            lon="Longitude",
-            color="ResultMeasureValue",
-            color_continuous_scale=px.colors.sequential.Sunset,
-            hover_name="Station ID",
-            hover_data={"Result": True, "Sample Date": True, "Latitude": True, "Longitude": True, "ResultMeasureValue": False},
-            mapbox_style="streets",
-            
-        ),
-        # layout={"legend": go.layout.Legend(title="git sum")},
+    fig1 = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
+
+    fig1 = px.scatter_mapbox(
+        nodata_df_staids,
+        lat="Latitude",
+        lon="Longitude",
+        color="ResultMeasureValue",
+        color_continuous_scale=px.colors.sequential.Sunset,
+        hover_name="Station ID",
+        hover_data={"Result": True, "Sample Date": True, "Latitude": True, "Longitude": True, "ResultMeasureValue": False},
+        mapbox_style="streets",
     )
 
-    fig.update_traces(
-        marker={"size": 12},
+    fig2 = px.scatter_mapbox(
+        date_filtered_mem_df,
+        lat="Latitude",
+        lon="Longitude",
+        color="ResultMeasureValue",
+        color_continuous_scale=px.colors.sequential.Sunset,
+        hover_name="Station ID",
+        hover_data={"Result": True, "Sample Date": True, "Latitude": True, "Longitude": True, "ResultMeasureValue": False},
+        mapbox_style="streets",
     )
+
+    fig1.add_trace(fig2.data[0])
+    fig1.update_traces(marker={"size": 12})
     # mem_df = mem_df.astype({"STAID": str, "Latitude": str, "Longitude": str, "Datetime": str})
     # Color bar Title, if not available, display nothing, else display units
     if len(date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].array) == 0 or date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].loc[~date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].isnull()].empty:  #  or bool(date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].isnull().array[0])
         color_bar_title = ""
     else:
         color_bar_title = date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].loc[~date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].isnull()].array[0]
-    fig.update_layout(
+    fig1.update_layout(
         # coloraxis_showscale=False,
         # overwrite=True,
         autosize=True,
@@ -436,7 +430,7 @@ def map_view_map(mem_data, param, end_date):
         ),
     )
 
-    return dcc.Graph(id="location-map", figure=fig, className="THEGRAPH", responsive=True)  # style={"width": "60vw", "height": "70vh"}
+    return dcc.Graph(id="location-map", figure=fig1, className="THEGRAPH", responsive=True)
 
 
 @app.callback(
