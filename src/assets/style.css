@@ -2,6 +2,7 @@
 html, body, .root, .page-container, #react-entry-point{
     height: 100%;
     margin: 0;
+    overflow: hidden;
 }
 
 .page-container {
@@ -23,6 +24,7 @@ html, body, .root, .page-container, #react-entry-point{
         rgb(0 0 0 / 14%) 0px 4px 5px 0px,
         rgb(0 0 0 / 12%) 0px 1px 10px 0px;
     background-color: #033f7a;
+    height: 50px
 }
 
 .navbar-brand-container {
@@ -102,7 +104,9 @@ html, body, .root, .page-container, #react-entry-point{
     margin-left: 8px;
     margin-right: 8px;
     padding: 10px 10px 10px 10px;
-    height: min-content; /* override height: 100% inherited from parents */
+    /* height: min-content; override height: 100% inherited from parents */
+    height: 100vh;
+    overflow-y: auto;
 }
 
 /* 
@@ -119,14 +123,18 @@ html, body, .root, .page-container, #react-entry-point{
     align-items: stretch;
     flex: 1;
 } */
-/* 
+ 
 .scatter-time-container {
-    width: 50%
-} */
-/* 
+    flex-basis: 600px;
+    /* min-width: 400px; */
+    /* max-width: 500px; */
+}
+
 .scatter-params-container {
-    width: 50%
-} */
+    flex-basis: 600px;
+    /* min-width: 400px; */
+    /* max-width: 500px; */
+}
 /* 
 .THEGRAPH {
     flex: 1;
