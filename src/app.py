@@ -475,8 +475,8 @@ def plot_parameter(mem_data, param):
 
     fig.update_layout(
         margin=dict(l=10, r=10, t=50, b=10),
-        title="",
-        xaxis_title="Date",
+        title="Parameter vs Time",
+        xaxis_title="Sample Date",
         yaxis_title=available_param_dict.get(param),
     )
     return fig
@@ -527,7 +527,7 @@ def x_vs_y(mem_data, param_x: str, param_y: str):
         y_title = utils.title_wrapper(y_title)
 
     fig.update_layout(
-        # title=f"Station: {station}",
+        title = "Parameter X vs Parameter Y"
         title_x=0.5,
         xaxis_title=x_title,
         yaxis_title=y_title,
