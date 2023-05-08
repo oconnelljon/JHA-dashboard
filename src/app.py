@@ -77,7 +77,25 @@ ALL_DATA = pd.merge(dataframe, staid_coords, on="staid", how="left")
 ALL_DATA.sort_values(by="datetime", ascending=True, inplace=True)
 ALL_DATA = ALL_DATA.loc[
     :,
-    ["ActivityStartDate", "ActivityStartTime/Time", "staid", "ResultDetectionConditionText", "CharacteristicName", "ResultSampleFractionText", "ResultMeasureValue", "ResultMeasure/MeasureUnitCode", "USGSPCode", "DetectionQuantitationLimitTypeName", "DetectionQuantitationLimitMeasure/MeasureValue", "DetectionQuantitationLimitMeasure/MeasureUnitCode", "datetime", "ValueAndUnits", "param_label", "dec_lat_va", "dec_long_va"],
+    [
+        "ActivityStartDate",
+        "ActivityStartTime/Time",
+        "staid",
+        "ResultDetectionConditionText",
+        "CharacteristicName",
+        "ResultSampleFractionText",
+        "ResultMeasureValue",
+        "ResultMeasure/MeasureUnitCode",
+        "USGSPCode",
+        "DetectionQuantitationLimitTypeName",
+        "DetectionQuantitationLimitMeasure/MeasureValue",
+        "DetectionQuantitationLimitMeasure/MeasureUnitCode",
+        "datetime",
+        "ValueAndUnits",
+        "param_label",
+        "dec_lat_va",
+        "dec_long_va",
+    ],
 ]
 
 # Setup a dataframe to handle missing values when plotting on the map.
@@ -140,7 +158,7 @@ navbar = html.Div(
             ],
             className="sidebar-download-container",
             id="download-button-container",
-        )
+        ),
     ],
     className="navbar-container",
 )
@@ -254,8 +272,8 @@ app.layout = html.Div(
                             [
                                 scatter_time_container,
                                 scatter_params_container,
-                                html.Div(
-                                    className="table-container",
+                                dash_table.DataTable(
+                                    id="summary-table",
                                 ),
                             ],
                             className="graph-content-container",
@@ -270,8 +288,9 @@ app.layout = html.Div(
     className="root",
 )
 
+
 @app.callback(
-    Output("summary-table-data", "value"),
+    Output("summary-table", "data"),
     Input("memory-time-plot", "data"),
 )
 def summarize_data(mem_data):
@@ -282,10 +301,17 @@ def summarize_data(mem_data):
     table_median = group_staid["ResultMeasureValue"].median()
     temp_df = pd.merge(total_samples, non_detects, left_index=True, right_index=True)
     my_data = pd.merge(temp_df, table_median, left_index=True, right_index=True)
-    # my_data.rename(columns={"ActivityStartDate":"Sample Count", "ResultDetectionConditionText"})
-
-    df = my_data
-    return dash_table.DataTable(df.to_dict('records'), [{"name": i, "id": i} for i in df.columns])
+    
+    my_data = my_data.rename(
+        columns={
+            "ResultMeasureValue": "Median Value",
+            "ActivityStartDate": "Sample Count",
+            "ResultDetectionConditionText": "Not Detected",
+        },
+    ).round(3)
+    my_data['Station ID'] = my_data.index
+    my_data = my_data[["Station ID", "Sample Count", "Not Detected", "Median Value"]]
+    return my_data.to_dict('records')
 
 
 @app.callback(
@@ -571,7 +597,7 @@ def x_vs_y(mem_data, param_x: str, param_y: str):
         y_title = utils.title_wrapper(y_title)
 
     fig.update_layout(
-        title = "Parameter X vs Parameter Y",
+        title="Parameter X vs Parameter Y",
         title_x=0.5,
         xaxis_title=x_title,
         yaxis_title=y_title,
