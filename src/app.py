@@ -260,7 +260,6 @@ app.layout = html.Div(
         dcc.Store(id="memory-time-plot", storage_type="memory"),  # Holds plotting data for map
         dcc.Store(id="memory-time-plot-no-data", storage_type="memory"),  # Holds plotting data for map if no data found
         dcc.Store(id="memory-scatter-plot", storage_type="memory"),  # Holds scatter plot x-y data
-        dcc.Store(id="summary-table-data", storage_type="memory"),
         html.Div(
             [
                 dcc.Location(id="url"),
@@ -272,8 +271,14 @@ app.layout = html.Div(
                             [
                                 scatter_time_container,
                                 scatter_params_container,
-                                dash_table.DataTable(
-                                    id="summary-table",
+                                html.Div(
+                                    [
+                                        html.P(),
+                                        dash_table.DataTable(
+                                            id="summary-table",
+                                        ),
+                                    ],
+                                    id="table-container",
                                 ),
                             ],
                             className="graph-content-container",
@@ -301,7 +306,7 @@ def summarize_data(mem_data):
     table_median = group_staid["ResultMeasureValue"].median()
     temp_df = pd.merge(total_samples, non_detects, left_index=True, right_index=True)
     my_data = pd.merge(temp_df, table_median, left_index=True, right_index=True)
-    
+
     my_data = my_data.rename(
         columns={
             "ResultMeasureValue": "Median Value",
@@ -309,9 +314,9 @@ def summarize_data(mem_data):
             "ResultDetectionConditionText": "Not Detected",
         },
     ).round(3)
-    my_data['Station ID'] = my_data.index
+    my_data["Station ID"] = my_data.index
     my_data = my_data[["Station ID", "Sample Count", "Not Detected", "Median Value"]]
-    return my_data.to_dict('records')
+    return my_data.to_dict("records")
 
 
 @app.callback(
