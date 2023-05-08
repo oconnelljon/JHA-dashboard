@@ -107,89 +107,6 @@ navbar = html.Div(
             className="navbar-JHA-container",
         ),
         html.Div(
-            html.Ul(
-                # [html.Li(dbc.NavLink("Item 1")), html.Li(dbc.NavLink("Item 2"))],
-                className="navlink-list",
-            ),
-            className="navbar-link-container",
-        ),
-    ],
-    className="navbar-container",
-)
-
-sidebar_select = html.Aside(
-    [
-        html.Div(
-            [
-                html.P("Station ID: "),
-                dcc.Dropdown(
-                    id="station_ID",
-                    options=pc.STATION_LIST,
-                    persistence=False,
-                    multi=True,
-                ),
-            ],
-            className="sidebar-sub-container",
-            id="station-select-container",
-        ),
-        html.Div(
-            [
-                html.P("Select Date Range"),
-                dcc.DatePickerRange(
-                    id="date_range",
-                    start_date=datetime.now().date() - timedelta(days=1460),
-                    end_date=datetime.now().date(),
-                    initial_visible_month=datetime.now(),
-                    persistence=True,
-                    style={
-                        "color": "#333",
-                    },
-                ),
-            ],
-            className="sidebar-sub-container",
-            id="daterange-container",
-        ),
-        html.Div(
-            [
-                "Time plot and map view parameter: ",
-                dcc.Dropdown(
-                    id="param_select",
-                    options=available_param_dict,
-                    value=DEFAULT_PCODE,
-                    persistence=True,
-                ),
-            ],
-            className="sidebar-sub-container",
-            id="select-time-param-container",
-        ),
-        html.Div(
-            [
-                "Scatter X parameter: ",
-                dcc.Dropdown(
-                    id="param_select_X",
-                    options=available_param_dict,
-                    value=DEFAULT_PCODE,
-                ),
-            ],
-            className="sidebar-sub-container",
-            id="select-x-container",
-        ),
-        html.Div(
-            [
-                "Scatter Y parameter: ",
-                dcc.Dropdown(
-                    id="param_select_Y",
-                    options=available_param_dict,
-                    value=DEFAULT_PCODE,
-                ),
-            ],
-            className="sidebar-sub-container",
-            id="select-y-container",
-        ),
-        # Map
-        html.Div(id="map-tab-graph", className="map-view-container"),
-        # Download button/modal section
-        html.Div(
             [
                 dbc.Button("Download", color="primary", id="download-button", n_clicks=0),
                 dbc.Modal(
@@ -215,7 +132,81 @@ sidebar_select = html.Aside(
             className="sidebar-download-container",
             id="download-button-container",
         )
-        # dcc.Graph(id="sidebar-location-map", figure=create_map()),
+    ],
+    className="navbar-container",
+)
+
+sidebar_select = html.Aside(
+    [
+        html.Div(
+            [
+                html.H1("Station ID"),
+                dcc.Checklist(
+                    id="station_ID",
+                    options=pc.STATION_LIST,
+                    persistence=False,
+                    # multi=True,
+                ),
+            ],
+            className="sidebar-sub-container",
+            id="station-select-container",
+        ),
+        html.Div(
+            [
+                html.H1("Select Date Range"),
+                dcc.DatePickerRange(
+                    id="date_range",
+                    start_date=datetime.now().date() - timedelta(days=1460),
+                    end_date=datetime.now().date(),
+                    initial_visible_month=datetime.now(),
+                    persistence=True,
+                    style={
+                        "color": "#333",
+                    },
+                ),
+            ],
+            className="sidebar-sub-container",
+            id="daterange-container",
+        ),
+        html.Div(
+            [
+                html.H1("Time plot and map view parameter"),
+                dcc.Dropdown(
+                    id="param_select",
+                    options=available_param_dict,
+                    value=DEFAULT_PCODE,
+                    persistence=True,
+                ),
+            ],
+            className="sidebar-sub-container",
+            id="select-time-param-container",
+        ),
+        html.Div(
+            [
+                html.H1("Scatter X parameter"),
+                dcc.Dropdown(
+                    id="param_select_X",
+                    options=available_param_dict,
+                    value=DEFAULT_PCODE,
+                ),
+            ],
+            className="sidebar-sub-container",
+            id="select-x-container",
+        ),
+        html.Div(
+            [
+                html.H1("Scatter Y parameter"),
+                dcc.Dropdown(
+                    id="param_select_Y",
+                    options=available_param_dict,
+                    value=DEFAULT_PCODE,
+                ),
+            ],
+            className="sidebar-sub-container",
+            id="select-y-container",
+        ),
+        # Map
+        html.Div(id="map-tab-graph", className="map-view-container"),
     ],
     className="sidebar-container",
 )
