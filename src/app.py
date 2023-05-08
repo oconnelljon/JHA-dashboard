@@ -1,5 +1,5 @@
 import dash
-from dash import html, dcc, Input, Output, State
+from dash import html, dcc, Input, Output, State, dash_table, callback_context
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 import dataretrieval.nwis as nwis
@@ -54,22 +54,31 @@ dataframe["datetime"] = dataframe["ActivityStartDate"] + " " + dataframe["Activi
 dataframe["ValueAndUnits"] = dataframe["ResultMeasureValue"].astype(str) + " " + dataframe["ResultMeasure/MeasureUnitCode"].astype(str)
 dataframe.loc[dataframe["ValueAndUnits"] == "nan nan", "ValueAndUnits"] = "No Value"
 dataframe.loc[(dataframe["ValueAndUnits"] == "No Value") & (dataframe["ResultDetectionConditionText"] == "Not Detected"), "ValueAndUnits"] = "Not Detected"
+dataframe = dataframe.loc[(dataframe["ActivityTypeCode"] == "Sample-Routine")]
+dataframe["ResultMeasure/MeasureUnitCode"] = dataframe["ResultMeasure/MeasureUnitCode"].str.replace("asNO2", "as NO2")
+dataframe["ResultMeasure/MeasureUnitCode"] = dataframe["ResultMeasure/MeasureUnitCode"].str.replace("asNO3", "as NO3")
+dataframe["ResultMeasure/MeasureUnitCode"] = dataframe["ResultMeasure/MeasureUnitCode"].str.replace("asPO4", "as PO4")
+dataframe["DetectionQuantitationLimitMeasure/MeasureUnitCode"] = dataframe["DetectionQuantitationLimitMeasure/MeasureUnitCode"].str.replace("asNO2", "as NO2")
+dataframe["DetectionQuantitationLimitMeasure/MeasureUnitCode"] = dataframe["DetectionQuantitationLimitMeasure/MeasureUnitCode"].str.replace("asNO3", "as NO3")
+dataframe["DetectionQuantitationLimitMeasure/MeasureUnitCode"] = dataframe["DetectionQuantitationLimitMeasure/MeasureUnitCode"].str.replace("asPO4", "as PO4")
 dataframe["param_label"] = dataframe["CharacteristicName"] + ", " + dataframe["ResultSampleFractionText"].fillna("") + ", " + dataframe["ResultMeasure/MeasureUnitCode"].fillna("")
 dataframe["param_label"] = dataframe["param_label"].str.replace(", , ", ", ")
-dataframe["param_label"] = dataframe["param_label"].str.replace("asNO3", "as NO3")
-dataframe["param_label"] = dataframe["param_label"].str.replace("asPO4", "as PO4")
 dataframe["param_label"] = dataframe["param_label"].str.replace("deg C, deg C", "deg C")
 dataframe["param_label"] = dataframe["param_label"].str.rstrip(", ")
 
 # Create dictionary of parameter labels and values for the App to display
 available_parameters = dataframe.drop_duplicates("param_label")
-available_param_dict = dict(zip(dataframe["USGSPCode"], dataframe["param_label"]))
+available_param_dict = dict(zip(available_parameters["USGSPCode"], available_parameters["param_label"]))
 available_param_labels = [{"label": label, "value": pcode} for label, pcode in zip(available_parameters["param_label"], available_parameters["USGSPCode"])]
 
 # This is all the available data for all the stations.  Hopefully.
 # Query all data at the start of the App, then sort intermediates to pass to Callbacks
 ALL_DATA = pd.merge(dataframe, staid_coords, on="staid", how="left")
 ALL_DATA.sort_values(by="datetime", ascending=True, inplace=True)
+ALL_DATA = ALL_DATA.loc[
+    :,
+    ["ActivityStartDate", "ActivityStartTime/Time", "staid", "ResultDetectionConditionText", "CharacteristicName", "ResultSampleFractionText", "ResultMeasureValue", "ResultMeasure/MeasureUnitCode", "USGSPCode", "DetectionQuantitationLimitTypeName", "DetectionQuantitationLimitMeasure/MeasureValue", "DetectionQuantitationLimitMeasure/MeasureUnitCode", "datetime", "ValueAndUnits", "param_label", "dec_lat_va", "dec_long_va"],
+]
 
 # Setup a dataframe to handle missing values when plotting on the map.
 # Every well should plot, and if no data is found, display a black marker and Result = No Data when hovering.
@@ -141,11 +150,11 @@ sidebar_select = html.Aside(
         html.Div(
             [
                 html.H1("Station ID"),
+                dcc.Checklist(["All"], ["All"], id="all-checklist", inline=True),
                 dcc.Checklist(
-                    id="station_ID",
+                    id="station-checklist",
                     options=pc.STATION_LIST,
                     persistence=False,
-                    # multi=True,
                 ),
             ],
             className="sidebar-sub-container",
@@ -233,6 +242,7 @@ app.layout = html.Div(
         dcc.Store(id="memory-time-plot", storage_type="memory"),  # Holds plotting data for map
         dcc.Store(id="memory-time-plot-no-data", storage_type="memory"),  # Holds plotting data for map if no data found
         dcc.Store(id="memory-scatter-plot", storage_type="memory"),  # Holds scatter plot x-y data
+        dcc.Store(id="summary-table-data", storage_type="memory"),
         html.Div(
             [
                 dcc.Location(id="url"),
@@ -244,6 +254,9 @@ app.layout = html.Div(
                             [
                                 scatter_time_container,
                                 scatter_params_container,
+                                html.Div(
+                                    className="table-container",
+                                ),
                             ],
                             className="graph-content-container",
                         ),
@@ -256,6 +269,39 @@ app.layout = html.Div(
     ],
     className="root",
 )
+
+@app.callback(
+    Output("summary-table-data", "value"),
+    Input("memory-time-plot", "data"),
+)
+def summarize_data(mem_data):
+    mem_df = pd.read_json(mem_data)
+    group_staid = mem_df.groupby(["staid"])
+    total_samples = group_staid["ActivityStartDate"].count()
+    non_detects = group_staid["ResultDetectionConditionText"].count()
+    table_median = group_staid["ResultMeasureValue"].median()
+    temp_df = pd.merge(total_samples, non_detects, left_index=True, right_index=True)
+    my_data = pd.merge(temp_df, table_median, left_index=True, right_index=True)
+    # my_data.rename(columns={"ActivityStartDate":"Sample Count", "ResultDetectionConditionText"})
+
+    df = my_data
+    return dash_table.DataTable(df.to_dict('records'), [{"name": i, "id": i} for i in df.columns])
+
+
+@app.callback(
+    Output("station-checklist", "value"),
+    Output("all-checklist", "value"),
+    Input("station-checklist", "value"),
+    Input("all-checklist", "value"),
+)
+def sync_checklists(staids_selected, all_selected):
+    ctx = callback_context
+    input_id = ctx.triggered[0]["prop_id"].split(".")[0]
+    if input_id == "station-checklist":
+        all_selected = ["Select All"] if set(staids_selected) == set(pc.STATION_LIST) else []
+    else:
+        staids_selected = pc.STATION_LIST if all_selected else []
+    return staids_selected, all_selected
 
 
 @app.callback(
@@ -279,7 +325,7 @@ def toggle_modal(n1, n2, is_open):
 @app.callback(
     Output("memory-time-plot", "data"),
     [
-        Input("station_ID", "value"),
+        Input("station-checklist", "value"),
         Input("date_range", "start_date"),
         Input("date_range", "end_date"),
         Input("param_select", "value"),
@@ -307,7 +353,7 @@ def filter_timeplot_data(staid, start_date, end_date, param):
         Output("memory-time-plot-no-data", "data"),
     ],
     [
-        Input("station_ID", "value"),
+        Input("station-checklist", "value"),
         Input("date_range", "start_date"),
         Input("date_range", "end_date"),
         Input("param_select_X", "value"),
@@ -527,7 +573,7 @@ def x_vs_y(mem_data, param_x: str, param_y: str):
         y_title = utils.title_wrapper(y_title)
 
     fig.update_layout(
-        title = "Parameter X vs Parameter Y"
+        title = "Parameter X vs Parameter Y",
         title_x=0.5,
         xaxis_title=x_title,
         yaxis_title=y_title,
