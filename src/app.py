@@ -390,10 +390,6 @@ def filter_scatter_data(staid, start_date, end_date, param_x, param_y):
 def map_view_map(mem_data, no_data, param, end_date):
     # This is technically a secret, but anyone can request this from mapbox so I'm not concerened about it.
     MAPBOX_ACCESS_TOKEN = "pk.eyJ1Ijoic2xlZXB5Y2F0IiwiYSI6ImNsOXhiZng3cDA4cmkzdnFhOWhxdDEwOHQifQ.SU3dYPdC5aFVgOJWGzjq2w"
-    if mem_data is None:
-        raise PreventUpdate
-    if no_data is None:
-        raise PreventUpdate
     mem_df = pd.read_json(mem_data)
     no_data = pd.read_json(no_data)
     mem_df.rename(
@@ -506,6 +502,7 @@ def plot_parameter(mem_data, param):
         raise PreventUpdate
     mem_df = pd.read_json(mem_data)
     mem_df["datetime"] = pd.to_datetime(mem_df["datetime"], format="%Y-%m-%d %H:%M")
+    mem_df = mem_df.dropna(subset=["ResultMeasureValue"])
 
     fig = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
     fig = px.scatter(
@@ -544,6 +541,7 @@ def x_vs_y(mem_data, param_x: str, param_y: str):
     y_data = mem_df.loc[mem_df["USGSPCode"] == param_y]
     # y_data = y_data.loc[:,["staid", "datetime", "ResultMeasureValue", "USGSPCode"]]  # Can take out later, just helping debug now.
     combined = pd.merge(x_data, y_data, on="datetime")
+    combined = combined.dropna(subset=["ResultMeasureValue_x", "ResultMeasureValue_y"])
     combined.rename(columns={"staid_x": "staid"}, inplace=True)
     combined_x = combined["ResultMeasureValue_x"].array
     combined_y = combined["ResultMeasureValue_y"].array
