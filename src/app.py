@@ -10,7 +10,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 import pandas as pd
 from utils import utils
-import json
+from collections import OrderedDict
 import requests
 import io
 from datetime import date, datetime, timedelta
@@ -26,7 +26,7 @@ app.title = "JHA-USGS Dashboard"
 DEFAULT_PCODE = "p00400"
 DEFAULT_STAID = "USGS-433615110440001"
 # default_start_year = datetime.today().date() - timedelta(days=365)
-default_start_date = (pd.Timestamp.today() - pd.DateOffset(years=2)).date()
+default_start_date = pd.Timestamp.today().strftime("%m-%d-%Y")
 
 staid_coords = pd.read_csv("src/data/JHA_STAID_INFO.csv")
 staid_coords["staid"] = "USGS-" + staid_coords["staid"].astype(str)  # Need to concat "USGS-" to the start of the staid for qwp query
@@ -37,9 +37,8 @@ response = requests.post(
     url="https://www.waterqualitydata.us/data/Result/search?",
     data={
         "siteid": [staid_list],
-        # "startDateLo": default_start_date.strftime("%m-%d-%Y"),
         "startDateLo": "01-01-2020",
-        "startDateHi": "12-31-2023",
+        "startDateHi": default_start_date,
         "service": "results",
     },
     headers={"user-agent": "python"},
@@ -68,9 +67,9 @@ dataframe["param_label"] = dataframe["param_label"].str.rstrip(", ")
 
 # Create dictionary of parameter labels and values for the App to display
 available_parameters = dataframe.drop_duplicates("param_label")
+available_parameters = available_parameters.sort_values(by="param_label", key=lambda col: col.str.lower())
 available_param_dict = dict(zip(available_parameters["USGSPCode"], available_parameters["param_label"]))
 available_param_labels = [{"label": label, "value": pcode} for label, pcode in zip(available_parameters["param_label"], available_parameters["USGSPCode"])]
-
 # This is all the available data for all the stations.  Hopefully.
 # Query all data at the start of the App, then sort intermediates to pass to Callbacks
 ALL_DATA = pd.merge(dataframe, staid_coords, on="staid", how="left")
@@ -212,6 +211,7 @@ sidebar_select = html.Aside(
 
 scatter_time_container = html.Div(
     [
+        html.H1("Time-Series Plot"),
         dcc.Graph(id="scatter_plot", className="scatter-plot"),
     ],
     className="scatter-time-container",
@@ -219,6 +219,7 @@ scatter_time_container = html.Div(
 
 scatter_params_container = html.Div(
     [
+        html.H1("Comparative Plot"),
         dcc.Graph(id="plot_X_vs_Y"),
     ],
     className="scatter-params-container",
@@ -325,28 +326,31 @@ app.layout = html.Div(
     ],
     [
         Input("memory-time-plot", "data"),
-        Input("param_select", "value"),
+        # Input("param_select", "value"),
     ],
 )
-def summarize_data(mem_data, param):
+def summarize_data(mem_data):
     mem_df = pd.read_json(mem_data)
     group_staid = mem_df.groupby(["staid"])
-    total_samples = group_staid["ActivityStartDate"].count()
+    total_samples = group_staid["dec_lat_va"].count()
     non_detects = group_staid["ResultDetectionConditionText"].count()
     table_median = group_staid["ResultMeasureValue"].median()
+    most_recent_sample = group_staid["ActivityStartDate"].max()
     temp_df = pd.merge(total_samples, non_detects, left_index=True, right_index=True)
-    my_data = pd.merge(temp_df, table_median, left_index=True, right_index=True)
+    temp_df2 = pd.merge(temp_df, table_median, left_index=True, right_index=True)
+    my_data = pd.merge(temp_df2, most_recent_sample, left_index=True, right_index=True)
 
     my_data = my_data.rename(
         columns={
             "ResultMeasureValue": "Median Value",
-            "ActivityStartDate": "Sample Count",
+            "dec_lat_va": "Sample Count",
             "ResultDetectionConditionText": "Not Detected",
+            "ActivityStartDate": "Last Sample",
         },
     ).round(3)
     my_data["Station ID"] = my_data.index
-    my_data = my_data[["Station ID", "Sample Count", "Not Detected", "Median Value"]]
-    return my_data.to_dict("records"), "Summary Table"  #  f"Parameter: {available_param_dict[param]}"
+    my_data = my_data[["Station ID", "Sample Count", "Not Detected", "Median Value", "Last Sample"]]
+    return my_data.to_dict("records"), "Summary Table"
 
 
 @app.callback(
@@ -531,7 +535,7 @@ def map_view_map(mem_data, no_data, param, end_date):
             title=color_bar_title,
         ),
         hovermode="closest",
-        margin=dict(l=10, r=10, t=10, b=10),
+        margin=dict(l=5, r=5, t=5, b=5),
         mapbox=dict(
             accesstoken=MAPBOX_ACCESS_TOKEN,
             bearing=0,
@@ -591,8 +595,8 @@ def plot_parameter(mem_data, param):
     )
 
     fig.update_layout(
-        margin=dict(l=10, r=10, t=50, b=10),
-        title="Time-Series Plot",
+        margin=dict(l=5, r=5, t=5, b=5),
+        # title="Time-Series Plot",
         xaxis_title="Sample Date",
         yaxis_title=available_param_dict.get(param),
     )
@@ -645,7 +649,8 @@ def x_vs_y(mem_data, param_x: str, param_y: str):
         y_title = utils.title_wrapper(y_title)
 
     fig.update_layout(
-        title="Comparative Parameter Plot",
+        # title="Comparative Parameter Plot",
+        margin=dict(l=5, r=5, t=5, b=5),
         title_x=0.5,
         xaxis_title=x_title,
         yaxis_title=y_title,
@@ -666,3 +671,46 @@ def x_vs_y(mem_data, param_x: str, param_y: str):
 
 if __name__ == "__main__":
     app.run_server(debug=True)
+
+
+
+# 43,36,42.6,-110,44,14.0
+# 43,36,14.55,-110,44,2.31
+# 43,36,04.2,-110,44,33.5
+# 43,36,04.25,-110,44,33.58
+# 43,36,04.2,-110,44,33.5
+# 43,35,50.69,-110,44,37.54
+# 43,35,59.8,-110,44,37.5
+# 43,36,2.92,-110,44,37.31
+# 43,36,2.65,-110,44,37.45
+# 43,36,04.97,-110,44,37.57
+# 43,36,12.48,-110,44,37.70
+# 43,35,55.94,-110,44,18.76
+# 43,36,29.45,-110,44,30.02
+# 43,36,3.36,-110,44,12.81
+# 43,36,5.64,-110,44,7.94
+# 43,36,4.93,-110,44,14.51
+# 43,36,2.01,-110,44,14.50
+# 43,35,57.57,-110,44,17.43
+# 43,36,06.4,-110,44,11.94
+
+# 43.611833333,-110.737222222
+# 43.604041667,-110.733975
+# 43.601166667,-110.742638889
+# 43.601180556,-110.742661111
+# 43.601166667,-110.742638889
+# 43.597413889,-110.743761111
+# 43.599944444,-110.74375
+# 43.600811111,-110.743697222
+# 43.600736111,-110.743736111
+# 43.601380556,-110.743769444
+# 43.603466667,-110.743805556
+# 43.598872222,-110.738544444
+# 43.608180556,-110.741672222
+# 43.600933333,-110.736891667
+# 43.601566667,-110.735538889
+# 43.601369444,-110.737363889
+# 43.600558333,-110.737361111
+# 43.599325,-110.738175
+# 43.601777778,-110.73665
+# °

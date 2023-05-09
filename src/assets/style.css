@@ -142,6 +142,8 @@ p {
     max-height: 550px;
     padding: 4px;
     margin-bottom: 5px;
+    border: 1px solid #cacccd;
+    border-radius: 4px;
 }
 
 .graph-content-container {
