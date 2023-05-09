@@ -264,7 +264,7 @@ app.layout = html.Div(
                                         ),
                                         html.Div(
                                             [
-                                                html.P(id="data-table-text"),
+                                                html.H1(id="data-table-text"),
                                                 dash_table.DataTable(
                                                     id="summary-table",
                                                 ),
@@ -323,9 +323,12 @@ app.layout = html.Div(
         Output("summary-table", "data"),
         Output("data-table-text", "children"),
     ],
-    Input("memory-time-plot", "data"),
+    [
+        Input("memory-time-plot", "data"),
+        Input("param_select", "value"),
+    ],
 )
-def summarize_data(mem_data):
+def summarize_data(mem_data, param):
     mem_df = pd.read_json(mem_data)
     group_staid = mem_df.groupby(["staid"])
     total_samples = group_staid["ActivityStartDate"].count()
@@ -343,7 +346,7 @@ def summarize_data(mem_data):
     ).round(3)
     my_data["Station ID"] = my_data.index
     my_data = my_data[["Station ID", "Sample Count", "Not Detected", "Median Value"]]
-    return my_data.to_dict("records"), "text"
+    return my_data.to_dict("records"), "Summary Table"  #  f"Parameter: {available_param_dict[param]}"
 
 
 @app.callback(
@@ -589,7 +592,7 @@ def plot_parameter(mem_data, param):
 
     fig.update_layout(
         margin=dict(l=10, r=10, t=50, b=10),
-        title="Parameter vs Time",
+        title="Time-Series Plot",
         xaxis_title="Sample Date",
         yaxis_title=available_param_dict.get(param),
     )
@@ -642,7 +645,7 @@ def x_vs_y(mem_data, param_x: str, param_y: str):
         y_title = utils.title_wrapper(y_title)
 
     fig.update_layout(
-        title="Parameter X vs Parameter Y",
+        title="Comparative Parameter Plot",
         title_x=0.5,
         xaxis_title=x_title,
         yaxis_title=y_title,
