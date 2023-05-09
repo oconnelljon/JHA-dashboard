@@ -232,6 +232,7 @@ sidebar_select = html.Aside(
             className="sidebar-sub-container",
             id="select-y-container",
         ),
+        html.P(id="graph-text"),
         # Map
         html.Div(id="map-tab-graph", className="map-view-container"),
     ],
