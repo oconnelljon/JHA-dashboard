@@ -273,7 +273,7 @@ app.layout = html.Div(
                                 scatter_params_container,
                                 html.Div(
                                     [
-                                        html.P(),
+                                        html.P(id="data-table-text"),
                                         dash_table.DataTable(
                                             id="summary-table",
                                         ),
@@ -436,12 +436,17 @@ def map_view_map(mem_data, no_data, param, end_date):
 
     #  Only plot the most recent data on the map.  Since sampling may not occur on the same day,
     #  select the previous 30 days of data to plot.  This should yield 1 point for each well to plot if data is available.
-    begin_sampling_date = mem_df["datetime"].max() - pd.to_timedelta(30, "days")
-    if begin_sampling_date is not pd.NaT:
-        date_filtered_mem_df = mem_df.loc[mem_df["datetime"] >= begin_sampling_date].copy()
-    else:
-        date_filtered_mem_df = mem_df.copy()
-    date_filtered_mem_df["Sample Date"] = date_filtered_mem_df["datetime"].astype(str)
+
+    temp_df = mem_df.groupby("Station ID")["datetime"].max()
+    date_filtered_mem_df = mem_df.loc[mem_df["datetime"].isin(list(temp_df.values))]
+
+    # begin_sampling_date = mem_df["datetime"].max() - pd.to_timedelta(30, "days")
+    # if begin_sampling_date is not pd.NaT:
+    #     date_filtered_mem_df = mem_df.loc[mem_df["datetime"] >= begin_sampling_date].copy()
+    # else:
+    #     date_filtered_mem_df = mem_df.copy()
+
+    date_filtered_mem_df["Sample Date"] = date_filtered_mem_df["datetime"].astype(str).copy()
 
     # Debugging helper lines.
     # date_filtered_mem_df[["Station ID", "Sample Date", "Result", "Latitude", "Longitude", "ResultMeasureValue", "ResultMeasure/MeasureUnitCode"]]
@@ -497,11 +502,11 @@ def map_view_map(mem_data, no_data, param, end_date):
             accesstoken=MAPBOX_ACCESS_TOKEN,
             bearing=0,
             center=dict(
-                lat=43.608685,
-                lon=-110.736564,
+                lat=43.61,
+                lon=-110.7355,
             ),
             pitch=0,
-            zoom=13.25,
+            zoom=12.8,
         ),
     )
 
