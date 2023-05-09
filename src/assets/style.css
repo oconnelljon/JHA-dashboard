@@ -10,6 +10,10 @@ html, body, .root, .page-container, #react-entry-point{
     padding-left: 2px;
 }
 
+p {
+    margin-bottom: 2px;
+}
+
 .page-container {
     display: flex;
     flex-direction: column;
@@ -86,7 +90,7 @@ html, body, .root, .page-container, #react-entry-point{
 .sidebar-sub-container {
     align-self: stretch;
     border: 1px solid #cacccd;
-    /* padding: 2px; */
+    border-radius: 4px;
     margin: 3px;
 }
 
@@ -119,12 +123,20 @@ html, body, .root, .page-container, #react-entry-point{
     column-gap: 2em;
 }
 
+.time-graph-container {
+    display: flex;
+    flex-grow: 1;
+    gap: 2rem;
+    max-height: 550px;
+}
+
 .graph-content-container {
     display: flex;
     flex-grow: 1;
-    flex-wrap: wrap;
+    flex-direction: column;
+    /* flex-wrap: wrap;
     align-items: flex-start;
-    justify-content: space-between;
+    justify-content: space-between; */
     background-color: #f8f9fa;
     margin-top: 8px;
     margin-left: 8px;
@@ -149,7 +161,15 @@ html, body, .root, .page-container, #react-entry-point{
     align-items: stretch;
     flex: 1;
 } */
- 
+#table-container {
+    flex-grow: 1;
+} 
+
+.plots-wrapper {
+    width: 700px;
+    height: 550px;
+}
+
 .scatter-time-container {
     flex-basis: 600px;
     /* min-width: 400px; */

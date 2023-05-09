@@ -195,43 +195,43 @@ sidebar_select = html.Aside(
             className="sidebar-sub-container",
             id="daterange-container",
         ),
-        html.Div(
-            [
-                html.H1("Time plot and map view parameter"),
-                dcc.Dropdown(
-                    id="param_select",
-                    options=available_param_dict,
-                    value=DEFAULT_PCODE,
-                    persistence=True,
-                ),
-            ],
-            className="sidebar-sub-container",
-            id="select-time-param-container",
-        ),
-        html.Div(
-            [
-                html.H1("Scatter X parameter"),
-                dcc.Dropdown(
-                    id="param_select_X",
-                    options=available_param_dict,
-                    value=DEFAULT_PCODE,
-                ),
-            ],
-            className="sidebar-sub-container",
-            id="select-x-container",
-        ),
-        html.Div(
-            [
-                html.H1("Scatter Y parameter"),
-                dcc.Dropdown(
-                    id="param_select_Y",
-                    options=available_param_dict,
-                    value=DEFAULT_PCODE,
-                ),
-            ],
-            className="sidebar-sub-container",
-            id="select-y-container",
-        ),
+        # html.Div(
+        #     [
+        #         html.H1("Time plot and map view parameter"),
+        #         dcc.Dropdown(
+        #             id="param_select",
+        #             options=available_param_dict,
+        #             value=DEFAULT_PCODE,
+        #             persistence=True,
+        #         ),
+        #     ],
+        #     className="sidebar-sub-container",
+        #     id="select-time-param-container",
+        # ),
+        # html.Div(
+        #     [
+        #         html.H1("Scatter X parameter"),
+        #         dcc.Dropdown(
+        #             id="param_select_X",
+        #             options=available_param_dict,
+        #             value=DEFAULT_PCODE,
+        #         ),
+        #     ],
+        #     className="sidebar-sub-container",
+        #     id="select-x-container",
+        # ),
+        # html.Div(
+        #     [
+        #         html.H1("Scatter Y parameter"),
+        #         dcc.Dropdown(
+        #             id="param_select_Y",
+        #             options=available_param_dict,
+        #             value=DEFAULT_PCODE,
+        #         ),
+        #     ],
+        #     className="sidebar-sub-container",
+        #     id="select-y-container",
+        # ),
         # Map
         html.Div(
             [
@@ -278,16 +278,68 @@ app.layout = html.Div(
                         sidebar_select,
                         html.Div(
                             [
-                                scatter_time_container,
-                                scatter_params_container,
                                 html.Div(
                                     [
-                                        html.P(id="data-table-text"),
-                                        dash_table.DataTable(
-                                            id="summary-table",
+                                        html.Div(
+                                            [
+                                                html.Div(
+                                                    [
+                                                        html.H1("Time plot and map view parameter"),
+                                                        dcc.Dropdown(
+                                                            id="param_select",
+                                                            options=available_param_dict,
+                                                            value=DEFAULT_PCODE,
+                                                            persistence=True,
+                                                        ),
+                                                    ],
+                                                    className="sidebar-sub-container",
+                                                    id="select-time-param-container",
+                                                ),
+                                                scatter_time_container,
+                                            ],
+                                            className="plots-wrapper",
+                                        ),
+                                        html.Div(
+                                            [
+                                                html.P(id="data-table-text"),
+                                                dash_table.DataTable(
+                                                    id="summary-table",
+                                                ),
+                                            ],
+                                            id="table-container",
                                         ),
                                     ],
-                                    id="table-container",
+                                    className="time-graph-container",
+                                ),
+                                html.Div(
+                                    [
+                                        scatter_params_container,
+                                        html.Div(
+                                            [
+                                                html.H1("Scatter X parameter"),
+                                                dcc.Dropdown(
+                                                    id="param_select_X",
+                                                    options=available_param_dict,
+                                                    value=DEFAULT_PCODE,
+                                                ),
+                                            ],
+                                            className="sidebar-sub-container",
+                                            id="select-x-container",
+                                        ),
+                                        html.Div(
+                                            [
+                                                html.H1("Scatter Y parameter"),
+                                                dcc.Dropdown(
+                                                    id="param_select_Y",
+                                                    options=available_param_dict,
+                                                    value=DEFAULT_PCODE,
+                                                ),
+                                            ],
+                                            className="sidebar-sub-container",
+                                            id="select-y-container",
+                                        ),
+                                    ],
+                                    className="plots-wrapper",
                                 ),
                             ],
                             className="graph-content-container",
@@ -304,7 +356,10 @@ app.layout = html.Div(
 
 
 @app.callback(
-    Output("summary-table", "data"),
+    [
+        Output("summary-table", "data"),
+        Output("data-table-text", "children"),
+    ],
     Input("memory-time-plot", "data"),
 )
 def summarize_data(mem_data):
@@ -325,7 +380,7 @@ def summarize_data(mem_data):
     ).round(3)
     my_data["Station ID"] = my_data.index
     my_data = my_data[["Station ID", "Sample Count", "Not Detected", "Median Value"]]
-    return my_data.to_dict("records")
+    return my_data.to_dict("records"), "text"
 
 
 @app.callback(
