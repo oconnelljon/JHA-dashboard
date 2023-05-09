@@ -232,9 +232,17 @@ sidebar_select = html.Aside(
             className="sidebar-sub-container",
             id="select-y-container",
         ),
-        html.P(id="graph-text"),
         # Map
-        html.Div(id="map-tab-graph", className="map-view-container"),
+        html.Div(
+            [
+                html.H1("Location Map"),
+                html.P(id="graph-text"),
+                html.P(id="graph-text-param"),
+                html.Div(id="map-tab-graph", className="map-view-container"),
+            ],
+            id="sidebar-map-container",
+            className="sidebar-sub-container",
+        ),
     ],
     className="sidebar-container",
 )
@@ -411,7 +419,11 @@ def filter_scatter_data(staid, start_date, end_date, param_x, param_y):
 
 
 @app.callback(
-    Output("map-tab-graph", "children"),
+    [
+        Output("map-tab-graph", "children"),
+        Output("graph-text", "children"),
+        Output("graph-text-param", "children"),
+    ],
     [
         Input("memory-time-plot", "data"),
         Input("memory-time-plot-no-data", "data"),
@@ -493,12 +505,12 @@ def map_view_map(mem_data, no_data, param, end_date):
 
     fig1.update_layout(
         autosize=True,
-        title=f"Most recent values before {end_date} for: \n{available_param_dict.get(param)}",
+        # title=f"{available_param_dict.get(param)}",
         coloraxis_colorbar=dict(
             title=color_bar_title,
         ),
         hovermode="closest",
-        margin=dict(l=10, r=10, t=50, b=10),
+        margin=dict(l=10, r=10, t=10, b=10),
         mapbox=dict(
             accesstoken=MAPBOX_ACCESS_TOKEN,
             bearing=0,
@@ -511,7 +523,11 @@ def map_view_map(mem_data, no_data, param, end_date):
         ),
     )
 
-    return dcc.Graph(id="location-map", figure=fig1, className="THEGRAPH", responsive=True)
+    return (
+        dcc.Graph(id="location-map", figure=fig1, className="THEGRAPH", responsive=True),
+        f"Most recent values before {end_date} for:",
+        f"{available_param_dict.get(param)}",
+    )
 
 
 @app.callback(
