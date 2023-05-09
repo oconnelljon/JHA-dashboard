@@ -94,6 +94,17 @@ p {
     margin: 3px;
 }
 
+#sidebar-map-container {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.map-view-container {
+    flex-grow: 1;
+    padding: 2px;
+}
+
 #station-checklist {
     line-height:1em;
     overflow-y:scroll;
@@ -103,6 +114,7 @@ p {
 
 #location-map {
     width: 550px;
+    height: 100%;
 }
 
 .modal-content {
@@ -126,8 +138,10 @@ p {
 .time-graph-container {
     display: flex;
     flex-grow: 1;
-    gap: 2rem;
+    gap: 1rem;
     max-height: 550px;
+    padding: 4px;
+    margin-bottom: 5px;
 }
 
 .graph-content-container {
@@ -143,7 +157,7 @@ p {
     margin-right: 8px;
     padding: 10px 10px 10px 10px;
     /* height: min-content; override height: 100% inherited from parents */
-    height: 100vh;
+    /* height: 100vh; */
     overflow-y: auto;
 }
 
@@ -166,20 +180,17 @@ p {
 } 
 
 .plots-wrapper {
-    width: 700px;
-    height: 550px;
+    width: 710px;
+    border: 1px solid #cacccd;
+    border-radius: 4px;
 }
 
 .scatter-time-container {
-    flex-basis: 600px;
-    /* min-width: 400px; */
-    /* max-width: 500px; */
+    width: 700px;
 }
 
 .scatter-params-container {
-    flex-basis: 600px;
-    /* min-width: 400px; */
-    /* max-width: 500px; */
+    width: 700px;
 }
 /* 
 .THEGRAPH {

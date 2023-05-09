@@ -195,49 +195,12 @@ sidebar_select = html.Aside(
             className="sidebar-sub-container",
             id="daterange-container",
         ),
-        # html.Div(
-        #     [
-        #         html.H1("Time plot and map view parameter"),
-        #         dcc.Dropdown(
-        #             id="param_select",
-        #             options=available_param_dict,
-        #             value=DEFAULT_PCODE,
-        #             persistence=True,
-        #         ),
-        #     ],
-        #     className="sidebar-sub-container",
-        #     id="select-time-param-container",
-        # ),
-        # html.Div(
-        #     [
-        #         html.H1("Scatter X parameter"),
-        #         dcc.Dropdown(
-        #             id="param_select_X",
-        #             options=available_param_dict,
-        #             value=DEFAULT_PCODE,
-        #         ),
-        #     ],
-        #     className="sidebar-sub-container",
-        #     id="select-x-container",
-        # ),
-        # html.Div(
-        #     [
-        #         html.H1("Scatter Y parameter"),
-        #         dcc.Dropdown(
-        #             id="param_select_Y",
-        #             options=available_param_dict,
-        #             value=DEFAULT_PCODE,
-        #         ),
-        #     ],
-        #     className="sidebar-sub-container",
-        #     id="select-y-container",
-        # ),
         # Map
         html.Div(
             [
                 html.H1("Location Map"),
                 html.P(id="graph-text"),
-                html.P(id="graph-text-param"),
+                html.P(id="graph-text-param", style={"font-weight": "bold", "text-align": "center"}),
                 html.Div(id="map-tab-graph", className="map-view-container"),
             ],
             id="sidebar-map-container",
@@ -280,21 +243,21 @@ app.layout = html.Div(
                             [
                                 html.Div(
                                     [
+                                        html.H1("Parameter of interest"),
+                                        dcc.Dropdown(
+                                            id="param_select",
+                                            options=available_param_dict,
+                                            value=DEFAULT_PCODE,
+                                            persistence=True,
+                                        ),
+                                    ],
+                                    className="sidebar-sub-container",
+                                    id="select-time-param-container",
+                                ),
+                                html.Div(
+                                    [
                                         html.Div(
                                             [
-                                                html.Div(
-                                                    [
-                                                        html.H1("Time plot and map view parameter"),
-                                                        dcc.Dropdown(
-                                                            id="param_select",
-                                                            options=available_param_dict,
-                                                            value=DEFAULT_PCODE,
-                                                            persistence=True,
-                                                        ),
-                                                    ],
-                                                    className="sidebar-sub-container",
-                                                    id="select-time-param-container",
-                                                ),
                                                 scatter_time_container,
                                             ],
                                             className="plots-wrapper",
@@ -571,10 +534,10 @@ def map_view_map(mem_data, no_data, param, end_date):
             bearing=0,
             center=dict(
                 lat=43.61,
-                lon=-110.7355,
+                lon=-110.737,
             ),
             pitch=0,
-            zoom=12.8,
+            zoom=14,
         ),
     )
 
