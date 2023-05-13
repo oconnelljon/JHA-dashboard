@@ -277,33 +277,38 @@ app.layout = html.Div(
                                 ),
                                 html.Div(
                                     [
-                                        scatter_params_container,
                                         html.Div(
                                             [
-                                                html.H1("Scatter X parameter"),
-                                                dcc.Dropdown(
-                                                    id="param_select_X",
-                                                    options=available_param_dict,
-                                                    value=DEFAULT_PCODE,
+                                                scatter_params_container,
+                                                html.Div(
+                                                    [
+                                                        html.H1("Scatter X parameter"),
+                                                        dcc.Dropdown(
+                                                            id="param_select_X",
+                                                            options=available_param_dict,
+                                                            value=DEFAULT_PCODE,
+                                                        ),
+                                                    ],
+                                                    className="sidebar-sub-container",
+                                                    id="select-x-container",
+                                                ),
+                                                html.Div(
+                                                    [
+                                                        html.H1("Scatter Y parameter"),
+                                                        dcc.Dropdown(
+                                                            id="param_select_Y",
+                                                            options=available_param_dict,
+                                                            value=DEFAULT_PCODE,
+                                                        ),
+                                                    ],
+                                                    className="sidebar-sub-container",
+                                                    id="select-y-container",
                                                 ),
                                             ],
-                                            className="sidebar-sub-container",
-                                            id="select-x-container",
-                                        ),
-                                        html.Div(
-                                            [
-                                                html.H1("Scatter Y parameter"),
-                                                dcc.Dropdown(
-                                                    id="param_select_Y",
-                                                    options=available_param_dict,
-                                                    value=DEFAULT_PCODE,
-                                                ),
-                                            ],
-                                            className="sidebar-sub-container",
-                                            id="select-y-container",
+                                            className="plots-wrapper",
                                         ),
                                     ],
-                                    className="plots-wrapper",
+                                    className="scatter-graph-container",
                                 ),
                             ],
                             className="graph-content-container",
