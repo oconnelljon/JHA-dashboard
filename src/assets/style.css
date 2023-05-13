@@ -135,7 +135,7 @@ p {
     column-gap: 2em;
 }
 
-.time-graph-container {
+.main-content-container {
     display: flex;
     flex-grow: 1;
     gap: 1rem;
@@ -157,7 +157,7 @@ p {
     border-radius: 4px;
 }
 
-.graph-content-container {
+.main-body-container {
     display: flex;
     flex-grow: 1;
     flex-direction: column;

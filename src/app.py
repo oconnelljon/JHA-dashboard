@@ -273,7 +273,7 @@ app.layout = html.Div(
                                             id="table-container",
                                         ),
                                     ],
-                                    className="time-graph-container",
+                                    className="main-content-container",
                                 ),
                                 html.Div(
                                     [
@@ -311,7 +311,7 @@ app.layout = html.Div(
                                     className="scatter-graph-container",
                                 ),
                             ],
-                            className="graph-content-container",
+                            className="main-body-container",
                         ),
                     ],
                     className="body-container",
