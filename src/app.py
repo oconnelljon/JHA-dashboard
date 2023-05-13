@@ -237,10 +237,10 @@ app.layout = html.Div(
             [
                 dcc.Location(id="url"),
                 navbar,
-                html.Main(
+                html.Div(
                     [
                         sidebar_select,
-                        html.Div(
+                        html.Main(
                             [
                                 html.Div(
                                     [
@@ -314,7 +314,7 @@ app.layout = html.Div(
                             className="graph-content-container",
                         ),
                     ],
-                    className="main-container",
+                    className="body-container",
                 ),
             ],
             className="page-container",

@@ -55,7 +55,7 @@ p {
     display: inline-flex;
 }
 
-.main-container {
+.body-container {
     display: flex;
     background-color: rgb(161, 161, 161);
     flex-grow: 1;
