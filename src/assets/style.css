@@ -85,6 +85,7 @@ p {
 .sidebar-container {
     display: flex;
     flex-direction: column;
+    flex-basis: 45rem;
     align-items: flex-start;
     background-color: #f8f9fa;
     padding-top: 2px;
@@ -131,7 +132,7 @@ p {
 }
 
 #location-map {
-    width: 30rem;
+    /* width: 30rem; */
     height: 100%;
 }
 
