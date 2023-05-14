@@ -209,21 +209,21 @@ sidebar_select = html.Aside(
     className="sidebar-container",
 )
 
-scatter_time_container = html.Div(
-    [
-        html.H1("Time-Series Plot"),
-        dcc.Graph(id="scatter_plot"),
-    ],
-    className="scatter-time-container",
-)
+# scatter_time_container = html.Div(
+#     [
+#         html.H1("Time-Series Plot"),
+#         dcc.Graph(id="scatter_plot"),
+#     ],
+#     className="scatter-time-container",
+# )
 
-scatter_params_container = html.Div(
-    [
-        html.H1("Comparative Plot"),
-        dcc.Graph(id="plot_X_vs_Y"),
-    ],
-    className="scatter-params-container",
-)
+# scatter_params_container = html.Div(
+#     [
+#         html.H1("Comparative Plot"),
+#         dcc.Graph(id="plot_X_vs_Y"),
+#     ],
+#     className="scatter-params-container",
+# )
 
 
 application = app.server  # Important for debugging and using Flask!
@@ -258,19 +258,24 @@ app.layout = html.Div(
                                                     ],
                                                     className="main-content-dropdown",
                                                 ),
-                                                html.H1("Time-Series Plot"),
-                                                dcc.Graph(id="scatter_plot", className="scatter-plot"),
-                                            ],
-                                            className="plots-wrapper",
-                                        ),
-                                        html.Div(
-                                            [
-                                                html.H1(id="data-table-text"),
-                                                dash_table.DataTable(
-                                                    id="summary-table",
+                                                html.Div(
+                                                    [
+                                                        html.H1("Time-Series Plot"),
+                                                        dcc.Graph(id="scatter_plot", className="scatter-plot"),
+                                                    ],
+                                                    className="plots-wrapper",
+                                                ),
+                                                html.Div(
+                                                    [
+                                                        html.H1(id="data-table-text"),
+                                                        dash_table.DataTable(
+                                                            id="summary-table",
+                                                        ),
+                                                    ],
+                                                    className="table-container",
                                                 ),
                                             ],
-                                            className="table-container",
+                                            className="time-and-sumtable-container"
                                         ),
                                         html.Div(
                                             [

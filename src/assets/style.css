@@ -175,8 +175,15 @@ p {
     border-radius: 4px;
 } */
 
-.main-content-dropdown {
-    /* flex-basis: 100%; */
+.time-and-sumtable-container {
+    display: flex;
+    flex-grow: 1;
+    flex-wrap: wrap;
+    border: 1px solid darkgray;
+}
+
+.main-content-container .time-and-sumtable-container .main-content-dropdown {
+    flex-basis: 100%;
 }
 
 /* 
@@ -198,8 +205,8 @@ p {
 } 
 
 .plots-wrapper {
-    flex-grow: 1;
-    /* flex-basis: 40rem; */
+    /* flex-grow: 1; */
+    flex-basis: 40rem;
     border: 1px solid #cacccd;
     border-radius: 4px;
 }
