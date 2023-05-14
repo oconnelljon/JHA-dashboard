@@ -8,6 +8,8 @@ html, body, .root, .page-container, #react-entry-point{
 .H1, H1 {
     font-size: 1.5rem;
     padding-left: 2px;
+    background: #004c7d;
+    color: whitesmoke;
 }
 
 p {
@@ -88,8 +90,6 @@ p {
     padding-top: 2px;
     padding-left: 8px;
     padding-right: 5px;
-    /* height: 100vh; */
-    /* overflow: auto; */
 }
 
 .station-sub-container p {
@@ -131,7 +131,7 @@ p {
 }
 
 #location-map {
-    width: 550px;
+    width: 30rem;
     height: 100%;
 }
 
@@ -140,10 +140,9 @@ p {
     flex-wrap: wrap;
     flex-grow: 1;
     gap: 1rem;
-    /* max-height: 550px; */
     padding: 4px;
     margin-bottom: 5px;
-    border: 1px solid #cacccd;
+    border: 1px solid #3f3f3f;
     border-radius: 4px;
 }
 
@@ -154,7 +153,7 @@ p {
     /* flex-wrap: wrap;
     align-items: flex-start;
     justify-content: space-between; */
-    background-color: #f8f9fa;
+    background-color: #e5ebf1;
     margin-top: 8px;
     margin-left: 8px;
     margin-right: 8px;
@@ -164,42 +163,18 @@ p {
     overflow-y: auto;
 }
 
-/* .scatter-graph-container {
-    display: flex;
-    flex-grow: 1;
-    gap: 1rem;
-    max-height: 550px;
-    padding: 4px;
-    margin-bottom: 5px;
-    border: 1px solid #cacccd;
-    border-radius: 4px;
-} */
-
 .time-and-sumtable-container {
     display: flex;
     flex-grow: 1;
     flex-wrap: wrap;
-    border: 1px solid darkgray;
+    gap: 0.5rem;
+    border: 1px solid #3f3f3f78;
 }
 
 .main-content-container .time-and-sumtable-container .main-content-dropdown {
     flex-basis: 100%;
 }
 
-/* 
-.main-content-container {
-    display: flex;
-    padding-top: 10px;
-    column-gap: 20px;
-    background-color: rgb(161, 161, 161);
-    overflow: auto;
-} */
-/* 
-.map-view-container {
-    display: flex;
-    align-items: stretch;
-    flex: 1;
-} */
 .table-container {
     flex-grow: 1;
 } 
@@ -211,15 +186,6 @@ p {
     border-radius: 4px;
 }
 
-/* .scatter-time-container {
-    width: 700px;
+.main-content-container .plots-wrapper {
+    border: 1px solid #3f3f3f78;
 }
-
-.scatter-params-container {
-    width: 700px;
-} */
-/* 
-.THEGRAPH {
-    flex: 1;
-    min-width: 0;
-} */
