@@ -212,7 +212,7 @@ sidebar_select = html.Aside(
 scatter_time_container = html.Div(
     [
         html.H1("Time-Series Plot"),
-        dcc.Graph(id="scatter_plot", className="scatter-plot"),
+        dcc.Graph(id="scatter_plot"),
     ],
     className="scatter-time-container",
 )
@@ -246,18 +246,18 @@ app.layout = html.Div(
                                     [
                                         html.Div(
                                             [
-                                                html.H1("Parameter of interest"),
-                                                dcc.Dropdown(
-                                                    id="param_select",
-                                                    options=available_param_dict,
-                                                    value=DEFAULT_PCODE,
-                                                    persistence=True,
+                                                html.Div(
+                                                    [
+                                                        html.H1("Parameter of interest"),
+                                                        dcc.Dropdown(
+                                                            id="param_select",
+                                                            options=available_param_dict,
+                                                            value=DEFAULT_PCODE,
+                                                            persistence=True,
+                                                        ),
+                                                    ],
+                                                    className="main-content-dropdown",
                                                 ),
-                                            ],
-                                            id="select-time-param-container",
-                                        ),
-                                        html.Div(
-                                            [
                                                 html.H1("Time-Series Plot"),
                                                 dcc.Graph(id="scatter_plot", className="scatter-plot"),
                                             ],
@@ -284,7 +284,7 @@ app.layout = html.Div(
                                                             value=DEFAULT_PCODE,
                                                         ),
                                                     ],
-                                                    className="sidebar-sub-container",
+                                                    className="main-content-dropdown",
                                                     id="select-x-container",
                                                 ),
                                                 html.Div(
@@ -296,7 +296,7 @@ app.layout = html.Div(
                                                             value=DEFAULT_PCODE,
                                                         ),
                                                     ],
-                                                    className="sidebar-sub-container",
+                                                    className="main-content-dropdown",
                                                     id="select-y-container",
                                                 ),
                                                 dcc.Graph(id="plot_X_vs_Y"),
