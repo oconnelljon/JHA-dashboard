@@ -244,22 +244,22 @@ app.layout = html.Div(
                             [
                                 html.Div(
                                     [
-                                        html.H1("Parameter of interest"),
-                                        dcc.Dropdown(
-                                            id="param_select",
-                                            options=available_param_dict,
-                                            value=DEFAULT_PCODE,
-                                            persistence=True,
-                                        ),
-                                    ],
-                                    className="sidebar-sub-container",
-                                    id="select-time-param-container",
-                                ),
-                                html.Div(
-                                    [
                                         html.Div(
                                             [
-                                                scatter_time_container,
+                                                html.H1("Parameter of interest"),
+                                                dcc.Dropdown(
+                                                    id="param_select",
+                                                    options=available_param_dict,
+                                                    value=DEFAULT_PCODE,
+                                                    persistence=True,
+                                                ),
+                                            ],
+                                            id="select-time-param-container",
+                                        ),
+                                        html.Div(
+                                            [
+                                                html.H1("Time-Series Plot"),
+                                                dcc.Graph(id="scatter_plot", className="scatter-plot"),
                                             ],
                                             className="plots-wrapper",
                                         ),
@@ -274,7 +274,7 @@ app.layout = html.Div(
                                         ),
                                         html.Div(
                                             [
-                                                scatter_params_container,
+                                                html.H1("Comparative Plot"),
                                                 html.Div(
                                                     [
                                                         html.H1("Scatter X parameter"),
@@ -299,6 +299,7 @@ app.layout = html.Div(
                                                     className="sidebar-sub-container",
                                                     id="select-y-container",
                                                 ),
+                                                dcc.Graph(id="plot_X_vs_Y"),
                                             ],
                                             className="plots-wrapper",
                                         ),
