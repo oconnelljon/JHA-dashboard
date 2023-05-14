@@ -137,6 +137,7 @@ p {
 
 .main-content-container {
     display: flex;
+    flex-wrap: wrap;
     flex-grow: 1;
     gap: 1rem;
     max-height: 550px;
@@ -188,7 +189,7 @@ p {
     align-items: stretch;
     flex: 1;
 } */
-#table-container {
+.table-container {
     flex-grow: 1;
 } 
 

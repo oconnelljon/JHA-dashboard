@@ -270,13 +270,8 @@ app.layout = html.Div(
                                                     id="summary-table",
                                                 ),
                                             ],
-                                            id="table-container",
+                                            className="table-container",
                                         ),
-                                    ],
-                                    className="main-content-container",
-                                ),
-                                html.Div(
-                                    [
                                         html.Div(
                                             [
                                                 scatter_params_container,
@@ -308,7 +303,7 @@ app.layout = html.Div(
                                             className="plots-wrapper",
                                         ),
                                     ],
-                                    className="scatter-graph-container",
+                                    className="main-content-container",
                                 ),
                             ],
                             className="main-body-container",
@@ -676,7 +671,6 @@ def x_vs_y(mem_data, param_x: str, param_y: str):
 
 if __name__ == "__main__":
     app.run_server(debug=True)
-
 
 
 # 43,36,42.6,-110,44,14.0
