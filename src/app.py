@@ -10,7 +10,6 @@ import plotly.graph_objects as go
 import plotly.express as px
 import pandas as pd
 from utils import utils
-from collections import OrderedDict
 import requests
 import io
 from datetime import date, datetime, timedelta
@@ -22,10 +21,8 @@ app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])  # Includ
 app.title = "JHA-USGS Dashboard"
 
 # Set defaults, load local data
-# STAID_COORDS = pd.read_csv("src/data/JHA_STAID_INFO.csv")
 DEFAULT_PCODE = "p00400"
 DEFAULT_STAID = "USGS-433615110440001"
-# default_start_year = datetime.today().date() - timedelta(days=365)
 default_start_date = pd.Timestamp.today().strftime("%m-%d-%Y")
 
 staid_coords = pd.read_csv("src/data/JHA_STAID_INFO.csv")
@@ -125,9 +122,11 @@ nodata_df_staids = nodata_df_staids.rename(
 navbar = html.Div(
     [
         html.Div(
-            html.Div("USGS"),
+            # html.Div("USGS"),
+            html.Img(src=app.get_asset_url('usgs-logo.png')),
             className="navbar-brand-container",
         ),
+        # html.Img(src=app.get_asset_url('jh-airport-logo.svg')),
         html.Div(
             html.Div("Jackson Hole Airport"),
             className="navbar-JHA-container",
@@ -197,7 +196,7 @@ sidebar_select = html.Aside(
         # Map
         html.Div(
             [
-                html.H1("Location Map"),
+                html.H2("Location Map"),
                 html.P(id="graph-text"),
                 html.P(id="graph-text-param", style={"font-weight": "bold", "text-align": "center"}),
                 html.Div(id="map-tab-graph", className="map-view-container"),
@@ -337,10 +336,21 @@ app.layout = html.Div(
     ],
     [
         Input("memory-time-plot", "data"),
-        # Input("param_select", "value"),
     ],
 )
-def summarize_data(mem_data):
+def summarize_data(mem_data) -> tuple:
+    """Summarizes selected data into descriptive table
+
+    Parameters
+    ----------
+    mem_data : _type_
+        memory data input from Dash
+
+    Returns
+    -------
+    tuple
+        Tuple of summary data to be placed in Dash table and summary text
+    """
     mem_df = pd.read_json(mem_data)
     group_staid = mem_df.groupby(["staid"])
     total_samples = group_staid["dec_lat_va"].count()
@@ -360,13 +370,8 @@ def summarize_data(mem_data):
 
     my_data = pd.concat([total_samples, non_detects, table_median, first_sample, last_sample], axis=1)
 
-    # temp_df = pd.merge(total_samples, non_detects, left_index=True, right_index=True)
-    # temp_df2 = pd.merge(temp_df, table_median, left_index=True, right_index=True)
-    # temp_df3 = pd.merge(temp_df2, temp_df, left_index=True, right_index=True)
-    # my_data = pd.merge(temp_df3, most_recent_sample, left_index=True, right_index=True)
-
     my_data["Station ID"] = my_data.index
-    my_data = my_data[["Station ID", "Sample Count", "Not Detected", "Median Value", "First Sample", "Last Sample"]]
+    my_data = my_data[["Station ID", "Last Sample", "First Sample", "Sample Count", "Not Detected", "Median Value"]]
     return my_data.to_dict("records"), "Summary Table"
 
 

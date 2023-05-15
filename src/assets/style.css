@@ -7,7 +7,7 @@ html, body, .root, .page-container, #react-entry-point{
 
 .H1, H1 {
     text-align: center;
-    font-size: 1.8rem;
+    font-size: 1.5rem;
     padding-left: 2px;
     margin: 0px;
     background: #004c7d;
@@ -22,11 +22,15 @@ html, body, .root, .page-container, #react-entry-point{
 }
 
 .H2, H2 {
-    font-size: 1.3rem;
+    font-size: 1.1rem;
     padding-left: 2px;
     background: #193b5d;
     color: whitesmoke;
     margin: 0px;
+}
+
+.sidebar-sub-container H2 {
+    text-align: center;
 }
 
 p {
@@ -43,8 +47,8 @@ p {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-top: 0px;
-    padding-bottom: 0px;
+    padding-top: 4px;
+    padding-bottom: 4px;
     padding-right: 15px;
     padding-left: 15px;
     color: #EEE;
@@ -53,7 +57,7 @@ p {
         rgb(0 0 0 / 14%) 0px 4px 5px 0px,
         rgb(0 0 0 / 12%) 0px 1px 10px 0px;
     background-color: #00264c;
-    height: 50px
+    /* height: 50px */
 }
 
 .navbar-brand-container {
