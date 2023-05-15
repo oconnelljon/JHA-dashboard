@@ -246,9 +246,9 @@ app.layout = html.Div(
                                     [
                                         html.Div(
                                             [
+                                                html.H1("Parameter of interest"),
                                                 html.Div(
                                                     [
-                                                        html.H1("Parameter of interest"),
                                                         dcc.Dropdown(
                                                             id="param_select",
                                                             options=available_param_dict,
@@ -256,7 +256,7 @@ app.layout = html.Div(
                                                             persistence=True,
                                                         ),
                                                     ],
-                                                    className="main-content-dropdown",
+                                                    id="main-parameter-dropdown",
                                                 ),
                                                 html.Div(
                                                     [
@@ -275,38 +275,44 @@ app.layout = html.Div(
                                                     className="table-container",
                                                 ),
                                             ],
-                                            className="time-and-sumtable-container"
+                                            className="tile-container",
+                                            # className="time-and-sumtable-container"
                                         ),
                                         html.Div(
                                             [
                                                 html.H1("Comparative Plot"),
                                                 html.Div(
                                                     [
-                                                        html.H1("Scatter X parameter"),
-                                                        dcc.Dropdown(
-                                                            id="param_select_X",
-                                                            options=available_param_dict,
-                                                            value=DEFAULT_PCODE,
+                                                        html.Div(
+                                                            [
+                                                                html.H1("Scatter X parameter"),
+                                                                dcc.Dropdown(
+                                                                    id="param_select_X",
+                                                                    options=available_param_dict,
+                                                                    value=DEFAULT_PCODE,
+                                                                ),
+                                                            ],
+                                                            className="main-content-dropdown",
+                                                            id="select-x-container",
                                                         ),
-                                                    ],
-                                                    className="main-content-dropdown",
-                                                    id="select-x-container",
-                                                ),
-                                                html.Div(
-                                                    [
-                                                        html.H1("Scatter Y parameter"),
-                                                        dcc.Dropdown(
-                                                            id="param_select_Y",
-                                                            options=available_param_dict,
-                                                            value=DEFAULT_PCODE,
+                                                        html.Div(
+                                                            [
+                                                                html.H1("Scatter Y parameter"),
+                                                                dcc.Dropdown(
+                                                                    id="param_select_Y",
+                                                                    options=available_param_dict,
+                                                                    value=DEFAULT_PCODE,
+                                                                ),
+                                                            ],
+                                                            className="main-content-dropdown",
+                                                            id="select-y-container",
                                                         ),
+                                                        dcc.Graph(id="plot_X_vs_Y"),
                                                     ],
-                                                    className="main-content-dropdown",
-                                                    id="select-y-container",
+                                                    className="plots-wrapper",
                                                 ),
-                                                dcc.Graph(id="plot_X_vs_Y"),
                                             ],
-                                            className="plots-wrapper",
+                                            className="tile-container",
                                         ),
                                     ],
                                     className="main-content-container",
@@ -339,23 +345,29 @@ def summarize_data(mem_data):
     mem_df = pd.read_json(mem_data)
     group_staid = mem_df.groupby(["staid"])
     total_samples = group_staid["dec_lat_va"].count()
-    non_detects = group_staid["ResultDetectionConditionText"].count()
-    table_median = group_staid["ResultMeasureValue"].median()
-    most_recent_sample = group_staid["ActivityStartDate"].max()
-    temp_df = pd.merge(total_samples, non_detects, left_index=True, right_index=True)
-    temp_df2 = pd.merge(temp_df, table_median, left_index=True, right_index=True)
-    my_data = pd.merge(temp_df2, most_recent_sample, left_index=True, right_index=True)
+    total_samples = total_samples.rename("Sample Count")
 
-    my_data = my_data.rename(
-        columns={
-            "ResultMeasureValue": "Median Value",
-            "dec_lat_va": "Sample Count",
-            "ResultDetectionConditionText": "Not Detected",
-            "ActivityStartDate": "Last Sample",
-        },
-    ).round(3)
+    non_detects = group_staid["ResultDetectionConditionText"].count()
+    non_detects = non_detects.rename("Not Detected")
+
+    table_median = group_staid["ResultMeasureValue"].median().round(3)
+    table_median = table_median.rename("Median Value")
+
+    last_sample = group_staid["ActivityStartDate"].max()
+    last_sample = last_sample.rename("Last Sample")
+
+    first_sample = group_staid["ActivityStartDate"].min()
+    first_sample = first_sample.rename("First Sample")
+
+    my_data = pd.concat([total_samples, non_detects, table_median, first_sample, last_sample], axis=1)
+
+    # temp_df = pd.merge(total_samples, non_detects, left_index=True, right_index=True)
+    # temp_df2 = pd.merge(temp_df, table_median, left_index=True, right_index=True)
+    # temp_df3 = pd.merge(temp_df2, temp_df, left_index=True, right_index=True)
+    # my_data = pd.merge(temp_df3, most_recent_sample, left_index=True, right_index=True)
+
     my_data["Station ID"] = my_data.index
-    my_data = my_data[["Station ID", "Sample Count", "Not Detected", "Median Value", "Last Sample"]]
+    my_data = my_data[["Station ID", "Sample Count", "Not Detected", "Median Value", "First Sample", "Last Sample"]]
     return my_data.to_dict("records"), "Summary Table"
 
 
