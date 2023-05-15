@@ -260,14 +260,14 @@ app.layout = html.Div(
                                                 ),
                                                 html.Div(
                                                     [
-                                                        html.H1("Time-Series Plot"),
+                                                        html.H2("Time-Series Plot"),
                                                         dcc.Graph(id="scatter_plot", className="scatter-plot"),
                                                     ],
                                                     className="plots-wrapper",
                                                 ),
                                                 html.Div(
                                                     [
-                                                        html.H1(id="data-table-text"),
+                                                        html.H2(id="data-table-text"),
                                                         dash_table.DataTable(
                                                             id="summary-table",
                                                         ),
@@ -276,7 +276,6 @@ app.layout = html.Div(
                                                 ),
                                             ],
                                             className="tile-container",
-                                            # className="time-and-sumtable-container"
                                         ),
                                         html.Div(
                                             [
@@ -285,7 +284,7 @@ app.layout = html.Div(
                                                     [
                                                         html.Div(
                                                             [
-                                                                html.H1("Scatter X parameter"),
+                                                                html.H2("Scatter X parameter"),
                                                                 dcc.Dropdown(
                                                                     id="param_select_X",
                                                                     options=available_param_dict,
@@ -297,7 +296,7 @@ app.layout = html.Div(
                                                         ),
                                                         html.Div(
                                                             [
-                                                                html.H1("Scatter Y parameter"),
+                                                                html.H2("Scatter Y parameter"),
                                                                 dcc.Dropdown(
                                                                     id="param_select_Y",
                                                                     options=available_param_dict,
