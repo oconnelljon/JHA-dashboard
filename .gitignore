@@ -133,3 +133,5 @@ dmypy.json
 
 # MS Office temp files
 ~$*
+all_data-20230514.csv
+hardness.csv
