@@ -139,7 +139,3 @@ dmypy.json
 # Other
 all_data-20230514.csv
 hardness.csv
-ALL_DATA_2023-03-24_ND.csv
-ALL_DATA_2023-03-24.csv
-src/utils/test_code.py
-src/utils/test_code2.py
