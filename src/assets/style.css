@@ -1,25 +1,54 @@
-/* Good colors: https://www.color-hex.com/color/335379 */
+/* Good colors: https://www.color-hex.com/color/335379 #033F7A  #f5f5f5 */
+html, body, .root, .page-container, #react-entry-point{
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+}
+
+.H1, H1 {
+    text-align: center;
+    font-size: 1.5rem;
+    padding-left: 2px;
+    margin: 0px;
+    background: #004c7d;
+    color: whitesmoke;
+}
+
+.tile-container H1 {
+    width: 100%;
+    background: #004c7d;
+    color: whitesmoke;
+    padding: 0.3rem;
+}
+
+.H2, H2 {
+    font-size: 1.1rem;
+    padding-left: 2px;
+    background: #193b5d;
+    color: whitesmoke;
+    margin: 0px;
+}
+
+.sidebar-sub-container H2 {
+    text-align: center;
+}
+
+p {
+    margin-bottom: 2px;
+}
 
 .page-container {
-    display: grid;
-    justify-content: stretch;
-    grid-template-rows: 55px calc(100vh - 55px);
-    /* 2 rows, 55px tall for header and rest for container */
-    grid-template-columns: 310px 1fr;
-    /* 2 columns, 300px for sidebar, auto for content container */
-    grid-template-areas:
-        /* Define content areas of the 4x4 grid */
-        "header header"
-        "nav content";
+    display: flex;
+    flex-direction: column;
 }
 
 .navbar-container {
-    grid-area: header;
     z-index: 2000;
     display: flex;
     justify-content: space-between;
-    padding-top: 0px;
-    padding-bottom: 0px;
+    align-items: center;
+    padding-top: 4px;
+    padding-bottom: 4px;
     padding-right: 15px;
     padding-left: 15px;
     color: #EEE;
@@ -27,7 +56,8 @@
         rgb(0 0 0 / 20%) 0px 2px 4px -1px,
         rgb(0 0 0 / 14%) 0px 4px 5px 0px,
         rgb(0 0 0 / 12%) 0px 1px 10px 0px;
-    background-color: #033f7a;
+    background-color: #00264c;
+    height: 73px
 }
 
 .navbar-brand-container {
@@ -48,27 +78,6 @@
     display: inline-flex;
 }
 
-.sidebar-container {
-    grid-area: nav;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    background-color: #f8f9fa;
-    padding-top: 10px;
-    padding-left: 10px;
-    padding-right: 10px;
-}
-
-.sidebar-container .sidebar-download-container{
-    margin-top: auto;
-    align-self: center;
-    margin-bottom: 10px;
-}
-
-.sidebar-sub-container {
-    align-self: stretch;
-}
-
 .modal-content {
     width: auto;
 }
@@ -87,87 +96,116 @@
     column-gap: 2em;
 }
 
-.main-content-container {
-    grid-area: content;
+.body-container {
     display: flex;
-    padding-top: 10px;
-    column-gap: 20px;
     background-color: rgb(161, 161, 161);
-    overflow: auto;
-    /* overflow condition on parent */
+    flex-grow: 1;
+    height: calc(100vh - 50px);
 }
 
-.tabs-content-container {
-    /* flex-grow: 1; */
-    flex: 1;
-    min-width: 0;
-    /* display: flex; */
-    /* align-items: stretch; */
-    /* min-height: 100%; */
-    /* display: flex; */
-    /* flex-direction: column; */
-    /* min-height: 100vh; */
-    /* height: auto; */
-    margin-right: 15px;
-    margin-bottom: 15px;
-    margin-left: 15px;
-    border-radius: 5px;
-    background-color: #eaedf1
-}
-
-.tab-parent {
+.sidebar-container {
     display: flex;
-    align-items: stretch;
-    min-height: 100%;
-    /* flex-direction: column; */
-    /* min-height: 100vh; */
-    /* height: 100%; */
+    flex-direction: column;
+    flex-basis: 45rem;
+    align-items: flex-start;
+    background-color: #f8f9fa;
+    padding-top: 2px;
+    padding-left: 8px;
+    padding-right: 5px;
 }
 
-/* tab-content is created by dbc.Tabs and is not explicetly defined in app.py*/
-.tab-content {
-    flex: 1;
+.station-sub-container p {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+}
+
+.sidebar-container .sidebar-download-container{
+    margin-top: auto;
+    align-self: center;
+    padding-bottom: 10px;
+    position: sticky;
+    bottom: 0;
+}
+
+.sidebar-sub-container {
+    align-self: stretch;
+    border: 1px solid #cacccd;
+    border-radius: 4px;
+    margin: 3px;
+}
+
+#sidebar-map-container {
     display: flex;
-    align-items: stretch;
-    /* flex-direction: column; */
-    /* min-height: 100vh; */
-    /* height: auto; */
-    margin-top: 15px;
-    margin-right: 15px;
-    margin-bottom: 15px;
-    margin-left: 15px;
-    /* border-radius: 5px; */
+    flex-direction: column;
+    flex-grow: 1;
 }
 
 .map-view-container {
+    flex-grow: 1;
+    padding: 2px;
+}
+
+#station-checklist {
+    line-height:1em;
+    overflow-y:scroll;
+    overflow-x:hidden;
+    height: 100px;
+}
+
+#location-map {
+    height: 100%;
+}
+
+.main-content-container {
     display: flex;
-    align-items: stretch;
-    flex: 1;
+    flex-wrap: wrap;
+    flex-grow: 1;
+    gap: 1rem;
 }
 
-.scatter-time-container {
-    width: 50%
+.main-body-container {
+    display: flex;
+    flex-grow: 1;
+    flex-direction: column;
+    background-color: #ffffff;
+    margin-top: 8px;
+    margin-left: 8px;
+    margin-right: 8px;
+    padding: 10px 10px 10px 10px;
+    overflow-y: auto;
 }
 
-.scatter-params-container {
-    width: 50%
+.time-and-sumtable-container {
+    display: flex;
+    flex-grow: 1;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    background-color: #b2bdc9;
+    border: 1px solid #3f3f3f78;
+    padding: 4px;
 }
 
-.THEGRAPH {
-    flex: 1;
-    min-width: 0;
+.tile-container {
+    display: flex;
+    flex-grow: 1;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    background-color: #b2bdc9;
+    border: 1px solid #3f3f3f78;
 }
 
-/* Tab1 Map view section */
-.map-tab-graph {
-    /* display: flex; */
-    /* width: 100%;
-    height: 100%; */
+#main-parameter-dropdown {
+    flex-basis: 100%;
+    margin-left: 5px;
+    margin-right: 5px;
 }
 
-.location-map {
-    /* flex: 1; */
-    /* min-height: 500px; */
-    /* margin-right: 10px;
-    margin-left: 10px; */
+.table-container {
+    flex-grow: 1;
+    padding: 4px;
+} 
+
+.plots-wrapper {
+    flex-basis: 40rem;
+    padding: 4px;
 }

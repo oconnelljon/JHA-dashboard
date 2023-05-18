@@ -1,5 +1,5 @@
 import dash
-from dash import html, dcc, Input, Output, State
+from dash import html, dcc, Input, Output, State, dash_table, callback_context
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 import dataretrieval.nwis as nwis
@@ -10,43 +10,38 @@ import plotly.graph_objects as go
 import plotly.express as px
 import pandas as pd
 from utils import utils
-import json
 import requests
 import io
 from datetime import date, datetime, timedelta
 from typing import List
 from array import array
 
+# Initialize App
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])  # Include __name__, serves as reference for finding .css files.
 app.title = "JHA-USGS Dashboard"
-# app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
-STAID_COORDS = pd.read_csv("src/data/JHA_STAID_INFO.csv")
+
+# Set defaults, load local data
 DEFAULT_PCODE = "p00400"
 DEFAULT_STAID = "USGS-433615110440001"
-# default_start_year = datetime.today().date() - timedelta(days=365)
-default_start_date = (pd.Timestamp.today() - pd.DateOffset(years=2)).date()
+default_start_date = pd.Timestamp.today().strftime("%m-%d-%Y")
 
-
-def process_coords():
-    coords = pd.read_csv("src/data/JHA_STAID_INFO.csv")
-    coords["staid"] = "USGS-" + coords["staid"].astype(str)  # Need to concat "USGS-" to the start of the staid for qwp query
-    return coords
-
-
-staid_coords = process_coords()
+staid_coords = pd.read_csv("src/data/JHA_STAID_INFO.csv")
+staid_coords["staid"] = "USGS-" + staid_coords["staid"].astype(str)  # Need to concat "USGS-" to the start of the staid for qwp query
 staid_list = staid_coords["staid"].to_list()
+
+# Query QWP for data
 response = requests.post(
     url="https://www.waterqualitydata.us/data/Result/search?",
     data={
         "siteid": [staid_list],
-        # "startDateLo": default_start_date.strftime("%m-%d-%Y"),
         "startDateLo": "01-01-2020",
-        "startDateHi": "12-31-2023",
+        "startDateHi": default_start_date,
         "service": "results",
     },
     headers={"user-agent": "python"},
 )
 
+# Load and scrub QWP data
 decode_response = io.StringIO(response.content.decode("utf-8"))
 dataframe = pd.read_csv(decode_response, dtype={"USGSPCode": str})
 dataframe["USGSPCode"] = "p" + dataframe["USGSPCode"]
@@ -55,129 +50,87 @@ dataframe["datetime"] = dataframe["ActivityStartDate"] + " " + dataframe["Activi
 dataframe["ValueAndUnits"] = dataframe["ResultMeasureValue"].astype(str) + " " + dataframe["ResultMeasure/MeasureUnitCode"].astype(str)
 dataframe.loc[dataframe["ValueAndUnits"] == "nan nan", "ValueAndUnits"] = "No Value"
 dataframe.loc[(dataframe["ValueAndUnits"] == "No Value") & (dataframe["ResultDetectionConditionText"] == "Not Detected"), "ValueAndUnits"] = "Not Detected"
+dataframe = dataframe.loc[(dataframe["ActivityTypeCode"] == "Sample-Routine")]
+dataframe["ResultMeasure/MeasureUnitCode"] = dataframe["ResultMeasure/MeasureUnitCode"].str.replace("asNO2", "as NO2")
+dataframe["ResultMeasure/MeasureUnitCode"] = dataframe["ResultMeasure/MeasureUnitCode"].str.replace("asNO3", "as NO3")
+dataframe["ResultMeasure/MeasureUnitCode"] = dataframe["ResultMeasure/MeasureUnitCode"].str.replace("asPO4", "as PO4")
+dataframe["DetectionQuantitationLimitMeasure/MeasureUnitCode"] = dataframe["DetectionQuantitationLimitMeasure/MeasureUnitCode"].str.replace("asNO2", "as NO2")
+dataframe["DetectionQuantitationLimitMeasure/MeasureUnitCode"] = dataframe["DetectionQuantitationLimitMeasure/MeasureUnitCode"].str.replace("asNO3", "as NO3")
+dataframe["DetectionQuantitationLimitMeasure/MeasureUnitCode"] = dataframe["DetectionQuantitationLimitMeasure/MeasureUnitCode"].str.replace("asPO4", "as PO4")
 dataframe["param_label"] = dataframe["CharacteristicName"] + ", " + dataframe["ResultSampleFractionText"].fillna("") + ", " + dataframe["ResultMeasure/MeasureUnitCode"].fillna("")
 dataframe["param_label"] = dataframe["param_label"].str.replace(", , ", ", ")
-dataframe["param_label"] = dataframe["param_label"].str.replace("asNO3", "as NO3")
-dataframe["param_label"] = dataframe["param_label"].str.replace("asPO4", "as PO4")
 dataframe["param_label"] = dataframe["param_label"].str.replace("deg C, deg C", "deg C")
 dataframe["param_label"] = dataframe["param_label"].str.rstrip(", ")
 
+# Create dictionary of parameter labels and values for the App to display
 available_parameters = dataframe.drop_duplicates("param_label")
-# available_parameters = available_parameters[["USGSPCode", "param_label"]]
-available_param_dict = dict(zip(dataframe["USGSPCode"], dataframe["param_label"]))
+available_parameters = available_parameters.sort_values(by="param_label", key=lambda col: col.str.lower())
+available_param_dict = dict(zip(available_parameters["USGSPCode"], available_parameters["param_label"]))
 available_param_labels = [{"label": label, "value": pcode} for label, pcode in zip(available_parameters["param_label"], available_parameters["USGSPCode"])]
-# old_params = pc.PARAMETERS
-
 # This is all the available data for all the stations.  Hopefully.
-# Query at the start, then sort intermediates to pass to Callbacks
+# Query all data at the start of the App, then sort intermediates to pass to Callbacks
 ALL_DATA = pd.merge(dataframe, staid_coords, on="staid", how="left")
 ALL_DATA.sort_values(by="datetime", ascending=True, inplace=True)
+ALL_DATA = ALL_DATA.loc[
+    :,
+    [
+        "ActivityStartDate",
+        "ActivityStartTime/Time",
+        "staid",
+        "ResultDetectionConditionText",
+        "CharacteristicName",
+        "ResultSampleFractionText",
+        "ResultMeasureValue",
+        "ResultMeasure/MeasureUnitCode",
+        "USGSPCode",
+        "DetectionQuantitationLimitTypeName",
+        "DetectionQuantitationLimitMeasure/MeasureValue",
+        "DetectionQuantitationLimitMeasure/MeasureUnitCode",
+        "datetime",
+        "ValueAndUnits",
+        "param_label",
+        "dec_lat_va",
+        "dec_long_va",
+    ],
+]
+
+# Setup a dataframe to handle missing values when plotting on the map.
+# Every well should plot, and if no data is found, display a black marker and Result = No Data when hovering.
+nodata_df = pd.DataFrame(
+    {
+        "staid": pc.STATION_LIST,
+        "datetime": ["1970-01-01 00:00:00" for _ in pc.STATION_LIST],
+        "ResultMeasureValue": [float("NaN") for _ in pc.STATION_LIST],
+        # "USGSPCode": [param for _ in pc.STATION_LIST],
+        "Result": ["No Data" for _ in pc.STATION_LIST],
+    }
+)
+nodata_df_staids = pd.merge(nodata_df, staid_coords, on="staid", how="left")
+nodata_df_staids = nodata_df_staids.loc[
+    :,
+    ["staid", "datetime", "Result", "ResultMeasureValue", "dec_lat_va", "dec_long_va"],
+]
+nodata_df_staids = nodata_df_staids.rename(
+    columns={
+        "staid": "Station ID",
+        "dec_lat_va": "Latitude",
+        "dec_long_va": "Longitude",
+        "datetime": "Sample Date",
+    }
+)
 
 navbar = html.Div(
     [
         html.Div(
-            html.Div("USGS"),
+            # html.Div("USGS"),
+            html.Img(src=app.get_asset_url('usgs-logo.png')),
             className="navbar-brand-container",
         ),
+        # html.Img(src=app.get_asset_url('jh-airport-logo.svg')),
         html.Div(
             html.Div("Jackson Hole Airport"),
             className="navbar-JHA-container",
         ),
-        html.Div(
-            html.Ul(
-                # [html.Li(dbc.NavLink("Item 1")), html.Li(dbc.NavLink("Item 2"))],
-                className="navlink-list",
-            ),
-            className="navbar-link-container",
-        ),
-    ],
-    className="navbar-container",
-)
-
-sidebar_select = html.Aside(
-    [
-        # html.Div(
-        #     [
-        #         html.P("Data Access Level"),
-        #         dcc.Dropdown(
-        #             id="access_dropdown",
-        #             value="0",
-        #             options=pc.access_level_codes,
-        #             persistence=True,
-        #         ),
-        #     ],
-        #     className="data-access-container",
-        # ),
-        html.Div(
-            [
-                html.P("Station ID: "),
-                dcc.Dropdown(
-                    id="station_ID",
-                    # value=DEFAULT_STAID,
-                    options=pc.STATION_LIST,
-                    persistence=False,
-                    multi=True,
-                ),
-            ],
-            className="sidebar-sub-container",
-            id="station-select-container",
-        ),
-        html.Div(
-            [
-                html.P("Select Date Range"),
-                dcc.DatePickerRange(
-                    id="date_range",
-                    start_date=datetime.now().date() - timedelta(days=1460),
-                    end_date=datetime.now().date(),
-                    initial_visible_month=datetime.now(),
-                    persistence=True,
-                    style={
-                        "color": "#333",
-                    },
-                ),
-            ],
-            className="sidebar-sub-container",
-            id="daterange-container",
-        ),
-        html.Div(
-            [
-                "Time plot and map view parameter: ",
-                dcc.Dropdown(
-                    id="param_select",
-                    options=available_param_dict,
-                    value=DEFAULT_PCODE,
-                    persistence=True,
-                ),
-            ],
-            className="sidebar-sub-container",
-            id="select-time-param-container",
-            # style={"width": "49%", "display": "inline-block"},
-        ),
-        html.Div(
-            [
-                "Scatter X parameter: ",
-                dcc.Dropdown(
-                    id="param_select_X",
-                    options=available_param_dict,
-                    value=DEFAULT_PCODE,
-                ),
-            ],
-            className="sidebar-sub-container",
-            id="select-x-container",
-        ),
-        html.Div(
-            [
-                "Scatter Y parameter: ",
-                dcc.Dropdown(
-                    id="param_select_Y",
-                    options=available_param_dict,
-                    value=DEFAULT_PCODE,
-                ),
-            ],
-            className="sidebar-sub-container",
-            id="select-y-container",
-        ),
-        # Download button/modal section
         html.Div(
             [
                 dbc.Button("Download", color="primary", id="download-button", n_clicks=0),
@@ -203,67 +156,170 @@ sidebar_select = html.Aside(
             ],
             className="sidebar-download-container",
             id="download-button-container",
-        )
-        # dcc.Graph(id="sidebar-location-map", figure=create_map()),
+        ),
+    ],
+    className="navbar-container",
+)
+
+sidebar_select = html.Aside(
+    [
+        html.Div(
+            [
+                html.H1("Station ID"),
+                dcc.Checklist(["All"], ["All"], id="all-checklist", inline=True),
+                dcc.Checklist(
+                    id="station-checklist",
+                    options=pc.STATION_LIST,
+                    persistence=False,
+                ),
+            ],
+            className="sidebar-sub-container",
+            id="station-select-container",
+        ),
+        html.Div(
+            [
+                html.H1("Select Date Range"),
+                dcc.DatePickerRange(
+                    id="date_range",
+                    start_date=datetime.now().date() - timedelta(days=1460),
+                    end_date=datetime.now().date(),
+                    initial_visible_month=datetime.now(),
+                    persistence=True,
+                    style={
+                        "color": "#333",
+                    },
+                ),
+            ],
+            className="sidebar-sub-container",
+            id="daterange-container",
+        ),
+        # Map
+        html.Div(
+            [
+                html.H2("Location Map"),
+                html.P(id="graph-text"),
+                html.P(id="graph-text-param", style={"font-weight": "bold", "text-align": "center"}),
+                html.Div(id="map-tab-graph", className="map-view-container"),
+            ],
+            id="sidebar-map-container",
+            className="sidebar-sub-container",
+        ),
     ],
     className="sidebar-container",
 )
 
-scatter_time_container = html.Div(
-    [
-        dcc.Graph(id="scatter_plot", className="scatter-plot"),
-    ],
-    className="scatter-time-container",
-)
+# scatter_time_container = html.Div(
+#     [
+#         html.H1("Time-Series Plot"),
+#         dcc.Graph(id="scatter_plot"),
+#     ],
+#     className="scatter-time-container",
+# )
 
-scatter_params_container = html.Div(
-    [
-        dcc.Graph(id="plot_X_vs_Y"),
-    ],
-    className="scatter-params-container",
-)
+# scatter_params_container = html.Div(
+#     [
+#         html.H1("Comparative Plot"),
+#         dcc.Graph(id="plot_X_vs_Y"),
+#     ],
+#     className="scatter-params-container",
+# )
 
-# expand on this for map view tab
-map_view = html.Div(id="map-tab-graph", className="map-view-container")
-
-tabs = dcc.Tabs(
-    [
-        dcc.Tab(  # located in tabpanel tab-1 aka "Map view"
-            map_view,
-            label="Map view",
-        ),
-        dcc.Tab(  # located in tabpanel tab-0 aka "Graph view"
-            [
-                scatter_time_container,
-                scatter_params_container,
-            ],
-            label="Graph view",
-            className="tab0-graph-view",
-        ),
-    ],
-    # id="tabs-main-container",  # dash appends -parent to this ID and creates a parent to hold tabs-main-container child
-    # parent_className="tabs-tab-container",  # Contains tabs and tab content
-    className="tabs-container",  # container for Tabs buttons only
-    # tabs-content Div container created by dbc.Tabs and holds the dbc.Tab objects
-)
 
 application = app.server  # Important for debugging and using Flask!
 
 app.layout = html.Div(
     [
-        dcc.Store(id="memory-time-plot", storage_type="memory"),
-        dcc.Store(id="memory-scatter-plot", storage_type="memory"),
+        dcc.Store(id="memory-time-plot", storage_type="memory"),  # Holds plotting data for map
+        dcc.Store(id="memory-time-plot-no-data", storage_type="memory"),  # Holds plotting data for map if no data found
+        dcc.Store(id="memory-scatter-plot", storage_type="memory"),  # Holds scatter plot x-y data
         html.Div(
             [
                 dcc.Location(id="url"),
                 navbar,
-                sidebar_select,
-                html.Main(
-                    html.Div(
-                        tabs,
-                        className="tabs-content-container",
-                    ),
-                    className="main-content-container",
+                html.Div(
+                    [
+                        sidebar_select,
+                        html.Main(
+                            [
+                                html.Div(
+                                    [
+                                        html.Div(
+                                            [
+                                                html.H1("Parameter of interest"),
+                                                html.Div(
+                                                    [
+                                                        dcc.Dropdown(
+                                                            id="param_select",
+                                                            options=available_param_dict,
+                                                            value=DEFAULT_PCODE,
+                                                            persistence=True,
+                                                        ),
+                                                    ],
+                                                    id="main-parameter-dropdown",
+                                                ),
+                                                html.Div(
+                                                    [
+                                                        html.H2("Time-Series Plot"),
+                                                        dcc.Graph(id="scatter_plot", className="scatter-plot"),
+                                                    ],
+                                                    className="plots-wrapper",
+                                                ),
+                                                html.Div(
+                                                    [
+                                                        html.H2(id="data-table-text"),
+                                                        dash_table.DataTable(
+                                                            id="summary-table",
+                                                        ),
+                                                    ],
+                                                    className="table-container",
+                                                ),
+                                            ],
+                                            className="tile-container",
+                                        ),
+                                        html.Div(
+                                            [
+                                                html.H1("Comparative Plot"),
+                                                html.Div(
+                                                    [
+                                                        html.Div(
+                                                            [
+                                                                html.H2("Scatter X parameter"),
+                                                                dcc.Dropdown(
+                                                                    id="param_select_X",
+                                                                    options=available_param_dict,
+                                                                    value=DEFAULT_PCODE,
+                                                                ),
+                                                            ],
+                                                            className="main-content-dropdown",
+                                                            id="select-x-container",
+                                                        ),
+                                                        html.Div(
+                                                            [
+                                                                html.H2("Scatter Y parameter"),
+                                                                dcc.Dropdown(
+                                                                    id="param_select_Y",
+                                                                    options=available_param_dict,
+                                                                    value=DEFAULT_PCODE,
+                                                                ),
+                                                            ],
+                                                            className="main-content-dropdown",
+                                                            id="select-y-container",
+                                                        ),
+                                                        dcc.Graph(id="plot_X_vs_Y"),
+                                                    ],
+                                                    className="plots-wrapper",
+                                                ),
+                                            ],
+                                            className="tile-container",
+                                        ),
+                                    ],
+                                    className="main-content-container",
+                                ),
+                            ],
+                            className="main-body-container",
+                        ),
+                    ],
+                    className="body-container",
                 ),
             ],
             className="page-container",
@@ -271,6 +327,68 @@ app.layout = html.Div(
     ],
     className="root",
 )
+
+
+@app.callback(
+    [
+        Output("summary-table", "data"),
+        Output("data-table-text", "children"),
+    ],
+    [
+        Input("memory-time-plot", "data"),
+    ],
+)
+def summarize_data(mem_data) -> tuple:
+    """Summarizes selected data into descriptive table
+
+    Parameters
+    ----------
+    mem_data : _type_
+        memory data input from Dash
+
+    Returns
+    -------
+    tuple
+        Tuple of summary data to be placed in Dash table and summary text
+    """
+    mem_df = pd.read_json(mem_data)
+    group_staid = mem_df.groupby(["staid"])
+    total_samples = group_staid["dec_lat_va"].count()
+    total_samples = total_samples.rename("Sample Count")
+
+    non_detects = group_staid["ResultDetectionConditionText"].count()
+    non_detects = non_detects.rename("Not Detected")
+
+    table_median = group_staid["ResultMeasureValue"].median().round(3)
+    table_median = table_median.rename("Median Value")
+
+    last_sample = group_staid["ActivityStartDate"].max()
+    last_sample = last_sample.rename("Last Sample")
+
+    first_sample = group_staid["ActivityStartDate"].min()
+    first_sample = first_sample.rename("First Sample")
+
+    my_data = pd.concat([total_samples, non_detects, table_median, first_sample, last_sample], axis=1)
+
+    my_data["Station ID"] = my_data.index
+    my_data = my_data[["Station ID", "Last Sample", "First Sample", "Sample Count", "Not Detected", "Median Value"]]
+    return my_data.to_dict("records"), "Summary Table"
+
+
+@app.callback(
+    Output("station-checklist", "value"),
+    Output("all-checklist", "value"),
+    Input("station-checklist", "value"),
+    Input("all-checklist", "value"),
+)
+def sync_checklists(staids_selected, all_selected):
+    ctx = callback_context
+    input_id = ctx.triggered[0]["prop_id"].split(".")[0]
+    if input_id == "station-checklist":
+        all_selected = ["Select All"] if set(staids_selected) == set(pc.STATION_LIST) else []
+    else:
+        staids_selected = pc.STATION_LIST if all_selected else []
+    return staids_selected, all_selected
 
 
 @app.callback(
@@ -294,8 +412,7 @@ def toggle_modal(n1, n2, is_open):
 @app.callback(
     Output("memory-time-plot", "data"),
     [
-        # Input("staid_coords", "data"),
-        Input("station_ID", "value"),
+        Input("station-checklist", "value"),
         Input("date_range", "start_date"),
         Input("date_range", "end_date"),
         Input("param_select", "value"),
@@ -313,15 +430,17 @@ def filter_timeplot_data(staid, start_date, end_date, param):
 
     # mask = ((ALL_DATA["staid"].isin([staid])) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date) | (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y))
     filtered_all_data = ALL_DATA.loc[staid_date_mask & pcode_mask]
-    # x_data = ALL_DATA.loc[:, ["staid", "datetime", "ResultMeasureValue", "USGSPCode"]]
-
+    # x_data = filtered_all_data.loc[:, ["staid", "datetime", "ResultMeasureValue", "USGSPCode"]]
     return filtered_all_data.to_json()
 
 
 @app.callback(
-    Output("memory-scatter-plot", "data"),
     [
-        Input("station_ID", "value"),
+        Output("memory-scatter-plot", "data"),
+        Output("memory-time-plot-no-data", "data"),
+    ],
+    [
+        Input("station-checklist", "value"),
         Input("date_range", "start_date"),
         Input("date_range", "end_date"),
         Input("param_select_X", "value"),
@@ -341,145 +460,139 @@ def filter_scatter_data(staid, start_date, end_date, param_x, param_y):
     filtered = ALL_DATA.loc[staid_date_mask & pcode_mask]
     # filtered = ALL_DATA.loc[(ALL_DATA["staid"].isin([staid])) & (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y)]
     # (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date) &
-    return filtered.to_json()
-
-
-# @app.callback(Output('memory-table', 'data'),
-#               Input('memory-output', 'data'))
-# def on_data_set_table(data):
-#     if data is None:
-#         raise PreventUpdate
-
-#     return data
-
-
-# @app.callback(
-#     Output("memory_data", "data"),
-#     [
-#         Input("staid_coords", "data"),
-#         Input("date_range", "start_date"),
-#         Input("date_range", "end_date"),
-#         Input("access_dropdown", "value"),
-#     ],
-# )
-# def get_qwp_data(coord_data, start, end):
-#     staids = process_coords(coord_data=coord_data)
-#     response = requests.post(url="https://www.waterqualitydata.us/data/Result/search?", data={"siteid": [staids], "startDateLo": start, "startDateHi": end, "service": "results"})
-#     decode_response = io.StringIO(response.content.decode("utf-8"))
-
-#     dataframe = pd.read_csv(decode_response)
-#     dataframe["STAID"] = dataframe["STAID"].astype(str)
-#     return dataframe.to_json()
-# coords["STAID"] = coords["STAID"].astype(str)
-# df2 = df.copy()
-# dataframe = pd.merge(dataframe, coords, on="STAID", how="left")
+    if staid is None:
+        return filtered.to_json(), nodata_df_staids.to_json()
+    return filtered.to_json(), nodata_df_staids.loc[nodata_df_staids["Station ID"].isin(staid)].to_json()
 
 
 @app.callback(
-    Output("map-tab-graph", "children"),
+    [
+        Output("map-tab-graph", "children"),
+        Output("graph-text", "children"),
+        Output("graph-text-param", "children"),
+    ],
     [
         Input("memory-time-plot", "data"),
+        Input("memory-time-plot-no-data", "data"),
         Input("param_select", "value"),
         Input("date_range", "end_date"),
     ],
 )
-def map_view_map(mem_data, param, end_date):
+def map_view_map(mem_data, no_data, param, end_date):
     # This is technically a secret, but anyone can request this from mapbox so I'm not concerened about it.
     MAPBOX_ACCESS_TOKEN = "pk.eyJ1Ijoic2xlZXB5Y2F0IiwiYSI6ImNsOXhiZng3cDA4cmkzdnFhOWhxdDEwOHQifQ.SU3dYPdC5aFVgOJWGzjq2w"
-    if mem_data is None:
-        raise PreventUpdate
     mem_df = pd.read_json(mem_data)
-    # mem_df = mem_df.astype({"staid": str, "dec_lat_va": float, "dec_long_va": float, "datetime": str})
+    no_data = pd.read_json(no_data)
     mem_df.rename(
         columns={
             "staid": "Station ID",
             "dec_lat_va": "Latitude",
             "dec_long_va": "Longitude",
-            # "datetime": "Sample Date",
             "ValueAndUnits": "Result",
         },
         inplace=True,
     )
     mem_df = mem_df[["Station ID", "datetime", "Result", "Latitude", "Longitude", "ResultMeasureValue", "ResultMeasure/MeasureUnitCode"]]
-    begin_sampling_date = mem_df["datetime"].max() - pd.to_timedelta(30, "days")
-    if begin_sampling_date is not pd.NaT:
-        date_filtered_mem_df = mem_df.loc[mem_df["datetime"] >= begin_sampling_date].copy()
-    else:
-        date_filtered_mem_df = mem_df.copy()
-    date_filtered_mem_df["Sample Date"] = date_filtered_mem_df["datetime"].astype(str)
+
+    #  Only plot the most recent data on the map.  Since sampling may not occur on the same day,
+    #  select the previous 30 days of data to plot.  This should yield 1 point for each well to plot if data is available.
+
+    temp_df = mem_df.groupby("Station ID")["datetime"].max()
+    date_filtered_mem_df = mem_df.loc[mem_df["datetime"].isin(list(temp_df.values))]
+
+    # begin_sampling_date = mem_df["datetime"].max() - pd.to_timedelta(30, "days")
+    # if begin_sampling_date is not pd.NaT:
+    #     date_filtered_mem_df = mem_df.loc[mem_df["datetime"] >= begin_sampling_date].copy()
+    # else:
+    #     date_filtered_mem_df = mem_df.copy()
+
+    date_filtered_mem_df["Sample Date"] = date_filtered_mem_df["datetime"].astype(str).copy()
+
+    # Debugging helper lines.
     # date_filtered_mem_df[["Station ID", "Sample Date", "Result", "Latitude", "Longitude", "ResultMeasureValue", "ResultMeasure/MeasureUnitCode"]]
     # mem_df = mem_df[["Station ID", "Sample Date", "Result", "Latitude", "Longitude", "ResultMeasureValue", "ResultMeasure/MeasureUnitCode"]]
-    # fig = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
-    fig = go.Figure(
-        data=px.scatter_mapbox(
-            date_filtered_mem_df,
-            lat="Latitude",
-            lon="Longitude",
-            color="ResultMeasureValue",
-            color_continuous_scale=px.colors.sequential.Sunset,
-            hover_name="Station ID",
-            hover_data={"Result": True, "Sample Date": True, "Latitude": True, "Longitude": True, "ResultMeasureValue": False},
-            mapbox_style="streets",
-        ),
-        # layout={"legend": go.layout.Legend(title="git sum")},
+
+    fig1 = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
+
+    # Create figure 1 plot
+    fig1 = px.scatter_mapbox(
+        no_data,
+        lat="Latitude",
+        lon="Longitude",
+        color="ResultMeasureValue",
+        color_continuous_scale=px.colors.sequential.Sunset,
+        hover_name="Station ID",
+        hover_data={"Result": True, "Sample Date": True, "Latitude": True, "Longitude": True, "ResultMeasureValue": False},
+        mapbox_style="streets",
     )
-    fig.update_traces(
-        marker={"size": 12},
+
+    # Create figure 2 plot
+    fig2 = px.scatter_mapbox(
+        date_filtered_mem_df,
+        lat="Latitude",
+        lon="Longitude",
+        color="ResultMeasureValue",
+        color_continuous_scale=px.colors.sequential.Sunset,
+        hover_name="Station ID",
+        hover_data={"Result": True, "Sample Date": True, "Latitude": True, "Longitude": True, "ResultMeasureValue": False},
+        mapbox_style="streets",
     )
-    # mem_df = mem_df.astype({"STAID": str, "Latitude": str, "Longitude": str, "Datetime": str})
+
+    fig1.add_trace(fig2.data[0])  # Overlay real data over No data plot
+
+    # Update marker sizes
+    fig1.update_traces(marker={"size": 12})
+    fig2.update_traces(marker={"size": 11})
+
+    # Color bar Title, if not available, display nothing, else display units
     if len(date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].array) == 0 or date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].loc[~date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].isnull()].empty:  #  or bool(date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].isnull().array[0])
         color_bar_title = ""
     else:
         color_bar_title = date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].loc[~date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].isnull()].array[0]
-    fig.update_layout(
-        # coloraxis_showscale=False,
-        # overwrite=True,
+
+    fig1.update_layout(
         autosize=True,
-        title=f"Most recent values before {end_date} for {available_param_dict.get(param)}",
+        # title=f"{available_param_dict.get(param)}",
         coloraxis_colorbar=dict(
             title=color_bar_title,
         ),
-        # legend=dict(title="mouse mouse"),
-        # legend=go.layout.Legend(title="git sum"),
-        # legend_title_text="git sum",
         hovermode="closest",
-        margin=dict(l=10, r=10, t=50, b=10),
+        margin=dict(l=5, r=5, t=5, b=5),
         mapbox=dict(
             accesstoken=MAPBOX_ACCESS_TOKEN,
             bearing=0,
             center=dict(
-                lat=43.608685,
-                lon=-110.736564,
+                lat=43.61,
+                lon=-110.737,
             ),
             pitch=0,
-            zoom=13.25,
+            zoom=14,
         ),
     )
 
-    return dcc.Graph(id="location-map", figure=fig, className="THEGRAPH", responsive=True)  # style={"width": "60vw", "height": "70vh"}
+    return (
+        dcc.Graph(id="location-map", figure=fig1, className="THEGRAPH", responsive=True),
+        f"Most recent values before {end_date} for:",
+        f"{available_param_dict.get(param)}",
+    )
 
 
 @app.callback(
     Output("scatter_plot", "figure"),
     [
         Input("memory-time-plot", "data"),
-        # Input("station_ID", "value"),
         Input("param_select", "value"),
     ],
 )
-def plot_parameter(mem_data, param):  # , stations: List, param: str, sample_code: int = 9
+def plot_parameter(mem_data, param):
     """Plots parameter as a function of time.
 
     Parameters
     ----------
     data : JSON
         JSON object from memory-output cache
-    stations : List
-        List of STAIDS from station_ID multi-dropdown
     param : str
         Parameter code, e.g. p00400 from param_select dropdown
-    sample_code : int, optional
-        Sample code to filter data set, by default 9
 
     Returns
     -------
@@ -489,6 +602,7 @@ def plot_parameter(mem_data, param):  # , stations: List, param: str, sample_cod
         raise PreventUpdate
     mem_df = pd.read_json(mem_data)
     mem_df["datetime"] = pd.to_datetime(mem_df["datetime"], format="%Y-%m-%d %H:%M")
+    mem_df = mem_df.dropna(subset=["ResultMeasureValue"])
 
     fig = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
     fig = px.scatter(
@@ -496,20 +610,17 @@ def plot_parameter(mem_data, param):  # , stations: List, param: str, sample_cod
         x="datetime",
         y="ResultMeasureValue",
         color="staid",
-        # hover_name="STAID",
-        # hover_data=["STAID", "Datetime", param],
         hover_data=dict(
             staid=True,
             datetime=True,
-            # sample_dt=False,
         ),
     )
 
     fig.update_layout(
-        margin=dict(l=10, r=10, t=50, b=10),
-        title="",
-        xaxis_title="Date",
-        yaxis_title=available_param_dict.get(param),  # mem_df["USGSPCode"].iloc[0]
+        margin=dict(l=5, r=5, t=5, b=5),
+        # title="Time-Series Plot",
+        xaxis_title="Sample Date",
+        yaxis_title=available_param_dict.get(param),
     )
     return fig
 
@@ -530,6 +641,7 @@ def x_vs_y(mem_data, param_x: str, param_y: str):
     y_data = mem_df.loc[mem_df["USGSPCode"] == param_y]
     # y_data = y_data.loc[:,["staid", "datetime", "ResultMeasureValue", "USGSPCode"]]  # Can take out later, just helping debug now.
     combined = pd.merge(x_data, y_data, on="datetime")
+    combined = combined.dropna(subset=["ResultMeasureValue_x", "ResultMeasureValue_y"])
     combined.rename(columns={"staid_x": "staid"}, inplace=True)
     combined_x = combined["ResultMeasureValue_x"].array
     combined_y = combined["ResultMeasureValue_y"].array
@@ -559,7 +671,8 @@ def x_vs_y(mem_data, param_x: str, param_y: str):
         y_title = utils.title_wrapper(y_title)
 
     fig.update_layout(
-        # title=f"Station: {station}",
+        # title="Comparative Parameter Plot",
+        margin=dict(l=5, r=5, t=5, b=5),
         title_x=0.5,
         xaxis_title=x_title,
         yaxis_title=y_title,
@@ -579,5 +692,46 @@ def x_vs_y(mem_data, param_x: str, param_y: str):
 
 
 if __name__ == "__main__":
-    # app.run_server()
     app.run_server(debug=True)
+
+
+# 43,36,42.6,-110,44,14.0
+# 43,36,14.55,-110,44,2.31
+# 43,36,04.2,-110,44,33.5
+# 43,36,04.25,-110,44,33.58
+# 43,36,04.2,-110,44,33.5
+# 43,35,50.69,-110,44,37.54
+# 43,35,59.8,-110,44,37.5
+# 43,36,2.92,-110,44,37.31
+# 43,36,2.65,-110,44,37.45
+# 43,36,04.97,-110,44,37.57
+# 43,36,12.48,-110,44,37.70
+# 43,35,55.94,-110,44,18.76
+# 43,36,29.45,-110,44,30.02
+# 43,36,3.36,-110,44,12.81
+# 43,36,5.64,-110,44,7.94
+# 43,36,4.93,-110,44,14.51
+# 43,36,2.01,-110,44,14.50
+# 43,35,57.57,-110,44,17.43
+# 43,36,06.4,-110,44,11.94
+
+# 43.611833333,-110.737222222
+# 43.604041667,-110.733975
+# 43.601166667,-110.742638889
+# 43.601180556,-110.742661111
+# 43.601166667,-110.742638889
+# 43.597413889,-110.743761111
+# 43.599944444,-110.74375
+# 43.600811111,-110.743697222
+# 43.600736111,-110.743736111
+# 43.601380556,-110.743769444
+# 43.603466667,-110.743805556
+# 43.598872222,-110.738544444
+# 43.608180556,-110.741672222
+# 43.600933333,-110.736891667
+# 43.601566667,-110.735538889
+# 43.601369444,-110.737363889
+# 43.600558333,-110.737361111
+# 43.599325,-110.738175
+# 43.601777778,-110.73665
+# °
