@@ -1,20 +1,17 @@
-import dash
-from dash import html, dcc, Input, Output, State, dash_table, callback_context
-from dash.exceptions import PreventUpdate
-import dash_bootstrap_components as dbc
-import dataretrieval.nwis as nwis
-
-import utils.qwpretreival as qwp
-import utils.param_codes as pc
-import plotly.graph_objects as go
-import plotly.express as px
-import pandas as pd
-from utils import utils
-import requests
 import io
-from datetime import date, datetime, timedelta
-from typing import List
 from array import array
+from datetime import datetime, timedelta
+
+import dash_bootstrap_components as dbc
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import requests
+from dash import Input, Output, State, callback_context, dash, dash_table, dcc, html
+from dash.exceptions import PreventUpdate
+
+import utils.param_codes as pc
+from utils import utils
 
 # Initialize App
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])  # Include __name__, serves as reference for finding .css files.
@@ -123,7 +120,7 @@ navbar = html.Div(
     [
         html.Div(
             # html.Div("USGS"),
-            html.Img(src=app.get_asset_url('usgs-logo.png')),
+            html.Img(src=app.get_asset_url("usgs-logo.png")),
             className="navbar-brand-container",
         ),
         # html.Img(src=app.get_asset_url('jh-airport-logo.svg')),
