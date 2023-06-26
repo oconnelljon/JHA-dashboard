@@ -1,27 +1,27 @@
 STATION_LIST = [
     "USGS-433551110443501",
-    # "USGS-433556110441501",  # GH only, no QW
-    # "USGS-433556110441601",  # GH only, no QW
+    "USGS-433556110441501",  # GH only, no QW
+    "USGS-433556110441601",  # GH only, no QW
     "USGS-433558110441501",
     "USGS-433600110443701",
-    # "USGS-433602110441201",  # GH only, no QW
+    "USGS-433602110441201",  # GH only, no QW
     "USGS-433603110443501",
     "USGS-433603110443502",
-    # "USGS-433604110441001",  # GH only, no QW
+    "USGS-433604110441001",  # GH only, no QW
     "USGS-433604110443401",
     "USGS-433604110443402",
     "USGS-433604110443403",
-    # "USGS-433605110441201",  # GH only, no QW
+    "USGS-433605110441201",  # GH only, no QW
     "USGS-433605110443801",
-    # "USGS-433606110440501",  # GH only, no QW
-    # "USGS-433607110440901",  # GH only, no QW
+    "USGS-433606110440501",  # GH only, no QW
+    "USGS-433607110440901",  # GH only, no QW
     "USGS-433613110443501",
     "USGS-433615110440001",
-    # "USGS-433630110442701",  # GH only, no QW
+    "USGS-433630110442701",  # GH only, no QW
     "USGS-433641110441501",
 ]
 
-smcl = {
+SMCL_DICT = {
     "Aluminum": 0.2,  # mg/L
     "Chloride": 250,  # mg/L
     "Color": 15,  # color units
