@@ -19,18 +19,23 @@ app.title = "JHA-USGS Dashboard"
 
 # Set defaults, load local data
 DEFAULT_PCODE = "p00400"
-DEFAULT_STAID = "USGS-433615110440001"
+# DEFAULT_STAID = "USGS-433615110440001"
 default_start_date = pd.Timestamp.today().strftime("%m-%d-%Y")
 
-staid_coords = pd.read_csv("src/data/JHA_STAID_INFO.csv")
-staid_coords["staid"] = "USGS-" + staid_coords["staid"].astype(str)  # Need to concat "USGS-" to the start of the staid for qwp query
-staid_list = staid_coords["staid"].to_list()
+
+# staid_meta_data = utils.get_meta_data(pc.STATION_LIST)  # pd.read_csv("src/data/JHA_STAID_INFO.csv")
+staid_meta_data = pd.read_csv("src/data/JHA_STAID_METADATA.csv")
+STAID_LIST = list(staid_meta_data["staid"])
+STATION_NMs = list(staid_meta_data["station_nm"])
+STATION_NMs.sort()
+# staid_coords["staid"] = "USGS-" + staid_coords["staid"].astype(str)  # Need to concat "USGS-" to the start of the staid for qwp query
+# staid_list = staid_coords["staid"].to_list()
 
 # Query QWP for data
 response = requests.post(
     url="https://www.waterqualitydata.us/data/Result/search?",
     data={
-        "siteid": [staid_list],
+        "siteid": [STAID_LIST],
         "startDateLo": "01-01-2020",
         "startDateHi": default_start_date,
         "service": "results",
@@ -66,7 +71,7 @@ available_param_dict = dict(zip(available_parameters["USGSPCode"], available_par
 available_param_labels = [{"label": label, "value": pcode} for label, pcode in zip(available_parameters["param_label"], available_parameters["USGSPCode"])]
 # This is all the available data for all the stations.  Hopefully.
 # Query all data at the start of the App, then sort intermediates to pass to Callbacks
-ALL_DATA = pd.merge(dataframe, staid_coords, on="staid", how="left")
+ALL_DATA = pd.merge(dataframe, staid_meta_data, on="staid", how="left")
 ALL_DATA.sort_values(by="datetime", ascending=True, inplace=True)
 ALL_DATA = ALL_DATA.loc[
     :,
@@ -74,6 +79,7 @@ ALL_DATA = ALL_DATA.loc[
         "ActivityStartDate",
         "ActivityStartTime/Time",
         "staid",
+        "station_nm",
         "ResultDetectionConditionText",
         "CharacteristicName",
         "ResultSampleFractionText",
@@ -95,20 +101,21 @@ ALL_DATA = ALL_DATA.loc[
 # Every well should plot, and if no data is found, display a black marker and Result = No Data when hovering.
 nodata_df = pd.DataFrame(
     {
-        "staid": pc.STATION_LIST,
-        "datetime": ["1970-01-01 00:00:00" for _ in pc.STATION_LIST],
-        "ResultMeasureValue": [float("NaN") for _ in pc.STATION_LIST],
+        "station_nm": STATION_NMs,
+        "datetime": ["1970-01-01 00:00:00" for _ in STATION_NMs],
+        "ResultMeasureValue": [float("NaN") for _ in STATION_NMs],
         # "USGSPCode": [param for _ in pc.STATION_LIST],
-        "Result": ["No Data" for _ in pc.STATION_LIST],
+        "Result": ["No Data" for _ in STATION_NMs],
     }
 )
-nodata_df_staids = pd.merge(nodata_df, staid_coords, on="staid", how="left")
+nodata_df_staids = pd.merge(nodata_df, staid_meta_data, on="station_nm", how="left")
 nodata_df_staids = nodata_df_staids.loc[
     :,
-    ["staid", "datetime", "Result", "ResultMeasureValue", "dec_lat_va", "dec_long_va"],
+    ["station_nm", "staid", "datetime", "Result", "ResultMeasureValue", "dec_lat_va", "dec_long_va"],
 ]
 nodata_df_staids = nodata_df_staids.rename(
     columns={
+        "station_nm": "Station Name",
         "staid": "Station ID",
         "dec_lat_va": "Latitude",
         "dec_long_va": "Longitude",
@@ -166,7 +173,7 @@ sidebar_select = html.Aside(
                 dcc.Checklist(["All"], ["All"], id="all-checklist", inline=True),
                 dcc.Checklist(
                     id="station-checklist",
-                    options=pc.STATION_LIST,
+                    options=STATION_NMs,
                     persistence=False,
                 ),
             ],
@@ -284,7 +291,7 @@ app.layout = html.Div(
                                                                 dcc.Dropdown(
                                                                     id="param_select_X",
                                                                     options=available_param_dict,
-                                                                    value=DEFAULT_PCODE,
+                                                                    value="p00400",
                                                                 ),
                                                             ],
                                                             className="main-content-dropdown",
@@ -296,7 +303,7 @@ app.layout = html.Div(
                                                                 dcc.Dropdown(
                                                                     id="param_select_Y",
                                                                     options=available_param_dict,
-                                                                    value=DEFAULT_PCODE,
+                                                                    value="p00300",
                                                                 ),
                                                             ],
                                                             className="main-content-dropdown",
@@ -350,6 +357,10 @@ def summarize_data(mem_data) -> tuple:
     """
     mem_df = pd.read_json(mem_data)
     group_staid = mem_df.groupby(["staid"])
+
+    station_nms = group_staid["station_nm"].first()
+    station_nms = station_nms.rename("Station Name")
+
     total_samples = group_staid["dec_lat_va"].count()
     total_samples = total_samples.rename("Sample Count")
 
@@ -365,10 +376,10 @@ def summarize_data(mem_data) -> tuple:
     first_sample = group_staid["ActivityStartDate"].min()
     first_sample = first_sample.rename("First Sample")
 
-    my_data = pd.concat([total_samples, non_detects, table_median, first_sample, last_sample], axis=1)
+    my_data = pd.concat([station_nms, total_samples, non_detects, table_median, first_sample, last_sample], axis=1)
 
     my_data["Station ID"] = my_data.index
-    my_data = my_data[["Station ID", "Last Sample", "First Sample", "Sample Count", "Not Detected", "Median Value"]]
+    my_data = my_data[["Station Name", "Station ID", "Last Sample", "First Sample", "Sample Count", "Not Detected", "Median Value"]]
     return my_data.to_dict("records"), "Summary Table"
 
 
@@ -382,9 +393,9 @@ def sync_checklists(staids_selected, all_selected):
     ctx = callback_context
     input_id = ctx.triggered[0]["prop_id"].split(".")[0]
     if input_id == "station-checklist":
-        all_selected = ["Select All"] if set(staids_selected) == set(pc.STATION_LIST) else []
+        all_selected = ["Select All"] if set(staids_selected) == set(STATION_NMs) else []
     else:
-        staids_selected = pc.STATION_LIST if all_selected else []
+        staids_selected = STATION_NMs if all_selected else []
     return staids_selected, all_selected
 
 
@@ -415,15 +426,15 @@ def toggle_modal(n1, n2, is_open):
         Input("param_select", "value"),
     ],
 )
-def filter_timeplot_data(staid, start_date, end_date, param):
+def filter_timeplot_data(station_nm, start_date, end_date, param):
     # .isin() method needs a list for querying properly.
-    if isinstance(staid, str):
-        staid = [staid]
-    if not staid:
-        staid = pc.STATION_LIST
+    if isinstance(station_nm, str):
+        station_nm = [station_nm]
+    # if not staid:
+    #     staid = pc.STATION_LIST
     # filtered = ALL_DATA.loc[(ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= str(end_date)) & (ALL_DATA["staid"].isin([staid])) & (ALL_DATA["USGSPCode"] == param)]
     pcode_mask = ALL_DATA["USGSPCode"] == param
-    staid_date_mask = (ALL_DATA["staid"].isin(staid)) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date)
+    staid_date_mask = (ALL_DATA["station_nm"].isin(station_nm)) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date)
 
     # mask = ((ALL_DATA["staid"].isin([staid])) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date) | (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y))
     filtered_all_data = ALL_DATA.loc[staid_date_mask & pcode_mask]
@@ -444,22 +455,22 @@ def filter_timeplot_data(staid, start_date, end_date, param):
         Input("param_select_Y", "value"),
     ],
 )
-def filter_scatter_data(staid, start_date, end_date, param_x, param_y):
+def filter_scatter_data(station_nm, start_date, end_date, param_x, param_y):
     # .isin() method needs a list for querying properly.
-    if isinstance(staid, str):
-        staid = [staid]
-    if not staid:
-        staid = pc.STATION_LIST
+    if isinstance(station_nm, str):
+        station_nm = [station_nm]
+    # if not staid:
+    #     staid = pc.STATION_LIST
     pcode_mask = (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y)
-    staid_date_mask = (ALL_DATA["staid"].isin(staid)) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date)
+    staid_date_mask = (ALL_DATA["station_nm"].isin(station_nm)) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date)
 
     # mask = ((ALL_DATA["staid"].isin([staid])) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date) | (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y))
     filtered = ALL_DATA.loc[staid_date_mask & pcode_mask]
     # filtered = ALL_DATA.loc[(ALL_DATA["staid"].isin([staid])) & (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y)]
     # (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date) &
-    if staid is None:
+    if station_nm is None:
         return filtered.to_json(), nodata_df_staids.to_json()
-    return filtered.to_json(), nodata_df_staids.loc[nodata_df_staids["Station ID"].isin(staid)].to_json()
+    return filtered.to_json(), nodata_df_staids.loc[nodata_df_staids["Station Name"].isin(station_nm)].to_json()
 
 
 @app.callback(
@@ -482,19 +493,19 @@ def map_view_map(mem_data, no_data, param, end_date):
     no_data = pd.read_json(no_data)
     mem_df.rename(
         columns={
-            "staid": "Station ID",
+            "station_nm": "Station Name",
             "dec_lat_va": "Latitude",
             "dec_long_va": "Longitude",
             "ValueAndUnits": "Result",
         },
         inplace=True,
     )
-    mem_df = mem_df[["Station ID", "datetime", "Result", "Latitude", "Longitude", "ResultMeasureValue", "ResultMeasure/MeasureUnitCode"]]
+    mem_df = mem_df[["Station Name", "datetime", "Result", "Latitude", "Longitude", "ResultMeasureValue", "ResultMeasure/MeasureUnitCode"]]
 
     #  Only plot the most recent data on the map.  Since sampling may not occur on the same day,
     #  select the previous 30 days of data to plot.  This should yield 1 point for each well to plot if data is available.
 
-    temp_df = mem_df.groupby("Station ID")["datetime"].max()
+    temp_df = mem_df.groupby("Station Name")["datetime"].max()
     date_filtered_mem_df = mem_df.loc[mem_df["datetime"].isin(list(temp_df.values))]
 
     # begin_sampling_date = mem_df["datetime"].max() - pd.to_timedelta(30, "days")
@@ -518,7 +529,7 @@ def map_view_map(mem_data, no_data, param, end_date):
         lon="Longitude",
         color="ResultMeasureValue",
         color_continuous_scale=px.colors.sequential.Sunset,
-        hover_name="Station ID",
+        hover_name="Station Name",
         hover_data={"Result": True, "Sample Date": True, "Latitude": True, "Longitude": True, "ResultMeasureValue": False},
         mapbox_style="streets",
     )
@@ -530,7 +541,7 @@ def map_view_map(mem_data, no_data, param, end_date):
         lon="Longitude",
         color="ResultMeasureValue",
         color_continuous_scale=px.colors.sequential.Sunset,
-        hover_name="Station ID",
+        hover_name="Station Name",
         hover_data={"Result": True, "Sample Date": True, "Latitude": True, "Longitude": True, "ResultMeasureValue": False},
         mapbox_style="streets",
     )
@@ -606,12 +617,18 @@ def plot_parameter(mem_data, param):
         mem_df,
         x="datetime",
         y="ResultMeasureValue",
-        color="staid",
+        color="station_nm",
         hover_data=dict(
-            staid=True,
+            station_nm=True,
             datetime=True,
         ),
     )
+
+    if smcl := pc.SMCL_DICT.get(mem_df["CharacteristicName"].unique()[0], False):
+        fig.add_hline(
+            y=smcl,
+            annotation_text=f"EPA SMCL: {smcl}",
+        )
 
     fig.update_layout(
         margin=dict(l=5, r=5, t=5, b=5),
@@ -640,9 +657,10 @@ def x_vs_y(mem_data, param_x: str, param_y: str):
     combined = pd.merge(x_data, y_data, on="datetime")
     combined = combined.dropna(subset=["ResultMeasureValue_x", "ResultMeasureValue_y"])
     combined.rename(columns={"staid_x": "staid"}, inplace=True)
+    combined.rename(columns={"station_nm_x": "station_nm"}, inplace=True)
     combined_x = combined["ResultMeasureValue_x"].array
     combined_y = combined["ResultMeasureValue_y"].array
-    combined_color = "staid"
+    combined_color = "station_nm"
     if combined.empty:
         combined_color = array("f", [1.0])
         combined_x = array("f", [float("NaN")])
