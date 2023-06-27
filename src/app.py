@@ -20,7 +20,9 @@ app.title = "JHA-USGS Dashboard"
 # Set defaults, load local data
 DEFAULT_PCODE = "p00400"
 # DEFAULT_STAID = "USGS-433615110440001"
-default_start_date = pd.Timestamp.today().strftime("%m-%d-%Y")
+default_start_date_lo = "01-01-2011"
+default_start_date_hi = "01-01-2020"
+# default_start_date = pd.Timestamp.today().strftime("%m-%d-%Y")
 
 
 # staid_meta_data = utils.get_meta_data(pc.STATION_LIST)  # pd.read_csv("src/data/JHA_STAID_INFO.csv")
@@ -36,8 +38,8 @@ response = requests.post(
     url="https://www.waterqualitydata.us/data/Result/search?",
     data={
         "siteid": [STAID_LIST],
-        "startDateLo": "01-01-2020",
-        "startDateHi": default_start_date,
+        "startDateLo": default_start_date_lo,
+        "startDateHi": default_start_date_hi,
         "service": "results",
     },
     headers={"user-agent": "python"},
@@ -265,6 +267,13 @@ app.layout = html.Div(
                                                     [
                                                         html.H2("Time-Series Plot"),
                                                         dcc.Graph(id="scatter_plot", className="scatter-plot"),
+                                                    ],
+                                                    className="plots-wrapper",
+                                                ),
+                                                html.Div(
+                                                    [
+                                                        html.H2("Box Plot"),
+                                                        dcc.Graph(id="Box-plot", className="Box-plot"),
                                                     ],
                                                     className="plots-wrapper",
                                                 ),
@@ -624,11 +633,14 @@ def plot_parameter(mem_data, param):
         ),
     )
 
-    if smcl := pc.SMCL_DICT.get(mem_df["CharacteristicName"].unique()[0], False):
-        fig.add_hline(
-            y=smcl,
-            annotation_text=f"EPA SMCL: {smcl}",
-        )
+    try:
+        if smcl := pc.SMCL_DICT.get(mem_df["CharacteristicName"].unique()[0], False):
+            fig.add_hline(
+                y=smcl,
+                annotation_text=f"EPA SMCL: {smcl}",
+            )
+    except IndexError:
+        print("Invalid index, no worries")
 
     fig.update_layout(
         margin=dict(l=5, r=5, t=5, b=5),
@@ -703,6 +715,42 @@ def x_vs_y(mem_data, param_x: str, param_y: str):
             scaleanchor="x",
             scaleratio=1,
         )
+    return fig
+
+
+@app.callback(
+    Output("Box-plot", "figure"),
+    [
+        Input("memory-time-plot", "data"),
+        Input("param_select", "value"),
+    ],
+)
+def box_plot(mem_data, param):
+    mem_df = pd.read_json(mem_data)
+    mem_df["datetime"] = pd.to_datetime(mem_df["datetime"], format="%Y-%m-%d %H:%M")
+    mem_df = mem_df.dropna(subset=["ResultMeasureValue"])
+
+    fig = px.box(mem_df, x="station_nm", y="ResultMeasureValue", color="station_nm")
+
+    fig.update_layout(
+        yaxis_title = str(available_param_dict.get(param))
+    )
+
+    # for staid in STATION_NMs:
+    #     min_staid_date = mem_df.loc[mem_df["station_nm"] == staid]["datetime"].min()
+    #     max_staid_date = mem_df.loc[mem_df["station_nm"] == staid]["datetime"].max()
+    #     mem_df.loc[mem_df["datetime"] == min_staid_date]["ResultMeasureValue"].values[0]
+
+
+    # fig = go.Figure(
+    #     data=[
+    #         # go.Scatter(x=mem_data["line_x"], y=mem_data["line_y"], mode="lines", showlegend=False, marker=dict(color="grey")),
+    #         go.Scatter(x=mem_data["earliest"], y=param, mode="markers", name="1952", marker=dict(color="green", size=10)),
+    #         go.Scatter(x=mem_data["latest"], y=param, mode="markers", name="2002", marker=dict(color="blue", size=10)),
+    #     ]
+    # )
+
+    # fig.update_layout(title="Life Expectancy in Europe: 1952 and 2002", height=1000, legend_itemclick=False)
     return fig
 
 
