@@ -105,6 +105,7 @@ p {
     display: flex;
     background-color: rgb(161, 161, 161);
     flex-grow: 1;
+    flex-shrink: 3;
     height: calc(100vh - 50px);
     padding-bottom: 1rem;
 }
@@ -112,7 +113,8 @@ p {
 .sidebar-container {
     display: flex;
     flex-direction: column;
-    flex-basis: 45rem;
+    flex-basis: 80rem;
+    flex-shrink: 1;
     align-items: flex-start;
     background-color: #f8f9fa;
     padding-top: 2px;
@@ -193,11 +195,17 @@ p {
 
 .tile-container {
     display: flex;
-    /* flex-grow: 1; */
+    flex-grow: 1;
     flex-wrap: wrap;
     gap: 0.5rem;
     background-color: #b2bdc9;
     border: 1px solid #3f3f3f78;
+}
+
+.plot-text {
+    background: #193b5d;
+    color: whitesmoke;
+    padding-left: 0.5rem;
 }
 
 #main-parameter-dropdown {

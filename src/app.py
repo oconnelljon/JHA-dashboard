@@ -125,6 +125,11 @@ nodata_df_staids = nodata_df_staids.rename(
     }
 )
 
+parameter_of_interest_text = "Select a parameter of interest to populate the Time-Series and Box plots.  Only selected stations and data within the time range are displayed."
+time_plot_text = "The Time-Series Plot shows the values for the Parameter of Interest for the selected stations across the selected time range."
+box_plot_text = "Box plots show the distribution of data for the entire selected time range."
+scatter_x_y_text = "The scatter plot displays data from the above drop down menues on their respective axis'. Only selected stations and data within the time range are displayed."
+
 navbar = html.Div(
     [
         html.Div(
@@ -259,6 +264,7 @@ app.layout = html.Div(
                                                             options=available_param_dict,
                                                             value=DEFAULT_PCODE,
                                                             persistence=True,
+                                                            clearable=False,
                                                         ),
                                                     ],
                                                     id="main-parameter-dropdown",
@@ -267,6 +273,10 @@ app.layout = html.Div(
                                                     [
                                                         html.H2("Time-Series Plot"),
                                                         dcc.Graph(id="scatter_plot", className="scatter-plot"),
+                                                        html.P(
+                                                            time_plot_text,
+                                                            className="plot-text",
+                                                        ),
                                                     ],
                                                     className="plots-wrapper",
                                                 ),
@@ -274,6 +284,10 @@ app.layout = html.Div(
                                                     [
                                                         html.H2("Box Plot"),
                                                         dcc.Graph(id="Box-plot", className="Box-plot"),
+                                                        html.P(
+                                                            box_plot_text,
+                                                            className="plot-text",
+                                                        ),
                                                     ],
                                                     className="plots-wrapper",
                                                 ),
@@ -282,6 +296,7 @@ app.layout = html.Div(
                                                         html.H2(id="data-table-text"),
                                                         dash_table.DataTable(
                                                             id="summary-table",
+                                                            sort_action="native",
                                                         ),
                                                     ],
                                                     className="table-container",
@@ -301,6 +316,7 @@ app.layout = html.Div(
                                                                     id="param_select_X",
                                                                     options=available_param_dict,
                                                                     value="p00400",
+                                                                    clearable=False,
                                                                 ),
                                                             ],
                                                             className="main-content-dropdown",
@@ -313,12 +329,17 @@ app.layout = html.Div(
                                                                     id="param_select_Y",
                                                                     options=available_param_dict,
                                                                     value="p00300",
+                                                                    clearable=False,
                                                                 ),
                                                             ],
                                                             className="main-content-dropdown",
                                                             id="select-y-container",
                                                         ),
                                                         dcc.Graph(id="plot_X_vs_Y"),
+                                                        html.P(
+                                                            scatter_x_y_text,
+                                                            className="plot-text",
+                                                        ),
                                                     ],
                                                     className="plots-wrapper",
                                                 ),
@@ -579,7 +600,7 @@ def map_view_map(mem_data, no_data, param, end_date):
             accesstoken=MAPBOX_ACCESS_TOKEN,
             bearing=0,
             center=dict(
-                lat=43.61,
+                lat=43.609,
                 lon=-110.737,
             ),
             pitch=0,
@@ -637,7 +658,12 @@ def plot_parameter(mem_data, param):
         if smcl := pc.SMCL_DICT.get(mem_df["CharacteristicName"].unique()[0], False):
             fig.add_hline(
                 y=smcl,
-                annotation_text=f"EPA SMCL: {smcl}",
+                annotation_text=f"EPA SDWR: {smcl}",
+            )
+        if param == "p00300":
+            fig.add_hline(
+                y=0.5,  # 0.5 mg/L is Anoxic
+                annotation_text="Anoxic: 0.5",
             )
     except IndexError:
         print("Invalid index, no worries")
@@ -689,6 +715,24 @@ def x_vs_y(mem_data, param_x: str, param_y: str):
         #     datetime=True,
         # ),
     )
+    try:
+        if smcl := pc.SMCL_DICT.get(mem_df["CharacteristicName"].unique()[0], False):
+            fig.add_hline(
+                y=smcl,
+                annotation_text=f"EPA SDWR: {smcl}",
+            )
+        if param_x == "p00300":
+            fig.add_vline(
+                x=0.5,  # 0.5 mg/L is Anoxic
+                annotation_text="Anoxic: 0.5",
+            )
+        if param_y == "p00300":
+            fig.add_hline(
+                y=0.5,  # 0.5 mg/L is Anoxic
+                annotation_text="Anoxic: 0.5",
+            )
+    except IndexError:
+        print("Invalid index, no worries")
 
     x_title = str(available_param_dict.get(param_x))
     y_title = str(available_param_dict.get(param_y))
@@ -729,18 +773,32 @@ def box_plot(mem_data, param):
     mem_df = pd.read_json(mem_data)
     mem_df["datetime"] = pd.to_datetime(mem_df["datetime"], format="%Y-%m-%d %H:%M")
     mem_df = mem_df.dropna(subset=["ResultMeasureValue"])
-
-    fig = px.box(mem_df, x="station_nm", y="ResultMeasureValue", color="station_nm")
-
-    fig.update_layout(
-        yaxis_title = str(available_param_dict.get(param))
+    mem_df = mem_df.rename(
+        columns={
+            "station_nm": "Station Name",
+        },
     )
+    fig = px.box(mem_df, x="Station Name", y="ResultMeasureValue", color="Station Name")
 
+    fig.update_layout(yaxis_title=str(available_param_dict.get(param)))
+    
+    try:
+        if smcl := pc.SMCL_DICT.get(mem_df["CharacteristicName"].unique()[0], False):
+            fig.add_hline(
+                y=smcl,
+                annotation_text=f"EPA SDWR: {smcl}",
+            )
+        if param == "p00300":
+            fig.add_hline(
+                y=0.5,  # 0.5 mg/L is Anoxic
+                annotation_text="Anoxic: 0.5",
+            )
+    except IndexError:
+        print("Invalid index, no worries")
     # for staid in STATION_NMs:
     #     min_staid_date = mem_df.loc[mem_df["station_nm"] == staid]["datetime"].min()
     #     max_staid_date = mem_df.loc[mem_df["station_nm"] == staid]["datetime"].max()
     #     mem_df.loc[mem_df["datetime"] == min_staid_date]["ResultMeasureValue"].values[0]
-
 
     # fig = go.Figure(
     #     data=[
