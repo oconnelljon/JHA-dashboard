@@ -29,6 +29,11 @@ html, body, .root, .page-container, #react-entry-point{
     margin: 0px;
 }
 
+input[type="checkbox"] {
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
 .sidebar-sub-container H2 {
     text-align: center;
 }
@@ -101,6 +106,7 @@ p {
     background-color: rgb(161, 161, 161);
     flex-grow: 1;
     height: calc(100vh - 50px);
+    padding-bottom: 1rem;
 }
 
 .sidebar-container {
@@ -187,7 +193,7 @@ p {
 
 .tile-container {
     display: flex;
-    flex-grow: 1;
+    /* flex-grow: 1; */
     flex-wrap: wrap;
     gap: 0.5rem;
     background-color: #b2bdc9;
@@ -201,7 +207,8 @@ p {
 }
 
 .table-container {
-    flex-grow: 1;
+    flex-basis: 100%;
+    /* flex-grow: 1; */
     padding: 4px;
 } 
 
@@ -209,3 +216,12 @@ p {
     flex-basis: 40rem;
     padding: 4px;
 }
+
+/* .tile-container > * {
+    flex: 1;
+    align-content: space-between;
+  } */
+
+/* .plots_wrapper{
+    margin-left: auto;
+} */
