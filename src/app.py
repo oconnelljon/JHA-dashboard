@@ -834,6 +834,9 @@ def plot_box(mem_data, param):
             )
     except IndexError:
         print("Invalid index, no worries")
+    fig.update_layout(
+        margin=dict(l=5, r=5, t=5, b=5),
+    )
     return fig
 
 
