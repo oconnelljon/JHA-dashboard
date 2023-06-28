@@ -146,7 +146,8 @@ parameter_of_interest_text = "Select a parameter of interest to populate the Tim
 time_plot_text = "The Time-Series Plot shows the values for the Parameter of Interest for the selected stations across the selected time range."
 box_plot_text = "Box plots show the distribution of data for the entire selected time range.  The longer the box, the larger the variation in the data."
 scatter_x_y_text = "The scatter plot displays data from the above drop down menues on their respective axis'. Only selected stations and data within the time range are displayed."
-scatter_x_y_z_text = ""
+scatter_x_y_z_text = "Plot X vs Y data with a third parameter that controls the size of the plot marker."
+summary_table_text = "The Summary Table contains general information about the selected stations in the time range for the Parameter of Interest."
 
 navbar = html.Div(
     [
@@ -172,7 +173,7 @@ navbar = html.Div(
                                     [
                                         dbc.Button("Download", color="primary", id="download-modal-button", n_clicks=0),
                                         dcc.Download(id="download-dataframe-csv"),
-                                        dbc.Button("Cancel", id="cancel-button", n_clicks=0),
+                                        dbc.Button("Close", id="cancel-button", n_clicks=0),
                                     ],
                                     id="modal-button-container",
                                 ),
@@ -299,6 +300,10 @@ app.layout = html.Div(
                                                             id="summary-table",
                                                             sort_action="native",
                                                         ),
+                                                        html.P(
+                                                            summary_table_text,
+                                                            className="plot-text",
+                                                        ),
                                                     ],
                                                     className="table-container",
                                                 ),
@@ -388,7 +393,7 @@ app.layout = html.Div(
                                                         dcc.Graph(id="plot_xyz"),
                                                         html.P(
                                                             scatter_x_y_z_text,
-                                                            className="plotxyz-text",
+                                                            className="plot-text",
                                                         ),
                                                     ],
                                                     className="plots-wrapper",
@@ -697,7 +702,7 @@ def plot_param_ts(mem_data, param):
     )
 
     try:
-        if smcl := pc.SMCL_DICT.get(mem_df["CharacteristicName"].unique()[0], False):
+        if smcl := pc.SMCL_DICT.get(mem_df.loc[mem_df["USGSPCode"] == param]["CharacteristicName"].unique()[0], False):
             fig.add_hline(
                 y=smcl,
                 annotation_text=f"EPA SDWR: {smcl}",
@@ -755,22 +760,16 @@ def plot_xy(mem_data, param_x: str, param_y: str):
         #     datetime=True,
         # ),
     )
+
     try:
-        if smcl := pc.SMCL_DICT.get(mem_df["CharacteristicName"].unique()[0], False):
-            fig.add_hline(
-                y=smcl,
-                annotation_text=f"EPA SDWR: {smcl}",
-            )
-        if param_x == "p00300":
-            fig.add_vline(
-                x=0.5,  # 0.5 mg/L is Anoxic
-                annotation_text="Anoxic: 0.5",
-            )
-        if param_y == "p00300":
-            fig.add_hline(
-                y=0.5,  # 0.5 mg/L is Anoxic
-                annotation_text="Anoxic: 0.5",
-            )
+        if smcl := pc.SMCL_DICT.get(mem_df.loc[mem_df["USGSPCode"] == param_x]["CharacteristicName"].unique()[0], False):
+            fig = utils.add_xline(fig=fig, smcl=smcl)
+    except IndexError:
+        print("Invalid index, no worries")
+
+    try:
+        if smcl := pc.SMCL_DICT.get(mem_df.loc[mem_df["USGSPCode"] == param_y]["CharacteristicName"].unique()[0], False):
+            fig = utils.add_yline(fig=fig, smcl=smcl)
     except IndexError:
         print("Invalid index, no worries")
 
@@ -822,18 +821,11 @@ def plot_box(mem_data, param):
     fig.update_layout(yaxis_title=str(available_param_dict.get(param)))
 
     try:
-        if smcl := pc.SMCL_DICT.get(mem_df["CharacteristicName"].unique()[0], False):
-            fig.add_hline(
-                y=smcl,
-                annotation_text=f"EPA SDWR: {smcl}",
-            )
-        if param == "p00300":
-            fig.add_hline(
-                y=0.5,  # 0.5 mg/L is Anoxic
-                annotation_text="Anoxic: 0.5",
-            )
+        if smcl := pc.SMCL_DICT.get(mem_df.loc[mem_df["USGSPCode"] == param]["CharacteristicName"].unique()[0], False):
+            fig = utils.add_yline(fig=fig, smcl=smcl)
     except IndexError:
         print("Invalid index, no worries")
+
     fig.update_layout(
         margin=dict(l=5, r=5, t=5, b=5),
     )
@@ -882,26 +874,18 @@ def plot_xyz(checklist, start_date, end_date, param_x: str, param_y: str, param_
         size=combined_z,
         color=combined_color,
     )
+
     try:
-        smcl = pc.SMCL_DICT.get(mem_df["CharacteristicName"].unique()[0], False)
-        if smcl and (param_x != "p00300"):
-            fig.add_hline(
-                y=smcl,
-                annotation_text=f"EPA SDWR: {smcl}",
-            )
+        if smcl := pc.SMCL_DICT.get(mem_df.loc[mem_df["USGSPCode"] == param_x]["CharacteristicName"].unique()[0], False):
+            fig = utils.add_xline(fig=fig, smcl=smcl)
     except IndexError:
         print("Invalid index, no worries")
 
-    if param_x == "p00300":
-        fig.add_vline(
-            x=0.5,  # 0.5 mg/L is Anoxic
-            annotation_text="Anoxic: 0.5",
-        )
-    if param_y == "p00300":
-        fig.add_hline(
-            y=0.5,  # 0.5 mg/L is Anoxic
-            annotation_text="Anoxic: 0.5",
-        )
+    try:
+        if smcl := pc.SMCL_DICT.get(mem_df.loc[mem_df["USGSPCode"] == param_y]["CharacteristicName"].unique()[0], False):
+            fig = utils.add_yline(fig=fig, smcl=smcl)
+    except IndexError:
+        print("Invalid index, no worries")
 
     x_title = str(available_param_dict.get(param_x))
     y_title = str(available_param_dict.get(param_y))
