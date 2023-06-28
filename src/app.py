@@ -13,6 +13,23 @@ from dash.exceptions import PreventUpdate
 import utils.param_codes as pc
 from utils import utils
 
+
+def filter_scatter(station_nm, start_date, end_date, param_x, param_y, param_z):
+    # .isin() method needs a list for querying properly.
+    if isinstance(station_nm, str):
+        station_nm = [station_nm]
+    # if not staid:
+    #     staid = pc.STATION_LIST
+    pcode_mask = (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y) | (ALL_DATA["USGSPCode"] == param_z)
+    staid_date_mask = (ALL_DATA["station_nm"].isin(station_nm)) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date)
+
+    # mask = ((ALL_DATA["staid"].isin([staid])) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date) | (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y))
+    filtered = ALL_DATA.loc[staid_date_mask & pcode_mask]
+    # filtered = ALL_DATA.loc[(ALL_DATA["staid"].isin([staid])) & (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y)]
+    # (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date) &
+    return filtered
+
+
 # Initialize App
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])  # Include __name__, serves as reference for finding .css files.
 app.title = "JHA-USGS Dashboard"
@@ -20,8 +37,8 @@ app.title = "JHA-USGS Dashboard"
 # Set defaults, load local data
 DEFAULT_PCODE = "p00400"
 # DEFAULT_STAID = "USGS-433615110440001"
-default_start_date_lo = "01-01-2011"
-default_start_date_hi = "01-01-2020"
+default_start_date_lo = "01-01-2020"
+default_start_date_hi = "01-01-2024"
 # default_start_date = pd.Timestamp.today().strftime("%m-%d-%Y")
 
 
@@ -29,7 +46,7 @@ default_start_date_hi = "01-01-2020"
 staid_meta_data = pd.read_csv("src/data/JHA_STAID_METADATA.csv")
 STAID_LIST = list(staid_meta_data["staid"])
 STATION_NMs = list(staid_meta_data["station_nm"])
-STATION_NMs.sort()
+# STATION_NMs.sort()
 # staid_coords["staid"] = "USGS-" + staid_coords["staid"].astype(str)  # Need to concat "USGS-" to the start of the staid for qwp query
 # staid_list = staid_coords["staid"].to_list()
 
@@ -129,6 +146,7 @@ parameter_of_interest_text = "Select a parameter of interest to populate the Tim
 time_plot_text = "The Time-Series Plot shows the values for the Parameter of Interest for the selected stations across the selected time range."
 box_plot_text = "Box plots show the distribution of data for the entire selected time range."
 scatter_x_y_text = "The scatter plot displays data from the above drop down menues on their respective axis'. Only selected stations and data within the time range are displayed."
+scatter_x_y_z_text = ""
 
 navbar = html.Div(
     [
@@ -208,7 +226,7 @@ sidebar_select = html.Aside(
         html.Div(
             [
                 html.H2("Location Map"),
-                html.P(id="graph-text"),
+                html.P(id="map-text"),
                 html.P(id="graph-text-param", style={"font-weight": "bold", "text-align": "center"}),
                 html.Div(id="map-tab-graph", className="map-view-container"),
             ],
@@ -218,23 +236,6 @@ sidebar_select = html.Aside(
     ],
     className="sidebar-container",
 )
-
-# scatter_time_container = html.Div(
-#     [
-#         html.H1("Time-Series Plot"),
-#         dcc.Graph(id="scatter_plot"),
-#     ],
-#     className="scatter-time-container",
-# )
-
-# scatter_params_container = html.Div(
-#     [
-#         html.H1("Comparative Plot"),
-#         dcc.Graph(id="plot_X_vs_Y"),
-#     ],
-#     className="scatter-params-container",
-# )
-
 
 application = app.server  # Important for debugging and using Flask!
 
@@ -272,7 +273,7 @@ app.layout = html.Div(
                                                 html.Div(
                                                     [
                                                         html.H2("Time-Series Plot"),
-                                                        dcc.Graph(id="scatter_plot", className="scatter-plot"),
+                                                        dcc.Graph(id="plot_param_ts", className="scatter-plot"),
                                                         html.P(
                                                             time_plot_text,
                                                             className="plot-text",
@@ -283,7 +284,7 @@ app.layout = html.Div(
                                                 html.Div(
                                                     [
                                                         html.H2("Box Plot"),
-                                                        dcc.Graph(id="Box-plot", className="Box-plot"),
+                                                        dcc.Graph(id="plot_box", className="box-plot"),
                                                         html.P(
                                                             box_plot_text,
                                                             className="plot-text",
@@ -313,7 +314,7 @@ app.layout = html.Div(
                                                             [
                                                                 html.H2("Scatter X parameter"),
                                                                 dcc.Dropdown(
-                                                                    id="param_select_X",
+                                                                    id="param_select_x",
                                                                     options=available_param_dict,
                                                                     value="p00400",
                                                                     clearable=False,
@@ -326,7 +327,7 @@ app.layout = html.Div(
                                                             [
                                                                 html.H2("Scatter Y parameter"),
                                                                 dcc.Dropdown(
-                                                                    id="param_select_Y",
+                                                                    id="param_select_y",
                                                                     options=available_param_dict,
                                                                     value="p00300",
                                                                     clearable=False,
@@ -335,10 +336,59 @@ app.layout = html.Div(
                                                             className="main-content-dropdown",
                                                             id="select-y-container",
                                                         ),
-                                                        dcc.Graph(id="plot_X_vs_Y"),
+                                                        dcc.Graph(id="plot_xy"),
                                                         html.P(
                                                             scatter_x_y_text,
                                                             className="plot-text",
+                                                        ),
+                                                    ],
+                                                    className="plots-wrapper",
+                                                ),
+                                                html.Div(
+                                                    [
+                                                        html.Div(
+                                                            [
+                                                                html.H2("Scatter X parameter"),
+                                                                dcc.Dropdown(
+                                                                    id="param_select_xx",
+                                                                    options=available_param_dict,
+                                                                    value="p00400",
+                                                                    clearable=False,
+                                                                ),
+                                                            ],
+                                                            className="main-content-dropdown",
+                                                            id="select-xx-container",
+                                                        ),
+                                                        html.Div(
+                                                            [
+                                                                html.H2("Scatter Y parameter"),
+                                                                dcc.Dropdown(
+                                                                    id="param_select_yy",
+                                                                    options=available_param_dict,
+                                                                    value="p00300",
+                                                                    clearable=False,
+                                                                ),
+                                                            ],
+                                                            className="main-content-dropdown",
+                                                            id="select-yy-container",
+                                                        ),
+                                                        html.Div(
+                                                            [
+                                                                html.H2("Bubble size parameter"),
+                                                                dcc.Dropdown(
+                                                                    id="param_select_zz",
+                                                                    options=available_param_dict,
+                                                                    value="p00095",
+                                                                    clearable=False,
+                                                                ),
+                                                            ],
+                                                            className="main-content-dropdown",
+                                                            id="select-zz-container",
+                                                        ),
+                                                        dcc.Graph(id="plot_xyz"),
+                                                        html.P(
+                                                            scatter_x_y_z_text,
+                                                            className="plotxyz-text",
                                                         ),
                                                     ],
                                                     className="plots-wrapper",
@@ -481,8 +531,8 @@ def filter_timeplot_data(station_nm, start_date, end_date, param):
         Input("station-checklist", "value"),
         Input("date_range", "start_date"),
         Input("date_range", "end_date"),
-        Input("param_select_X", "value"),
-        Input("param_select_Y", "value"),
+        Input("param_select_x", "value"),
+        Input("param_select_y", "value"),
     ],
 )
 def filter_scatter_data(station_nm, start_date, end_date, param_x, param_y):
@@ -503,10 +553,36 @@ def filter_scatter_data(station_nm, start_date, end_date, param_x, param_y):
     return filtered.to_json(), nodata_df_staids.loc[nodata_df_staids["Station Name"].isin(station_nm)].to_json()
 
 
+# @app.callback(
+#     [
+#         Output("memory-xyz-plot", "data"),
+#     ],
+#     [
+#         Input("station-checklist", "value"),
+#         Input("date_range", "start_date"),
+#         Input("date_range", "end_date"),
+#     ],
+# )
+# def filter_xyz_data(station_nm, start_date, end_date):
+#     # .isin() method needs a list for querying properly.
+#     if isinstance(station_nm, str):
+#         station_nm = [station_nm]
+
+#     staid_date_mask = (ALL_DATA["station_nm"].isin(station_nm)) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date)
+
+#     # mask = ((ALL_DATA["staid"].isin([staid])) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date) | (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y))
+#     filtered = ALL_DATA.loc[staid_date_mask]
+#     # filtered = ALL_DATA.loc[(ALL_DATA["staid"].isin([staid])) & (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y)]
+#     # (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date) &
+#     if station_nm is None:
+#         return filtered.to_json(), nodata_df_staids.to_json()
+#     return filtered.to_json()
+
+
 @app.callback(
     [
         Output("map-tab-graph", "children"),
-        Output("graph-text", "children"),
+        Output("map-text", "children"),
         Output("graph-text-param", "children"),
     ],
     [
@@ -616,13 +692,13 @@ def map_view_map(mem_data, no_data, param, end_date):
 
 
 @app.callback(
-    Output("scatter_plot", "figure"),
+    Output("plot_param_ts", "figure"),
     [
         Input("memory-time-plot", "data"),
         Input("param_select", "value"),
     ],
 )
-def plot_parameter(mem_data, param):
+def plot_param_ts(mem_data, param):
     """Plots parameter as a function of time.
 
     Parameters
@@ -648,6 +724,9 @@ def plot_parameter(mem_data, param):
         x="datetime",
         y="ResultMeasureValue",
         color="station_nm",
+        labels={
+            "station_nm": "Station Name",
+        },
         hover_data=dict(
             station_nm=True,
             datetime=True,
@@ -678,14 +757,14 @@ def plot_parameter(mem_data, param):
 
 
 @app.callback(
-    Output("plot_X_vs_Y", "figure"),
+    Output("plot_xy", "figure"),
     [
         Input("memory-scatter-plot", "data"),
-        Input("param_select_X", "value"),
-        Input("param_select_Y", "value"),
+        Input("param_select_x", "value"),
+        Input("param_select_y", "value"),
     ],
 )
-def x_vs_y(mem_data, param_x: str, param_y: str):
+def plot_xy(mem_data, param_x: str, param_y: str):
     mem_df = pd.read_json(mem_data)
     x_data = mem_df.loc[mem_df["USGSPCode"] == param_x]
     # x_data = x_data.loc[:,["staid", "datetime", "ResultMeasureValue", "USGSPCode"]]  # Can take out later, just helping debug now.
@@ -695,10 +774,10 @@ def x_vs_y(mem_data, param_x: str, param_y: str):
     combined = pd.merge(x_data, y_data, on="datetime")
     combined = combined.dropna(subset=["ResultMeasureValue_x", "ResultMeasureValue_y"])
     combined.rename(columns={"staid_x": "staid"}, inplace=True)
-    combined.rename(columns={"station_nm_x": "station_nm"}, inplace=True)
+    combined.rename(columns={"station_nm_x": "Station Name"}, inplace=True)
     combined_x = combined["ResultMeasureValue_x"].array
     combined_y = combined["ResultMeasureValue_y"].array
-    combined_color = "station_nm"
+    combined_color = "Station Name"
     if combined.empty:
         combined_color = array("f", [1.0])
         combined_x = array("f", [float("NaN")])
@@ -763,13 +842,13 @@ def x_vs_y(mem_data, param_x: str, param_y: str):
 
 
 @app.callback(
-    Output("Box-plot", "figure"),
+    Output("plot_box", "figure"),
     [
         Input("memory-time-plot", "data"),
         Input("param_select", "value"),
     ],
 )
-def box_plot(mem_data, param):
+def plot_box(mem_data, param):
     mem_df = pd.read_json(mem_data)
     mem_df["datetime"] = pd.to_datetime(mem_df["datetime"], format="%Y-%m-%d %H:%M")
     mem_df = mem_df.dropna(subset=["ResultMeasureValue"])
@@ -781,7 +860,7 @@ def box_plot(mem_data, param):
     fig = px.box(mem_df, x="Station Name", y="ResultMeasureValue", color="Station Name")
 
     fig.update_layout(yaxis_title=str(available_param_dict.get(param)))
-    
+
     try:
         if smcl := pc.SMCL_DICT.get(mem_df["CharacteristicName"].unique()[0], False):
             fig.add_hline(
@@ -795,64 +874,102 @@ def box_plot(mem_data, param):
             )
     except IndexError:
         print("Invalid index, no worries")
-    # for staid in STATION_NMs:
-    #     min_staid_date = mem_df.loc[mem_df["station_nm"] == staid]["datetime"].min()
-    #     max_staid_date = mem_df.loc[mem_df["station_nm"] == staid]["datetime"].max()
-    #     mem_df.loc[mem_df["datetime"] == min_staid_date]["ResultMeasureValue"].values[0]
+    return fig
 
-    # fig = go.Figure(
-    #     data=[
-    #         # go.Scatter(x=mem_data["line_x"], y=mem_data["line_y"], mode="lines", showlegend=False, marker=dict(color="grey")),
-    #         go.Scatter(x=mem_data["earliest"], y=param, mode="markers", name="1952", marker=dict(color="green", size=10)),
-    #         go.Scatter(x=mem_data["latest"], y=param, mode="markers", name="2002", marker=dict(color="blue", size=10)),
-    #     ]
-    # )
 
-    # fig.update_layout(title="Life Expectancy in Europe: 1952 and 2002", height=1000, legend_itemclick=False)
+@app.callback(
+    Output("plot_xyz", "figure"),
+    [
+        Input("station-checklist", "value"),
+        Input("date_range", "start_date"),
+        Input("date_range", "end_date"),
+        Input("param_select_xx", "value"),
+        Input("param_select_yy", "value"),
+        Input("param_select_zz", "value"),
+    ],
+)
+def plot_xyz(checklist, start_date, end_date, param_x: str, param_y: str, param_z: str):
+    mem_df = filter_scatter(checklist, start_date, end_date, param_x, param_y, param_z)
+    x_data = mem_df.loc[mem_df["USGSPCode"] == param_x]
+    x_data = x_data.rename(columns={"ResultMeasureValue": "ResultMeasureValue_x"})
+    y_data = mem_df.loc[mem_df["USGSPCode"] == param_y]
+    y_data = y_data.rename(columns={"ResultMeasureValue": "ResultMeasureValue_y"})
+    z_data = mem_df.loc[mem_df["USGSPCode"] == param_z]
+    z_data = z_data.rename(columns={"ResultMeasureValue": "ResultMeasureValue_z"})
+    # y_data = y_data.loc[:,["staid", "datetime", "ResultMeasureValue", "USGSPCode"]]  # Can take out later, just helping debug now.
+    combined = x_data.merge(y_data, on="datetime").merge(z_data, on="datetime")
+    combined = combined[["datetime", "ResultMeasureValue_x", "ResultMeasureValue_y", "ResultMeasureValue_z", "station_nm_x"]]
+    combined = combined.rename(columns={"station_nm_x": "Station Name", "staid_x": "staid"})
+    combined_x = combined["ResultMeasureValue_x"].array
+    combined_y = combined["ResultMeasureValue_y"].array
+    combined_z = combined["ResultMeasureValue_z"].fillna(0)
+    combined_z = combined_z.array
+    combined_color = "Station Name"
+    if combined.empty:
+        combined_color = array("f", [1.0])
+        combined_x = array("f", [float("NaN")])
+        combined_y = array("f", [float("NaN")])
+        combined_z = array("f", [1])
+
+    fig = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
+    fig = px.scatter(
+        combined,
+        x=combined_x,
+        y=combined_y,
+        size=combined_z,
+        color=combined_color,
+    )
+    try:
+        smcl = pc.SMCL_DICT.get(mem_df["CharacteristicName"].unique()[0], False)
+        if smcl and (param_x != "p00300"):
+            fig.add_hline(
+                y=smcl,
+                annotation_text=f"EPA SDWR: {smcl}",
+            )
+    except IndexError:
+        print("Invalid index, no worries")
+
+    if param_x == "p00300":
+        fig.add_vline(
+            x=0.5,  # 0.5 mg/L is Anoxic
+            annotation_text="Anoxic: 0.5",
+        )
+    if param_y == "p00300":
+        fig.add_hline(
+            y=0.5,  # 0.5 mg/L is Anoxic
+            annotation_text="Anoxic: 0.5",
+        )
+
+    x_title = str(available_param_dict.get(param_x))
+    y_title = str(available_param_dict.get(param_y))
+    z_title = str(available_param_dict.get(param_z))
+    if len(x_title) > 30:
+        x_title = utils.title_wrapper(x_title)
+    if len(y_title) > 30:
+        y_title = utils.title_wrapper(y_title)
+    if len(z_title) > 30:
+        z_title = utils.title_wrapper(z_title)
+
+    fig.update_layout(
+        # title="Comparative Parameter Plot",
+        margin=dict(l=5, r=5, t=5, b=5),
+        title_x=0.5,
+        xaxis_title=x_title,
+        yaxis_title=y_title,
+        coloraxis_colorbar=dict(
+            title="No Data",
+        ),
+    )
+    fig.update_xaxes(
+        constrain="domain",
+    )
+    if param_x == param_y:
+        fig.update_yaxes(
+            scaleanchor="x",
+            scaleratio=1,
+        )
     return fig
 
 
 if __name__ == "__main__":
     app.run_server(debug=True)
-
-
-# 43,36,42.6,-110,44,14.0
-# 43,36,14.55,-110,44,2.31
-# 43,36,04.2,-110,44,33.5
-# 43,36,04.25,-110,44,33.58
-# 43,36,04.2,-110,44,33.5
-# 43,35,50.69,-110,44,37.54
-# 43,35,59.8,-110,44,37.5
-# 43,36,2.92,-110,44,37.31
-# 43,36,2.65,-110,44,37.45
-# 43,36,04.97,-110,44,37.57
-# 43,36,12.48,-110,44,37.70
-# 43,35,55.94,-110,44,18.76
-# 43,36,29.45,-110,44,30.02
-# 43,36,3.36,-110,44,12.81
-# 43,36,5.64,-110,44,7.94
-# 43,36,4.93,-110,44,14.51
-# 43,36,2.01,-110,44,14.50
-# 43,35,57.57,-110,44,17.43
-# 43,36,06.4,-110,44,11.94
-
-# 43.611833333,-110.737222222
-# 43.604041667,-110.733975
-# 43.601166667,-110.742638889
-# 43.601180556,-110.742661111
-# 43.601166667,-110.742638889
-# 43.597413889,-110.743761111
-# 43.599944444,-110.74375
-# 43.600811111,-110.743697222
-# 43.600736111,-110.743736111
-# 43.601380556,-110.743769444
-# 43.603466667,-110.743805556
-# 43.598872222,-110.738544444
-# 43.608180556,-110.741672222
-# 43.600933333,-110.736891667
-# 43.601566667,-110.735538889
-# 43.601369444,-110.737363889
-# 43.600558333,-110.737361111
-# 43.599325,-110.738175
-# 43.601777778,-110.73665
-# °

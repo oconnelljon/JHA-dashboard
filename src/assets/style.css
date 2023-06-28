@@ -208,6 +208,12 @@ p {
     padding-left: 0.5rem;
 }
 
+#map-text {
+    /* background: #193b5d; */
+    /* color: whitesmoke; */
+    padding-left: 0.5rem;
+}
+
 #main-parameter-dropdown {
     flex-basis: 100%;
     margin-left: 5px;
