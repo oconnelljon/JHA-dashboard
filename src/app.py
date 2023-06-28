@@ -144,7 +144,7 @@ nodata_df_staids = nodata_df_staids.rename(
 
 parameter_of_interest_text = "Select a parameter of interest to populate the Time-Series and Box plots.  Only selected stations and data within the time range are displayed."
 time_plot_text = "The Time-Series Plot shows the values for the Parameter of Interest for the selected stations across the selected time range."
-box_plot_text = "Box plots show the distribution of data for the entire selected time range."
+box_plot_text = "Box plots show the distribution of data for the entire selected time range.  The longer the box, the larger the variation in the data."
 scatter_x_y_text = "The scatter plot displays data from the above drop down menues on their respective axis'. Only selected stations and data within the time range are displayed."
 scatter_x_y_z_text = ""
 
@@ -307,7 +307,7 @@ app.layout = html.Div(
                                         ),
                                         html.Div(
                                             [
-                                                html.H1("Comparative Plot"),
+                                                html.H1("Comparative Plots"),
                                                 html.Div(
                                                     [
                                                         html.Div(
