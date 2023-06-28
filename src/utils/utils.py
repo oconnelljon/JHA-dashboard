@@ -1,6 +1,7 @@
 import textwrap
 import pandas as pd
 from typing import List
+import src.utils.param_codes as pc
 
 
 def title_wrapper(text: str) -> str:
@@ -20,3 +21,31 @@ def get_meta_data(staids: List) -> pd.DataFrame:
     dataframe["staid"] = dataframe["station_nm"].str.slice(14).str.strip().apply(pd.Series)
     dataframe["station_id_num"] = "USGS-" + dataframe["station_id_num"]
     return dataframe[["staid", "station_id_num", "dec_lat_va", "dec_long_va"]]
+
+
+def add_xline(fig, smcl):
+    if smcl != "p00300":
+        fig.add_vline(
+            x=smcl,
+            annotation_text=f"EPA SDWR: {smcl}",
+        )
+    else:
+        fig.add_vline(
+            x=0.5,  # 0.5 mg/L is Anoxic
+            annotation_text="Anoxic: 0.5",
+        )
+    return fig
+
+
+def add_yline(fig, smcl):
+    if smcl != "p00300":
+        fig.add_hline(
+            y=smcl,
+            annotation_text=f"EPA SDWR: {smcl}",
+        )
+    else:
+        fig.add_hline(
+            y=0.5,  # 0.5 mg/L is Anoxic
+            annotation_text="Anoxic: 0.5",
+        )
+    return fig
