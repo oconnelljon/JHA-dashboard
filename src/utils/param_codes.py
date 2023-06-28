@@ -22,20 +22,20 @@ STATION_LIST = [
 ]
 
 SMCL_DICT = {
-    "Aluminum": 0.2,  # mg/L
-    "Chloride": 250,  # mg/L
-    "Color": 15,  # color units
-    "Copper": 1.0,  # mg/L
-    "Fluoride": 2.0,  # mg/L
-    "Foaming agents": 0.5,  # mg/L
-    "Iron": 300,  # ug/L
+    # "Aluminum": 0.2,  # mg/L
+    # "Chloride": 250,  # mg/L  No values anywhere close to this at JHA, ignore this SMCL
+    # "Color": 15,  # color units
+    # "Copper": 1.0,  # mg/L
+    # "Fluoride": 2.0,  # mg/L
+    # "Foaming agents": 0.5,  # mg/L
+    "Iron": 300,  # ug/L  No values anywhere close to this at JHA, ignore this SMCL
     "Manganese": 50,  # ug/L
-    "Odor": 3,  # TON threshold odor number
+    # "Odor": 3,  # TON threshold odor number
     # "pH": 6.5 - 8.5,  # standard units
-    "Silver": 0.1,  # mg/L
-    "Sulfate": 250,  # mg/L
-    "Total dissolved solids": 500,  # mg/L
-    "Zinc": 5,  # mg/L
+    # "Silver": 0.1,  # mg/L
+    # "Sulfate": 250,  # mg/L  No values anywhere close to this at JHA, ignore this SMCL
+    # "Total dissolved solids": 500,  # mg/L
+    # "Zinc": 5,  # mg/L
 }
 # PARAMETERS = {
 #     "p00010": "Temperature, degrees Celsius",
