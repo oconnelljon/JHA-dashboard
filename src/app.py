@@ -539,44 +539,14 @@ def filter_scatter_data(station_nm, start_date, end_date, param_x, param_y):
     # .isin() method needs a list for querying properly.
     if isinstance(station_nm, str):
         station_nm = [station_nm]
-    # if not staid:
-    #     staid = pc.STATION_LIST
+
     pcode_mask = (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y)
     staid_date_mask = (ALL_DATA["station_nm"].isin(station_nm)) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date)
 
-    # mask = ((ALL_DATA["staid"].isin([staid])) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date) | (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y))
     filtered = ALL_DATA.loc[staid_date_mask & pcode_mask]
-    # filtered = ALL_DATA.loc[(ALL_DATA["staid"].isin([staid])) & (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y)]
-    # (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date) &
     if station_nm is None:
         return filtered.to_json(), nodata_df_staids.to_json()
     return filtered.to_json(), nodata_df_staids.loc[nodata_df_staids["Station Name"].isin(station_nm)].to_json()
-
-
-# @app.callback(
-#     [
-#         Output("memory-xyz-plot", "data"),
-#     ],
-#     [
-#         Input("station-checklist", "value"),
-#         Input("date_range", "start_date"),
-#         Input("date_range", "end_date"),
-#     ],
-# )
-# def filter_xyz_data(station_nm, start_date, end_date):
-#     # .isin() method needs a list for querying properly.
-#     if isinstance(station_nm, str):
-#         station_nm = [station_nm]
-
-#     staid_date_mask = (ALL_DATA["station_nm"].isin(station_nm)) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date)
-
-#     # mask = ((ALL_DATA["staid"].isin([staid])) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date) | (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y))
-#     filtered = ALL_DATA.loc[staid_date_mask]
-#     # filtered = ALL_DATA.loc[(ALL_DATA["staid"].isin([staid])) & (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y)]
-#     # (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date) &
-#     if station_nm is None:
-#         return filtered.to_json(), nodata_df_staids.to_json()
-#     return filtered.to_json()
 
 
 @app.callback(
@@ -613,13 +583,6 @@ def map_view_map(mem_data, no_data, param, end_date):
 
     temp_df = mem_df.groupby("Station Name")["datetime"].max()
     date_filtered_mem_df = mem_df.loc[mem_df["datetime"].isin(list(temp_df.values))]
-
-    # begin_sampling_date = mem_df["datetime"].max() - pd.to_timedelta(30, "days")
-    # if begin_sampling_date is not pd.NaT:
-    #     date_filtered_mem_df = mem_df.loc[mem_df["datetime"] >= begin_sampling_date].copy()
-    # else:
-    #     date_filtered_mem_df = mem_df.copy()
-
     date_filtered_mem_df["Sample Date"] = date_filtered_mem_df["datetime"].astype(str).copy()
 
     # Debugging helper lines.
@@ -767,8 +730,6 @@ def plot_param_ts(mem_data, param):
 def plot_xy(mem_data, param_x: str, param_y: str):
     mem_df = pd.read_json(mem_data)
     x_data = mem_df.loc[mem_df["USGSPCode"] == param_x]
-    # x_data = x_data.loc[:,["staid", "datetime", "ResultMeasureValue", "USGSPCode"]]  # Can take out later, just helping debug now.
-
     y_data = mem_df.loc[mem_df["USGSPCode"] == param_y]
     # y_data = y_data.loc[:,["staid", "datetime", "ResultMeasureValue", "USGSPCode"]]  # Can take out later, just helping debug now.
     combined = pd.merge(x_data, y_data, on="datetime")
@@ -821,7 +782,6 @@ def plot_xy(mem_data, param_x: str, param_y: str):
         y_title = utils.title_wrapper(y_title)
 
     fig.update_layout(
-        # title="Comparative Parameter Plot",
         margin=dict(l=5, r=5, t=5, b=5),
         title_x=0.5,
         xaxis_title=x_title,
