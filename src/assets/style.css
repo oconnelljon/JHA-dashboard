@@ -42,11 +42,6 @@ p {
     margin-bottom: 2px;
 }
 
-.page-container {
-    display: flex;
-    flex-direction: column;
-}
-
 .navbar-container {
     z-index: 2000;
     display: flex;
@@ -101,21 +96,13 @@ p {
     column-gap: 2em;
 }
 
-.body-container {
-    display: flex;
-    background-color: rgb(161, 161, 161);
-    flex-grow: 1;
-    flex-shrink: 3;
-    height: calc(100vh - 50px);
-    padding-bottom: 1rem;
-}
 
 .sidebar-container {
     display: flex;
+    height: calc(100vh - 76px);
     flex-direction: column;
     flex-basis: 30rem;
     flex-shrink: 0;
-    align-items: flex-start;
     background-color: #f8f9fa;
     padding-top: 2px;
     padding-left: 8px;
@@ -125,14 +112,6 @@ p {
 .station-sub-container p {
     margin-top: 0;
     margin-bottom: 0.5rem;
-}
-
-.sidebar-container .sidebar-download-container{
-    margin-top: auto;
-    align-self: center;
-    padding-bottom: 10px;
-    position: sticky;
-    bottom: 0;
 }
 
 .sidebar-sub-container {
@@ -164,23 +143,31 @@ p {
     height: 100%;
 }
 
+.body-container {
+    display: flex;
+    background-color: rgb(161, 161, 161);
+    padding-bottom: 1rem;
+    height: calc(100vh - 76px);
+    margin-left: auto;
+    
+}
+
+.main-body-container {
+    background-color: #ffffff;
+    margin-right: auto;
+    margin-left: auto;
+    padding: 10px 10px 10px 10px;
+    height: 100%;
+    height: calc(100vh - 76px);
+    overflow-y: scroll;
+}
+
 .main-content-container {
     display: flex;
     flex-wrap: wrap;
     flex-grow: 1;
     gap: 1rem;
-}
-
-.main-body-container {
-    display: flex;
-    flex-grow: 1;
-    flex-direction: column;
-    background-color: #ffffff;
-    margin-top: 8px;
-    margin-left: 8px;
-    margin-right: 8px;
-    padding: 10px 10px 10px 10px;
-    overflow-y: auto;
+    max-width: 85rem;
 }
 
 .time-and-sumtable-container {
@@ -195,8 +182,6 @@ p {
 
 .tile-container {
     display: flex;
-    /* flex-grow: 1; */
-    /* flex-basis: 100%; */
     flex-wrap: wrap;
     justify-content: space-evenly;
     gap: 0.5rem;
@@ -232,12 +217,3 @@ p {
     flex-basis: 40rem;
     padding: 4px;
 }
-
-/* .tile-container > * {
-    flex: 1;
-    align-content: space-between;
-  } */
-
-/* .plots_wrapper{
-    margin-left: auto;
-} */
