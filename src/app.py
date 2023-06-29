@@ -184,7 +184,7 @@ navbar = html.Div(
                     is_open=False,
                 ),
             ],
-            className="sidebar-download-container",
+            className="navbar-download-container",
             id="download-button-container",
         ),
     ],
