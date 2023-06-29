@@ -242,9 +242,9 @@ application = app.server  # Important for debugging and using Flask!
 
 app.layout = html.Div(
     [
-        dcc.Store(id="memory-time-plot", storage_type="memory"),  # Holds plotting data for map
+        dcc.Store(id="memory-PoI-data", storage_type="memory"),  # Holds plotting data for map
         dcc.Store(id="memory-time-plot-no-data", storage_type="memory"),  # Holds plotting data for map if no data found
-        dcc.Store(id="memory-scatter-plot", storage_type="memory"),  # Holds scatter plot x-y data
+        dcc.Store(id="memory-xy-plot", storage_type="memory"),  # Holds scatter plot x-y data
         html.Div(
             [
                 dcc.Location(id="url"),
@@ -424,7 +424,7 @@ app.layout = html.Div(
         Output("data-table-text", "children"),
     ],
     [
-        Input("memory-time-plot", "data"),
+        Input("memory-PoI-data", "data"),
     ],
 )
 def summarize_data(mem_data) -> tuple:
@@ -503,7 +503,7 @@ def toggle_modal(n1, n2, is_open):
 
 
 @app.callback(
-    Output("memory-time-plot", "data"),
+    Output("memory-PoI-data", "data"),
     [
         Input("station-checklist", "value"),
         Input("date_range", "start_date"),
@@ -511,7 +511,7 @@ def toggle_modal(n1, n2, is_open):
         Input("param_select", "value"),
     ],
 )
-def filter_timeplot_data(station_nm, start_date, end_date, param):
+def filter_PoI_data(station_nm, start_date, end_date, param):
     # .isin() method needs a list for querying properly.
     if isinstance(station_nm, str):
         station_nm = [station_nm]
@@ -529,7 +529,7 @@ def filter_timeplot_data(station_nm, start_date, end_date, param):
 
 @app.callback(
     [
-        Output("memory-scatter-plot", "data"),
+        Output("memory-xy-plot", "data"),
         Output("memory-time-plot-no-data", "data"),
     ],
     [
@@ -561,7 +561,7 @@ def filter_scatter_data(station_nm, start_date, end_date, param_x, param_y):
         Output("graph-text-param", "children"),
     ],
     [
-        Input("memory-time-plot", "data"),
+        Input("memory-PoI-data", "data"),
         Input("memory-time-plot-no-data", "data"),
         Input("param_select", "value"),
         Input("date_range", "end_date"),
@@ -662,7 +662,7 @@ def map_view_map(mem_data, no_data, param, end_date):
 @app.callback(
     Output("plot_param_ts", "figure"),
     [
-        Input("memory-time-plot", "data"),
+        Input("memory-PoI-data", "data"),
         Input("param_select", "value"),
     ],
 )
@@ -717,7 +717,6 @@ def plot_param_ts(mem_data, param):
 
     fig.update_layout(
         margin=dict(l=5, r=5, t=5, b=5),
-        # title="Time-Series Plot",
         xaxis_title="Sample Date",
         yaxis_title=available_param_dict.get(param),
     )
@@ -727,7 +726,7 @@ def plot_param_ts(mem_data, param):
 @app.callback(
     Output("plot_xy", "figure"),
     [
-        Input("memory-scatter-plot", "data"),
+        Input("memory-xy-plot", "data"),
         Input("param_select_x", "value"),
         Input("param_select_y", "value"),
     ],
@@ -803,7 +802,7 @@ def plot_xy(mem_data, param_x: str, param_y: str):
 @app.callback(
     Output("plot_box", "figure"),
     [
-        Input("memory-time-plot", "data"),
+        Input("memory-PoI-data", "data"),
         Input("param_select", "value"),
     ],
 )
