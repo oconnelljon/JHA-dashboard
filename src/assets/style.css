@@ -104,7 +104,7 @@ p {
     flex-basis: 30rem;
     flex-shrink: 0;
     background-color: #f8f9fa;
-    padding-top: 2px;
+    padding-top: 10px;
     padding-left: 8px;
     padding-right: 5px;
 }
@@ -118,7 +118,8 @@ p {
     align-self: stretch;
     border: 1px solid #cacccd;
     border-radius: 4px;
-    margin: 3px;
+    /* margin: 3px; */
+    margin-bottom: 4px;
 }
 
 #sidebar-map-container {
