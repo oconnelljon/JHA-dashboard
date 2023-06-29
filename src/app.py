@@ -683,7 +683,7 @@ def plot_param_ts(mem_data, param):
     if mem_data is None:
         raise PreventUpdate
     mem_df = pd.read_json(mem_data)
-    mem_df["datetime"] = pd.to_datetime(mem_df["datetime"], format="%Y-%m-%d %H:%M")
+    # mem_df["datetime"] = pd.to_datetime(mem_df["datetime"], format="%Y-%m-%d %H:%M")
     mem_df = mem_df.dropna(subset=["ResultMeasureValue"])
 
     fig = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
@@ -694,10 +694,16 @@ def plot_param_ts(mem_data, param):
         color="station_nm",
         labels={
             "station_nm": "Station Name",
+            "datetime": "Sample Date",
+            "staid": "Station ID",
+            "ValueAndUnits": "Result",
         },
         hover_data=dict(
             station_nm=True,
+            staid=True,
             datetime=True,
+            ValueAndUnits=True,
+            ResultMeasureValue=False,
         ),
     )
 
@@ -739,25 +745,33 @@ def plot_xy(mem_data, param_x: str, param_y: str):
     combined = pd.merge(x_data, y_data, on="datetime")
     combined = combined.dropna(subset=["ResultMeasureValue_x", "ResultMeasureValue_y"])
     combined.rename(columns={"staid_x": "staid"}, inplace=True)
-    combined.rename(columns={"station_nm_x": "Station Name"}, inplace=True)
-    combined_x = combined["ResultMeasureValue_x"].array
-    combined_y = combined["ResultMeasureValue_y"].array
-    combined_color = "Station Name"
-    if combined.empty:
-        combined_color = array("f", [1.0])
-        combined_x = array("f", [float("NaN")])
-        combined_y = array("f", [float("NaN")])
+    combined.rename(columns={"station_nm_x": "station_nm"}, inplace=True)
+    # combined_x = combined["ResultMeasureValue_x"].array
+    # combined_y = combined["ResultMeasureValue_y"].array
+    # combined_color = "station_nm"
+    # if combined.empty:
+    #     combined_color = array("f", [1.0])
+    #     combined_x = array("f", [float("NaN")])
+    #     combined_y = array("f", [float("NaN")])
 
     fig = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
     fig = px.scatter(
         combined,
-        x=combined_x,
-        y=combined_y,
-        color=combined_color,
-        # hover_data=dict(
-        #     staid=True,
-        #     datetime=True,
-        # ),
+        x="ResultMeasureValue_x",
+        y="ResultMeasureValue_y",
+        color="station_nm",
+        labels={
+            "station_nm": "Station Name",
+            "datetime": "Sample Date",
+            "staid": "Station ID",
+        },
+        hover_data=dict(
+            station_nm=True,
+            staid=True,
+            datetime=True,
+            ResultMeasureValue_x=False,
+            ResultMeasureValue_y=False,
+        ),
     )
 
     try:
@@ -780,6 +794,102 @@ def plot_xy(mem_data, param_x: str, param_y: str):
         y_title = utils.title_wrapper(y_title)
 
     fig.update_layout(
+        margin=dict(l=5, r=5, t=5, b=5),
+        title_x=0.5,
+        xaxis_title=x_title,
+        yaxis_title=y_title,
+        coloraxis_colorbar=dict(
+            title="No Data",
+        ),
+    )
+    fig.update_xaxes(
+        constrain="domain",
+    )
+    if param_x == param_y:
+        fig.update_yaxes(
+            scaleanchor="x",
+            scaleratio=1,
+        )
+    return fig
+
+
+@app.callback(
+    Output("plot_xyz", "figure"),
+    [
+        Input("station-checklist", "value"),
+        Input("date_range", "start_date"),
+        Input("date_range", "end_date"),
+        Input("param_select_xx", "value"),
+        Input("param_select_yy", "value"),
+        Input("param_select_zz", "value"),
+    ],
+)
+def plot_xyz(checklist, start_date, end_date, param_x: str, param_y: str, param_z: str):
+    mem_df = filter_scatter(checklist, start_date, end_date, param_x, param_y, param_z)
+    x_data = mem_df.loc[mem_df["USGSPCode"] == param_x]
+    x_data = x_data.rename(columns={"ResultMeasureValue": "ResultMeasureValue_x"})
+    y_data = mem_df.loc[mem_df["USGSPCode"] == param_y]
+    y_data = y_data.rename(columns={"ResultMeasureValue": "ResultMeasureValue_y"})
+    z_data = mem_df.loc[mem_df["USGSPCode"] == param_z]
+    z_data = z_data.rename(columns={"ResultMeasureValue": "ResultMeasureValue_z"})
+    # y_data = y_data.loc[:,["staid", "datetime", "ResultMeasureValue", "USGSPCode"]]  # Can take out later, just helping debug now.
+    combined = x_data.merge(y_data, on="datetime").merge(z_data, on="datetime")
+    combined = combined[["datetime", "ResultMeasureValue_x", "ResultMeasureValue_y", "ResultMeasureValue_z", "station_nm_x", "staid_x"]]
+    # combined = combined.rename(columns={"station_nm_x": "Station Name", "staid_x": "staid"})
+    combined_x = combined["ResultMeasureValue_x"].array
+    combined_y = combined["ResultMeasureValue_y"].array
+    combined_z = combined["ResultMeasureValue_z"].fillna(0)
+    combined_z = combined_z.array
+    combined_color = "station_nm_x"
+    if combined.empty:
+        combined_color = array("f", [1.0])
+        combined_x = array("f", [float("NaN")])
+        combined_y = array("f", [float("NaN")])
+        combined_z = array("f", [1])
+
+    fig = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
+    fig = px.scatter(
+        combined,
+        x=combined_x,
+        y=combined_y,
+        size=combined_z,
+        color=combined_color,
+        labels={
+            "station_nm_x": "Station Name",
+            "datetime": "Sample Date",
+            "staid_x": "Station ID",
+        },
+        hover_data=dict(
+            station_nm_x=True,
+            staid_x=True,
+            datetime=True,
+        ),
+    )
+
+    try:
+        if smcl := pc.SMCL_DICT.get(mem_df.loc[mem_df["USGSPCode"] == param_x]["CharacteristicName"].unique()[0], False):
+            fig = utils.add_xline(fig=fig, smcl=smcl)
+    except IndexError:
+        print("Invalid index, no worries")
+
+    try:
+        if smcl := pc.SMCL_DICT.get(mem_df.loc[mem_df["USGSPCode"] == param_y]["CharacteristicName"].unique()[0], False):
+            fig = utils.add_yline(fig=fig, smcl=smcl)
+    except IndexError:
+        print("Invalid index, no worries")
+
+    x_title = str(available_param_dict.get(param_x))
+    y_title = str(available_param_dict.get(param_y))
+    z_title = str(available_param_dict.get(param_z))
+    if len(x_title) > 30:
+        x_title = utils.title_wrapper(x_title)
+    if len(y_title) > 30:
+        y_title = utils.title_wrapper(y_title)
+    if len(z_title) > 30:
+        z_title = utils.title_wrapper(z_title)
+
+    fig.update_layout(
+        # title="Comparative Parameter Plot",
         margin=dict(l=5, r=5, t=5, b=5),
         title_x=0.5,
         xaxis_title=x_title,
@@ -828,92 +938,6 @@ def plot_box(mem_data, param):
     fig.update_layout(
         margin=dict(l=5, r=5, t=5, b=5),
     )
-    return fig
-
-
-@app.callback(
-    Output("plot_xyz", "figure"),
-    [
-        Input("station-checklist", "value"),
-        Input("date_range", "start_date"),
-        Input("date_range", "end_date"),
-        Input("param_select_xx", "value"),
-        Input("param_select_yy", "value"),
-        Input("param_select_zz", "value"),
-    ],
-)
-def plot_xyz(checklist, start_date, end_date, param_x: str, param_y: str, param_z: str):
-    mem_df = filter_scatter(checklist, start_date, end_date, param_x, param_y, param_z)
-    x_data = mem_df.loc[mem_df["USGSPCode"] == param_x]
-    x_data = x_data.rename(columns={"ResultMeasureValue": "ResultMeasureValue_x"})
-    y_data = mem_df.loc[mem_df["USGSPCode"] == param_y]
-    y_data = y_data.rename(columns={"ResultMeasureValue": "ResultMeasureValue_y"})
-    z_data = mem_df.loc[mem_df["USGSPCode"] == param_z]
-    z_data = z_data.rename(columns={"ResultMeasureValue": "ResultMeasureValue_z"})
-    # y_data = y_data.loc[:,["staid", "datetime", "ResultMeasureValue", "USGSPCode"]]  # Can take out later, just helping debug now.
-    combined = x_data.merge(y_data, on="datetime").merge(z_data, on="datetime")
-    combined = combined[["datetime", "ResultMeasureValue_x", "ResultMeasureValue_y", "ResultMeasureValue_z", "station_nm_x"]]
-    combined = combined.rename(columns={"station_nm_x": "Station Name", "staid_x": "staid"})
-    combined_x = combined["ResultMeasureValue_x"].array
-    combined_y = combined["ResultMeasureValue_y"].array
-    combined_z = combined["ResultMeasureValue_z"].fillna(0)
-    combined_z = combined_z.array
-    combined_color = "Station Name"
-    if combined.empty:
-        combined_color = array("f", [1.0])
-        combined_x = array("f", [float("NaN")])
-        combined_y = array("f", [float("NaN")])
-        combined_z = array("f", [1])
-
-    fig = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
-    fig = px.scatter(
-        combined,
-        x=combined_x,
-        y=combined_y,
-        size=combined_z,
-        color=combined_color,
-    )
-
-    try:
-        if smcl := pc.SMCL_DICT.get(mem_df.loc[mem_df["USGSPCode"] == param_x]["CharacteristicName"].unique()[0], False):
-            fig = utils.add_xline(fig=fig, smcl=smcl)
-    except IndexError:
-        print("Invalid index, no worries")
-
-    try:
-        if smcl := pc.SMCL_DICT.get(mem_df.loc[mem_df["USGSPCode"] == param_y]["CharacteristicName"].unique()[0], False):
-            fig = utils.add_yline(fig=fig, smcl=smcl)
-    except IndexError:
-        print("Invalid index, no worries")
-
-    x_title = str(available_param_dict.get(param_x))
-    y_title = str(available_param_dict.get(param_y))
-    z_title = str(available_param_dict.get(param_z))
-    if len(x_title) > 30:
-        x_title = utils.title_wrapper(x_title)
-    if len(y_title) > 30:
-        y_title = utils.title_wrapper(y_title)
-    if len(z_title) > 30:
-        z_title = utils.title_wrapper(z_title)
-
-    fig.update_layout(
-        # title="Comparative Parameter Plot",
-        margin=dict(l=5, r=5, t=5, b=5),
-        title_x=0.5,
-        xaxis_title=x_title,
-        yaxis_title=y_title,
-        coloraxis_colorbar=dict(
-            title="No Data",
-        ),
-    )
-    fig.update_xaxes(
-        constrain="domain",
-    )
-    if param_x == param_y:
-        fig.update_yaxes(
-            scaleanchor="x",
-            scaleratio=1,
-        )
     return fig
 
 
