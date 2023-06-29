@@ -147,7 +147,7 @@ time_plot_text = "The Time-Series Plot shows the values for the Parameter of Int
 box_plot_text = "Box plots show the distribution of data for the entire selected time range.  The longer the box, the larger the variation in the data."
 scatter_x_y_text = "The scatter plot displays data from the above drop down menues on their respective axis'. Only selected stations and data within the time range are displayed."
 scatter_x_y_z_text = "Plot X vs Y data with a third parameter that controls the size of the plot marker."
-summary_table_text = "The Summary Table contains general information about the selected stations in the time range for the Parameter of Interest."
+summary_table_text = "The Summary Table contains general information about the selected stations in the time range for the Parameter of Interest.  Stations with no data are not displayed."
 
 navbar = html.Div(
     [
@@ -425,9 +425,10 @@ app.layout = html.Div(
     ],
     [
         Input("memory-PoI-data", "data"),
+        Input("param_select", "value"),
     ],
 )
-def summarize_data(mem_data) -> tuple:
+def summarize_data(mem_data, param) -> tuple:
     """Summarizes selected data into descriptive table
 
     Parameters
@@ -456,7 +457,7 @@ def summarize_data(mem_data) -> tuple:
     table_median = table_median.rename("Median Value")
 
     last_sample = group_staid["ActivityStartDate"].max()
-    last_sample = last_sample.rename("Last Sample")
+    last_sample = last_sample.rename("Latest Sample")
 
     first_sample = group_staid["ActivityStartDate"].min()
     first_sample = first_sample.rename("First Sample")
@@ -464,8 +465,8 @@ def summarize_data(mem_data) -> tuple:
     my_data = pd.concat([station_nms, total_samples, non_detects, table_median, first_sample, last_sample], axis=1)
 
     my_data["Station ID"] = my_data.index
-    my_data = my_data[["Station Name", "Station ID", "Last Sample", "First Sample", "Sample Count", "Not Detected", "Median Value"]]
-    return my_data.to_dict("records"), "Summary Table"
+    my_data = my_data[["Station Name", "Station ID", "Latest Sample", "First Sample", "Sample Count", "Not Detected", "Median Value"]]
+    return my_data.to_dict("records"), f"Summary Table for data from {group_staid['ActivityStartDate'].min().min()} to {group_staid['ActivityStartDate'].max().max()} for {available_param_dict[param]}"
 
 
 @app.callback(
@@ -760,6 +761,11 @@ def plot_xy(mem_data, param_x: str, param_y: str):
         x="ResultMeasureValue_x",
         y="ResultMeasureValue_y",
         color="station_nm",
+        # """
+        # Need to work on labels.
+        # Look for more SMCLs
+        # other graphs?
+        # """
         labels={
             "station_nm": "Station Name",
             "datetime": "Sample Date",
