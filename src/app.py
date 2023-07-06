@@ -1,4 +1,5 @@
 import io
+import configparser
 from array import array
 from datetime import datetime, timedelta
 
@@ -13,37 +14,20 @@ from dash.exceptions import PreventUpdate
 import utils.param_codes as pc
 from utils import utils
 
-
-def filter_scatter(station_nm, start_date, end_date, param_x, param_y, param_z):
-    # .isin() method needs a list for querying properly.
-    if isinstance(station_nm, str):
-        station_nm = [station_nm]
-    # if not staid:
-    #     staid = pc.STATION_LIST
-    pcode_mask = (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y) | (ALL_DATA["USGSPCode"] == param_z)
-    staid_date_mask = (ALL_DATA["station_nm"].isin(station_nm)) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date)
-
-    # mask = ((ALL_DATA["staid"].isin([staid])) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date) | (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y))
-    filtered = ALL_DATA.loc[staid_date_mask & pcode_mask]
-    # filtered = ALL_DATA.loc[(ALL_DATA["staid"].isin([staid])) & (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y)]
-    # (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date) &
-    return filtered
-
+config = configparser.ConfigParser()
+config.read("config.cfg")
 
 # Initialize App
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])  # Include __name__, serves as reference for finding .css files.
-app.title = "JHA-USGS Dashboard"
+app.title = "JHA Dashboard"
 
 # Set defaults, load local data
-DEFAULT_PCODE = "p00400"
-# DEFAULT_STAID = "USGS-433615110440001"
-default_start_date_lo = "01-01-2020"
-default_start_date_hi = "01-01-2024"
+DEFAULT_PCODE = config["DEFAULTS"]["DEFAULT_PCODE"]
+default_start_date_lo = config["DEFAULTS"]["default_start_date_lo"]
+default_start_date_hi = config["DEFAULTS"]["default_start_date_hi"]
 # default_start_date = pd.Timestamp.today().strftime("%m-%d-%Y")
 
-
-# staid_meta_data = utils.get_meta_data(pc.STATION_LIST)  # pd.read_csv("src/data/JHA_STAID_INFO.csv")
-staid_meta_data = pd.read_csv("src/data/JHA_STAID_METADATA.csv")
+staid_meta_data = pd.read_csv(config["DEFAULTS"]["staid_metadata"])
 STAID_LIST = list(staid_meta_data["staid"])
 STATION_NMs = list(staid_meta_data["station_nm"])
 # STATION_NMs.sort()
@@ -116,31 +100,7 @@ ALL_DATA = ALL_DATA.loc[
     ],
 ]
 
-# Setup a dataframe to handle missing values when plotting on the map.
-# Every well should plot, and if no data is found, display a black marker and Result = No Data when hovering.
-nodata_df = pd.DataFrame(
-    {
-        "station_nm": STATION_NMs,
-        "datetime": ["1970-01-01 00:00:00" for _ in STATION_NMs],
-        "ResultMeasureValue": [float("NaN") for _ in STATION_NMs],
-        # "USGSPCode": [param for _ in pc.STATION_LIST],
-        "Result": ["No Data" for _ in STATION_NMs],
-    }
-)
-nodata_df_staids = pd.merge(nodata_df, staid_meta_data, on="station_nm", how="left")
-nodata_df_staids = nodata_df_staids.loc[
-    :,
-    ["station_nm", "staid", "datetime", "Result", "ResultMeasureValue", "dec_lat_va", "dec_long_va"],
-]
-nodata_df_staids = nodata_df_staids.rename(
-    columns={
-        "station_nm": "Station Name",
-        "staid": "Station ID",
-        "dec_lat_va": "Latitude",
-        "dec_long_va": "Longitude",
-        "datetime": "Sample Date",
-    }
-)
+nodata_df_staids =  utils.make_nodata_df(STATION_NMs, staid_meta_data)
 
 parameter_of_interest_text = "Select a parameter of interest to populate the Time-Series and Box plots.  Only selected stations and data within the time range are displayed."
 time_plot_text = "The Time-Series Plot shows the values for the Parameter of Interest for the selected stations across the selected time range."
@@ -831,7 +791,7 @@ def plot_xy(mem_data, param_x: str, param_y: str):
     ],
 )
 def plot_xyz(checklist, start_date, end_date, param_x: str, param_y: str, param_z: str):
-    mem_df = filter_scatter(checklist, start_date, end_date, param_x, param_y, param_z)
+    mem_df = utils.filter_scatter(ALL_DATA, checklist, start_date, end_date, param_x, param_y, param_z)
     x_data = mem_df.loc[mem_df["USGSPCode"] == param_x]
     x_data = x_data.rename(columns={"ResultMeasureValue": "ResultMeasureValue_x"})
     y_data = mem_df.loc[mem_df["USGSPCode"] == param_y]
@@ -948,4 +908,4 @@ def plot_box(mem_data, param):
 
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+        app.run_server(debug=False)
