@@ -1,7 +1,6 @@
 import textwrap
 import pandas as pd
 from typing import List
-import src.utils.param_codes as pc
 
 
 def title_wrapper(text: str) -> str:
