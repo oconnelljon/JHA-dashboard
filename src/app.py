@@ -1,26 +1,21 @@
-import io
+
 import configparser
 from array import array
-from datetime import datetime, timedelta
 
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-import requests
+
 from dash import Input, Output, State, callback_context, dash, dash_table, dcc, html
 from dash.exceptions import PreventUpdate
 
 import utils.param_codes as pc
-from utils import utils
+from utils import utils, download
+from components import main_navbar, main_sidebar
 
 config = configparser.ConfigParser()
 config.read("config.cfg")
-
-# Initialize App
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])  # Include __name__, serves as reference for finding .css files.
-app.title = "JHA Dashboard"
-
 # Set defaults, load local data
 DEFAULT_PCODE = config["DEFAULTS"]["DEFAULT_PCODE"]
 default_start_date_lo = config["DEFAULTS"]["default_start_date_lo"]
@@ -30,51 +25,16 @@ default_start_date_hi = config["DEFAULTS"]["default_start_date_hi"]
 staid_meta_data = pd.read_csv(config["DEFAULTS"]["staid_metadata"])
 STAID_LIST = list(staid_meta_data["staid"])
 STATION_NMs = list(staid_meta_data["station_nm"])
-# STATION_NMs.sort()
-# staid_coords["staid"] = "USGS-" + staid_coords["staid"].astype(str)  # Need to concat "USGS-" to the start of the staid for qwp query
-# staid_list = staid_coords["staid"].to_list()
-
-# Query QWP for data
-response = requests.post(
-    url="https://www.waterqualitydata.us/data/Result/search?",
-    data={
-        "siteid": [STAID_LIST],
-        "startDateLo": default_start_date_lo,
-        "startDateHi": default_start_date_hi,
-        "service": "results",
-    },
-    headers={"user-agent": "python"},
-)
-
-# Load and scrub QWP data
-decode_response = io.StringIO(response.content.decode("utf-8"))
-dataframe = pd.read_csv(decode_response, dtype={"USGSPCode": str})
-dataframe["USGSPCode"] = "p" + dataframe["USGSPCode"]
-dataframe.rename(columns={"MonitoringLocationIdentifier": "staid"}, inplace=True)
-dataframe["datetime"] = dataframe["ActivityStartDate"] + " " + dataframe["ActivityStartTime/Time"]
-dataframe["ValueAndUnits"] = dataframe["ResultMeasureValue"].astype(str) + " " + dataframe["ResultMeasure/MeasureUnitCode"].astype(str)
-dataframe.loc[dataframe["ValueAndUnits"] == "nan nan", "ValueAndUnits"] = "No Value"
-dataframe.loc[(dataframe["ValueAndUnits"] == "No Value") & (dataframe["ResultDetectionConditionText"] == "Not Detected"), "ValueAndUnits"] = "Not Detected"
-dataframe = dataframe.loc[(dataframe["ActivityTypeCode"] == "Sample-Routine")]
-dataframe["ResultMeasure/MeasureUnitCode"] = dataframe["ResultMeasure/MeasureUnitCode"].str.replace("asNO2", "as NO2")
-dataframe["ResultMeasure/MeasureUnitCode"] = dataframe["ResultMeasure/MeasureUnitCode"].str.replace("asNO3", "as NO3")
-dataframe["ResultMeasure/MeasureUnitCode"] = dataframe["ResultMeasure/MeasureUnitCode"].str.replace("asPO4", "as PO4")
-dataframe["DetectionQuantitationLimitMeasure/MeasureUnitCode"] = dataframe["DetectionQuantitationLimitMeasure/MeasureUnitCode"].str.replace("asNO2", "as NO2")
-dataframe["DetectionQuantitationLimitMeasure/MeasureUnitCode"] = dataframe["DetectionQuantitationLimitMeasure/MeasureUnitCode"].str.replace("asNO3", "as NO3")
-dataframe["DetectionQuantitationLimitMeasure/MeasureUnitCode"] = dataframe["DetectionQuantitationLimitMeasure/MeasureUnitCode"].str.replace("asPO4", "as PO4")
-dataframe["param_label"] = dataframe["CharacteristicName"] + ", " + dataframe["ResultSampleFractionText"].fillna("") + ", " + dataframe["ResultMeasure/MeasureUnitCode"].fillna("")
-dataframe["param_label"] = dataframe["param_label"].str.replace(", , ", ", ")
-dataframe["param_label"] = dataframe["param_label"].str.replace("deg C, deg C", "deg C")
-dataframe["param_label"] = dataframe["param_label"].str.rstrip(", ")
+qwp_download = download.get_qwp_data(staid_list=STAID_LIST, start_lo=default_start_date_lo, start_hi=default_start_date_hi)
 
 # Create dictionary of parameter labels and values for the App to display
-available_parameters = dataframe.drop_duplicates("param_label")
+available_parameters = qwp_download.drop_duplicates("param_label")
 available_parameters = available_parameters.sort_values(by="param_label", key=lambda col: col.str.lower())
 available_param_dict = dict(zip(available_parameters["USGSPCode"], available_parameters["param_label"]))
 available_param_labels = [{"label": label, "value": pcode} for label, pcode in zip(available_parameters["param_label"], available_parameters["USGSPCode"])]
-# This is all the available data for all the stations.  Hopefully.
+
 # Query all data at the start of the App, then sort intermediates to pass to Callbacks
-ALL_DATA = pd.merge(dataframe, staid_meta_data, on="staid", how="left")
+ALL_DATA = pd.merge(qwp_download, staid_meta_data, on="staid", how="left")
 ALL_DATA.sort_values(by="datetime", ascending=True, inplace=True)
 ALL_DATA = ALL_DATA.loc[
     :,
@@ -100,7 +60,7 @@ ALL_DATA = ALL_DATA.loc[
     ],
 ]
 
-nodata_df_staids =  utils.make_nodata_df(STATION_NMs, staid_meta_data)
+nodata_df_staids = utils.make_nodata_df(STATION_NMs, staid_meta_data)
 
 parameter_of_interest_text = "Select a parameter of interest to populate the Time-Series and Box plots.  Only selected stations and data within the time range are displayed."
 time_plot_text = "The Time-Series Plot shows the values for the Parameter of Interest for the selected stations across the selected time range."
@@ -109,94 +69,9 @@ scatter_x_y_text = "The scatter plot displays data from the above drop down menu
 scatter_x_y_z_text = "Plot X vs Y data with a third parameter that controls the size of the plot marker."
 summary_table_text = "The Summary Table contains general information about the selected stations in the time range for the Parameter of Interest.  Stations with no data are not displayed."
 
-navbar = html.Div(
-    [
-        html.Div(
-            # html.Div("USGS"),
-            html.Img(src=app.get_asset_url("usgs-logo.png")),
-            className="navbar-brand-container",
-        ),
-        # html.Img(src=app.get_asset_url('jh-airport-logo.svg')),
-        html.Div(
-            html.Div("Jackson Hole Airport"),
-            className="navbar-JHA-container",
-        ),
-        html.Div(
-            [
-                dbc.Button("Download", color="primary", id="download-button", n_clicks=0),
-                dbc.Modal(
-                    [
-                        dbc.ModalBody(
-                            [
-                                dbc.Label("Download all data."),
-                                html.Div(
-                                    [
-                                        dbc.Button("Download", color="primary", id="download-modal-button", n_clicks=0),
-                                        dcc.Download(id="download-dataframe-csv"),
-                                        dbc.Button("Close", id="cancel-button", n_clicks=0),
-                                    ],
-                                    id="modal-button-container",
-                                ),
-                            ],
-                        )
-                    ],
-                    id="download-modal-container",
-                    is_open=False,
-                ),
-            ],
-            className="navbar-download-container",
-            id="download-button-container",
-        ),
-    ],
-    className="navbar-container",
-)
 
-sidebar_select = html.Aside(
-    [
-        html.Div(
-            [
-                html.H1("Station ID"),
-                dcc.Checklist(["All"], ["All"], id="all-checklist", inline=True),
-                dcc.Checklist(
-                    id="station-checklist",
-                    options=STATION_NMs,
-                    persistence=False,
-                ),
-            ],
-            className="sidebar-sub-container",
-            id="station-select-container",
-        ),
-        html.Div(
-            [
-                html.H1("Select Date Range"),
-                dcc.DatePickerRange(
-                    id="date_range",
-                    start_date=datetime.now().date() - timedelta(days=1460),
-                    end_date=datetime.now().date(),
-                    initial_visible_month=datetime.now(),
-                    persistence=True,
-                    style={
-                        "color": "#333",
-                    },
-                ),
-            ],
-            className="sidebar-sub-container",
-            id="daterange-container",
-        ),
-        # Map
-        html.Div(
-            [
-                html.H2("Location Map"),
-                html.P(id="map-text"),
-                html.P(id="graph-text-param", style={"font-weight": "bold", "text-align": "center"}),
-                html.Div(id="map-tab-graph", className="map-view-container"),
-            ],
-            id="sidebar-map-container",
-            className="sidebar-sub-container",
-        ),
-    ],
-    className="sidebar-container",
-)
+# Initialize App
+app = dash.Dash(__name__, assets_folder="assets", external_stylesheets=[dbc.themes.SPACELAB], title="JHA Dashboard")  # Include __name__, serves as reference for finding .css files.
 
 application = app.server  # Important for debugging and using Flask!
 
@@ -208,10 +83,10 @@ app.layout = html.Div(
         html.Div(
             [
                 dcc.Location(id="url"),
-                navbar,
+                main_navbar(),
                 html.Div(
                     [
-                        sidebar_select,
+                        main_sidebar(checklist_option=STATION_NMs),
                         html.Main(
                             [
                                 html.Div(
@@ -908,4 +783,4 @@ def plot_box(mem_data, param):
 
 
 if __name__ == "__main__":
-        app.run_server(debug=False)
+    app.run_server(debug=False)
