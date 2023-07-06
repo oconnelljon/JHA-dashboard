@@ -48,3 +48,39 @@ def add_yline(fig, smcl):
             annotation_text="Anoxic: 0.5",
         )
     return fig
+
+
+def filter_scatter(data, station_nm, start_date, end_date, param_x, param_y, param_z):
+    # .isin() method needs a list for querying properly.
+    if isinstance(station_nm, str):
+        station_nm = [station_nm]
+    pcode_mask = (data["USGSPCode"] == param_x) | (data["USGSPCode"] == param_y) | (data["USGSPCode"] == param_z)
+    staid_date_mask = (data["station_nm"].isin(station_nm)) & (data["ActivityStartDate"] >= str(start_date)) & (data["ActivityStartDate"] <= end_date)
+    return data.loc[staid_date_mask & pcode_mask]
+
+
+def make_nodata_df(station_nms, staid_metadata):
+    # Setup a dataframe to handle missing values when plotting on the map.
+    # Every well should plot, and if no data is found, display a black marker and Result = No Data when hovering.
+    nodata_df = pd.DataFrame(
+        {
+            "station_nm": station_nms,
+            "datetime": ["1970-01-01 00:00:00" for _ in station_nms],
+            "ResultMeasureValue": [float("NaN") for _ in station_nms],
+            "Result": ["No Data" for _ in station_nms],
+        }
+    )
+    nodata_df_staids = pd.merge(nodata_df, staid_metadata, on="station_nm", how="left")
+    nodata_df_staids = nodata_df_staids.loc[
+        :,
+        ["station_nm", "staid", "datetime", "Result", "ResultMeasureValue", "dec_lat_va", "dec_long_va"],
+    ]
+    return nodata_df_staids.rename(
+        columns={
+            "station_nm": "Station Name",
+            "staid": "Station ID",
+            "dec_lat_va": "Latitude",
+            "dec_long_va": "Longitude",
+            "datetime": "Sample Date",
+        }
+    )
