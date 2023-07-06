@@ -7,7 +7,7 @@ readme = "README.md"
 packages = [{include = "jha_dashboard"}]
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = ">=3.11,<3.13"
 pandas = "^1.5.3"
 dash = "^2.7.1"
 dataretrieval = "^1.0.1"
@@ -22,6 +22,7 @@ flake8 = "^6.0.0"
 pytest = "^7.2.1"
 nuitka = "^1.5.8"
 ipykernel = "^6.23.3"
+pyinstaller = "^5.13.0"
 
 [build-system]
 requires = ["poetry-core"]
