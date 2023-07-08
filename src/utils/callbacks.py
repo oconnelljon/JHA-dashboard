@@ -8,6 +8,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 import utils.param_codes as pc
+from utils.settings import MAPBOX_ACCESS_TOKEN
 from utils import common, data
 
 
@@ -234,7 +235,7 @@ def map_view_map(mem_data, no_data, param, end_date):
         hovermode="closest",
         margin=dict(l=5, r=5, t=5, b=5),
         mapbox=dict(
-            accesstoken=data.MAPBOX_ACCESS_TOKEN,
+            accesstoken=MAPBOX_ACCESS_TOKEN,
             bearing=0,
             center=dict(
                 lat=43.609,
