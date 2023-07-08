@@ -3,9 +3,9 @@ from array import array
 import pandas as pd
 from dash import Input, Output, State, callback_context, dash, dcc
 import dash
+from dash.exceptions import PreventUpdate
 import plotly.express as px
 import plotly.graph_objects as go
-from dash.exceptions import PreventUpdate
 
 import utils.param_codes as pc
 from utils import common, data
@@ -163,7 +163,6 @@ def filter_scatter_data(station_nm, start_date, end_date, param_x, param_y):
 )
 def map_view_map(mem_data, no_data, param, end_date):
     # This is technically a secret, but anyone can request this from mapbox so I'm not concerened about it.
-    MAPBOX_ACCESS_TOKEN = "pk.eyJ1Ijoic2xlZXB5Y2F0IiwiYSI6ImNsOXhiZng3cDA4cmkzdnFhOWhxdDEwOHQifQ.SU3dYPdC5aFVgOJWGzjq2w"
     mem_df = pd.read_json(mem_data)
     no_data = pd.read_json(no_data)
     mem_df.rename(
@@ -235,7 +234,7 @@ def map_view_map(mem_data, no_data, param, end_date):
         hovermode="closest",
         margin=dict(l=5, r=5, t=5, b=5),
         mapbox=dict(
-            accesstoken=MAPBOX_ACCESS_TOKEN,
+            accesstoken=data.MAPBOX_ACCESS_TOKEN,
             bearing=0,
             center=dict(
                 lat=43.609,
