@@ -1,13 +1,13 @@
 # data.py
-import configparser
-from dotenv import load_dotenv
+
+
 import io
-import os
 import requests
 import pandas as pd
 from typing import List
 
 import utils.common as com
+from utils.settings import config
 
 
 def get_meta_data(staids: List) -> pd.DataFrame:
@@ -58,19 +58,10 @@ def get_qwp_data(staid_list, start_lo, start_hi):
     return dataframe
 
 
-# Load environment variables
-load_dotenv()
-MAPBOX_ACCESS_TOKEN = os.getenv("MAPBOX_ACCESS_TOKEN")
-
-# load configuration variables
-config = configparser.ConfigParser()
-config.read("config.cfg")
 # Set defaults, load local data
 DEFAULT_PCODE = config["DEFAULTS"]["DEFAULT_PCODE"]
 default_start_date_lo = config["DEFAULTS"]["default_start_date_lo"]
 default_start_date_hi = config["DEFAULTS"]["default_start_date_hi"]
-# default_start_date = pd.Timestamp.today().strftime("%m-%d-%Y")
-
 
 staid_meta_data = pd.read_csv(config["DEFAULTS"]["staid_metadata"])
 STAID_LIST = list(staid_meta_data["staid"])
