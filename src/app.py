@@ -11,7 +11,7 @@ from dash import Input, Output, State, callback_context, dash, dash_table, dcc, 
 from dash.exceptions import PreventUpdate
 
 import utils.param_codes as pc
-from utils import utils, download
+from utils import data, utils
 from components import main_navbar, main_sidebar
 
 config = configparser.ConfigParser()
@@ -25,7 +25,7 @@ default_start_date_hi = config["DEFAULTS"]["default_start_date_hi"]
 staid_meta_data = pd.read_csv(config["DEFAULTS"]["staid_metadata"])
 STAID_LIST = list(staid_meta_data["staid"])
 STATION_NMs = list(staid_meta_data["station_nm"])
-qwp_download = download.get_qwp_data(staid_list=STAID_LIST, start_lo=default_start_date_lo, start_hi=default_start_date_hi)
+qwp_download = data.get_qwp_data(staid_list=STAID_LIST, start_lo=default_start_date_lo, start_hi=default_start_date_hi)
 
 # Create dictionary of parameter labels and values for the App to display
 available_parameters = qwp_download.drop_duplicates("param_label")
