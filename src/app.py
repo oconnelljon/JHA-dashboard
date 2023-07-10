@@ -1,4 +1,10 @@
 # app.py
+"""
+This is the entry point of the web application. The program needs to import the callbacks 
+to the main application for dash to find them in the global environment.  The callbacks rely on data.
+That data is downloaded at the start of the program when callbacks is imported.  Data is imported when the callbacks
+module imports the data module.  
+"""
 import dash
 import dash_bootstrap_components as dbc
 
