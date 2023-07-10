@@ -3,7 +3,6 @@ import dash
 import dash_bootstrap_components as dbc
 
 from utils.settings import PORT, ADDRESS
-import utils.data
 import utils.callbacks
 from components.layout import make_layout
 import flask
