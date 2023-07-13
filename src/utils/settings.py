@@ -1,4 +1,4 @@
-# Load environment variables
+# Load environment and configuration variables
 import configparser
 import os
 from dotenv import load_dotenv
@@ -12,4 +12,10 @@ ADDRESS = os.getenv("ADDRESS")
 config = configparser.ConfigParser()
 config.read("config.cfg")
 
+# Set defaults, load local data
+APP_TITLE = config["DEFAULTS"]["APP_TITLE"]
+DEFAULT_PCODE = config["DEFAULTS"]["DEFAULT_PCODE"]
+default_start_date_lo = config["DEFAULTS"]["default_start_date_lo"]
+default_start_date_hi = config["DEFAULTS"]["default_start_date_hi"]
+staid_metadata_path = config["DEFAULTS"]["staid_metadata_path"]
 # default_start_date = pd.Timestamp.today().strftime("%m-%d-%Y")

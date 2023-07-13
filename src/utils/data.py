@@ -7,7 +7,8 @@ import pandas as pd
 from typing import List
 
 import utils.common as com
-from utils.settings import config
+
+import utils.settings as configs
 
 
 def get_meta_data(staids: List) -> pd.DataFrame:
@@ -58,18 +59,15 @@ def get_qwp_data(staid_list, start_lo, start_hi):
     return dataframe
 
 
-# Set defaults, load local data
-DEFAULT_PCODE = config["DEFAULTS"]["DEFAULT_PCODE"]
-default_start_date_lo = config["DEFAULTS"]["default_start_date_lo"]
-default_start_date_hi = config["DEFAULTS"]["default_start_date_hi"]
-
-staid_meta_data = pd.read_csv(config["DEFAULTS"]["staid_metadata"])
+# TODO fix this mess yo
+# Read in station meta data
+staid_meta_data = pd.read_csv(configs.staid_metadata_path)
 STAID_LIST = list(staid_meta_data["staid"])
 STATION_NMs = list(staid_meta_data["station_nm"])
 nodata_df_staids = com.make_nodata_df(STATION_NMs, staid_meta_data)
 
 # Create dictionary of parameter labels and values for the App to display
-qwp_download = get_qwp_data(staid_list=STAID_LIST, start_lo=default_start_date_lo, start_hi=default_start_date_hi)
+qwp_download = get_qwp_data(staid_list=STAID_LIST, start_lo=configs.default_start_date_lo, start_hi=configs.default_start_date_hi)
 available_parameters = qwp_download.drop_duplicates("param_label")
 available_parameters = available_parameters.sort_values(by="param_label", key=lambda col: col.str.lower())
 available_param_dict = dict(zip(available_parameters["USGSPCode"], available_parameters["param_label"]))
