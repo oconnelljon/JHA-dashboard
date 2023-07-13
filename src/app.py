@@ -7,12 +7,12 @@ module imports the data module.
 """
 import dash
 import dash_bootstrap_components as dbc
+import flask
 
 from utils.settings import PORT, ADDRESS, APP_TITLE
 import utils.data
 import utils.callbacks
 from components.layout import make_layout
-import flask
 
 
 f_app = flask.Flask(__name__)
