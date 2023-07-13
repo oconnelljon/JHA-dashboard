@@ -7,7 +7,7 @@ html, body, .root, .page-container, #react-entry-point{
 
 .H1, H1 {
     text-align: center;
-    font-size: 1.5rem;
+    font-size: 1.2rem;
     padding-left: 2px;
     margin: 0px;
     background: #004c7d;
@@ -21,13 +21,13 @@ html, body, .root, .page-container, #react-entry-point{
     padding: 0.3rem;
 }
 
-.H2, H2 {
-    font-size: 1.1rem;
+/* #data-table-text {
+    font-size: 1.2rem;
     padding-left: 2px;
     background: #193b5d;
     color: whitesmoke;
     margin: 0px;
-}
+} */
 
 input[type="checkbox"] {
     margin-left: 5px;
@@ -99,7 +99,7 @@ p {
 
 .sidebar-container {
     display: flex;
-    height: calc(100vh - 76px);
+    height: calc(100vh - 73px);
     flex-direction: column;
     flex-basis: 30rem;
     flex-shrink: 0;
@@ -147,31 +147,42 @@ p {
 .body-container {
     display: flex;
     background-color: rgb(161, 161, 161);
-    padding-bottom: 1rem;
-    height: calc(100vh - 76px);
-    margin-left: auto;
-    
+    /* padding-bottom: 1rem; */
+    height: calc(100vh - 73px);
+    /* overflow-y: scroll; */
+}
+
+#main-wrapper {
+    /* display: flex; */
+    /* margin-right: auto; */
+    /* margin-left: auto; */
+    /* height: calc(100vh - 73px); */
+    overflow-y: scroll;
+    width: 100%;
+    /* height: inherit; */
 }
 
 .main-body-container {
-    background-color: #ffffff;
-    margin-right: auto;
-    margin-left: auto;
+    /* display: flex; */
+    /* margin-right: auto; */
+    /* margin-left: auto; */
     padding: 10px 10px 10px 10px;
-    height: 100%;
-    height: calc(100vh - 76px);
-    overflow-y: scroll;
+    /* height: revert; */
+    /* height: calc(100vh - 76px); */
+    /* overflow-y: hidden; */
 }
 
 .main-content-container {
     display: flex;
     flex-wrap: wrap;
-    flex-grow: 1;
+    margin-right: auto;
+    margin-left: auto;
+    /* flex-grow: 1; */
     gap: 1rem;
     max-width: 85rem;
 }
 
-.time-and-sumtable-container {
+/* .time-and-sumtable-container {
     display: flex;
     flex-grow: 1;
     flex-wrap: wrap;
@@ -179,14 +190,16 @@ p {
     background-color: #b2bdc9;
     border: 1px solid #3f3f3f78;
     padding: 4px;
-}
+} */
 
 .tile-container {
     display: flex;
     flex-wrap: wrap;
     justify-content: space-evenly;
     gap: 0.5rem;
-    background-color: #b2bdc9;
+    padding-bottom: 0.3rem;
+    /* background-color: #b2bdc9; */
+    background-color: #e5e9ed;
     border: 1px solid #3f3f3f78;
 }
 
@@ -209,14 +222,16 @@ p {
 }
 
 .table-container {
+    margin-left: 0.6rem;
+    margin-right: 0.6rem;
     flex-basis: 100%;
     /* flex-grow: 1; */
-    padding: 4px;
+    /* padding: 4px; */
 } 
 
 .plots-wrapper {
     flex-basis: 40rem;
-    padding: 4px;
+    /* padding: 4px; */
 }
 
 #summary-table {
