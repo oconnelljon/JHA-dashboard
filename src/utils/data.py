@@ -66,7 +66,8 @@ def get_qwp_data(staid_list, start_lo, start_hi):
 staid_meta_data = pd.read_csv(configs.staid_metadata_path)
 STAID_LIST = list(staid_meta_data["staid"])
 STATION_NMs = list(staid_meta_data["station_nm"])
-nodata_df_staids = com.make_nodata_df(STATION_NMs, staid_meta_data)
+
+NODATA_DF = com.make_nodata_df(STATION_NMs, staid_meta_data)
 
 # Create dictionary of parameter labels and values for the App to display
 qwp_download = get_qwp_data(staid_list=STAID_LIST, start_lo=configs.default_start_date_lo, start_hi=configs.default_start_date_hi)
@@ -76,9 +77,9 @@ available_param_dict = dict(zip(available_parameters["USGSPCode"], available_par
 available_param_labels = [{"label": label, "value": pcode} for label, pcode in zip(available_parameters["param_label"], available_parameters["USGSPCode"])]
 
 # Query all data at the start of the App, then sort intermediates to pass to Callbacks
-ALL_DATA = pd.merge(qwp_download, staid_meta_data, on="staid", how="left")
-ALL_DATA.sort_values(by="datetime", ascending=True, inplace=True)
-ALL_DATA = ALL_DATA.loc[
+ALL_DATA_DF = pd.merge(qwp_download, staid_meta_data, on="staid", how="left")
+ALL_DATA_DF.sort_values(by="datetime", ascending=True, inplace=True)
+ALL_DATA_DF = ALL_DATA_DF.loc[
     :,
     [
         "ActivityStartDate",

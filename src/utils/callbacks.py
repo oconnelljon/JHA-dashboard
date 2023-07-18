@@ -85,7 +85,7 @@ def sync_checklists(staids_selected, all_selected):
     prevent_initial_call=True,
 )
 def user_download(n_clicks):
-    return dcc.send_data_frame(data.ALL_DATA.to_csv, "You_data.csv")
+    return dcc.send_data_frame(data.ALL_DATA_DF.to_csv, "You_data.csv")
 
 
 @dash.callback(
@@ -113,11 +113,11 @@ def filter_PoI_data(station_nm, start_date, end_date, param):
     # if not staid:
     #     staid = pc.STATION_LIST
     # filtered = ALL_DATA.loc[(ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= str(end_date)) & (ALL_DATA["staid"].isin([staid])) & (ALL_DATA["USGSPCode"] == param)]
-    pcode_mask = data.ALL_DATA["USGSPCode"] == param
-    staid_date_mask = (data.ALL_DATA["station_nm"].isin(station_nm)) & (data.ALL_DATA["ActivityStartDate"] >= str(start_date)) & (data.ALL_DATA["ActivityStartDate"] <= end_date)
+    pcode_mask = data.ALL_DATA_DF["USGSPCode"] == param
+    staid_date_mask = (data.ALL_DATA_DF["station_nm"].isin(station_nm)) & (data.ALL_DATA_DF["ActivityStartDate"] >= str(start_date)) & (data.ALL_DATA_DF["ActivityStartDate"] <= end_date)
 
     # mask = ((ALL_DATA["staid"].isin([staid])) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date) | (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y))
-    filtered_all_data = data.ALL_DATA.loc[staid_date_mask & pcode_mask]
+    filtered_all_data = data.ALL_DATA_DF.loc[staid_date_mask & pcode_mask]
     # x_data = filtered_all_data.loc[:, ["staid", "datetime", "ResultMeasureValue", "USGSPCode"]]
     return filtered_all_data.to_json()
 
@@ -136,17 +136,38 @@ def filter_PoI_data(station_nm, start_date, end_date, param):
     ],
 )
 def filter_scatter_data(station_nm, start_date, end_date, param_x, param_y):
+    """Filter all and no data dataframes based on station selection, start date,
+    end date, and two parameters
+
+    Parameters
+    ----------
+    station_nm : _type_
+        List of stadion id's in the format USGS-XXXXXXXX
+    start_date : _type_
+        _description_
+    end_date : _type_
+        _description_
+    param_x : _type_
+        _description_
+    param_y : _type_
+        _description_
+
+    Returns
+    -------
+    tuple(json, json)
+        tuple of filtered data and no data dataframes
+    """
     # .isin() method needs a list for querying properly.
     if isinstance(station_nm, str):
         station_nm = [station_nm]
 
-    pcode_mask = (data.ALL_DATA["USGSPCode"] == param_x) | (data.ALL_DATA["USGSPCode"] == param_y)
-    staid_date_mask = (data.ALL_DATA["station_nm"].isin(station_nm)) & (data.ALL_DATA["ActivityStartDate"] >= str(start_date)) & (data.ALL_DATA["ActivityStartDate"] <= end_date)
+    pcode_mask = (data.ALL_DATA_DF["USGSPCode"] == param_x) | (data.ALL_DATA_DF["USGSPCode"] == param_y)
+    staid_date_mask = (data.ALL_DATA_DF["station_nm"].isin(station_nm)) & (data.ALL_DATA_DF["ActivityStartDate"] >= str(start_date)) & (data.ALL_DATA_DF["ActivityStartDate"] <= end_date)
 
-    filtered = data.ALL_DATA.loc[staid_date_mask & pcode_mask]
+    filtered = data.ALL_DATA_DF.loc[staid_date_mask & pcode_mask]
     if station_nm is None:
-        return filtered.to_json(), data.nodata_df_staids.to_json()
-    return filtered.to_json(), data.nodata_df_staids.loc[data.nodata_df_staids["Station Name"].isin(station_nm)].to_json()
+        return filtered.to_json(), data.NODATA_DF.to_json()
+    return filtered.to_json(), data.NODATA_DF.loc[data.NODATA_DF["Station Name"].isin(station_nm)].to_json()
 
 
 @dash.callback(
@@ -424,7 +445,7 @@ def plot_xy(mem_data, param_x: str, param_y: str):
     ],
 )
 def plot_xyz(checklist, start_date, end_date, param_x: str, param_y: str, param_z: str):
-    mem_df = common.filter_scatter(data.ALL_DATA, checklist, start_date, end_date, param_x, param_y, param_z)
+    mem_df = common.filter_scatter(data.ALL_DATA_DF, checklist, start_date, end_date, param_x, param_y, param_z)
     x_data = mem_df.loc[mem_df["USGSPCode"] == param_x]
     x_data = x_data.rename(columns={"ResultMeasureValue": "ResultMeasureValue_x"})
     y_data = mem_df.loc[mem_df["USGSPCode"] == param_y]
