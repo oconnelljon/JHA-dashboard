@@ -7,20 +7,19 @@ import pandas as pd
 from typing import List
 
 import utils.common as com
-
 import utils.settings as configs
 
 
-def get_meta_data(staids: List) -> pd.DataFrame:
-    # staids = [433615110440001, 433600110443701, 433604110443402]
-    staid_str = ",".join(str(staid) for staid in staids)
-    url = f"https://waterservices.usgs.gov/nwis/site/?format=rdb&sites={staid_str}&siteOutput=expanded&siteStatus=all"
-    # s=requests.get(url).text
-    dataframe = pd.read_csv(url, sep="\t", comment="#")
-    dataframe = dataframe.drop(index=0)
-    dataframe = dataframe.rename(columns={"site_no": "staid"})
-    dataframe[["station_str", "station_name"]] = dataframe["station_nm"].str.split(" ").apply(pd.Series)
-    return dataframe[["staid", "station_name", "dec_lat_va", "dec_long_va"]]
+# def get_meta_data(staids: List) -> pd.DataFrame:
+#     # staids = [433615110440001, 433600110443701, 433604110443402]
+#     staid_str = ",".join(str(staid) for staid in staids)
+#     url = f"https://waterservices.usgs.gov/nwis/site/?format=rdb&sites={staid_str}&siteOutput=expanded&siteStatus=all"
+#     # s=requests.get(url).text
+#     dataframe = pd.read_csv(url, sep="\t", comment="#")
+#     dataframe = dataframe.drop(index=0)
+#     dataframe = dataframe.rename(columns={"site_no": "staid"})
+#     dataframe[["station_str", "station_name"]] = dataframe["station_nm"].str.split(" ").apply(pd.Series)
+#     return dataframe[["staid", "station_name", "dec_lat_va", "dec_long_va"]]
 
 
 def get_qwp_data(staid_list, start_lo, start_hi):
@@ -39,6 +38,9 @@ def get_qwp_data(staid_list, start_lo, start_hi):
     # Load and scrub QWP data
     decode_response = io.StringIO(response.content.decode("utf-8"))
     dataframe = pd.read_csv(decode_response, dtype={"USGSPCode": str})
+    if dataframe.empty == True:
+        print("No data from qwp!")
+        raise SystemExit
     dataframe["USGSPCode"] = "p" + dataframe["USGSPCode"]
     dataframe.rename(columns={"MonitoringLocationIdentifier": "staid"}, inplace=True)
     dataframe["datetime"] = dataframe["ActivityStartDate"] + " " + dataframe["ActivityStartTime/Time"]
