@@ -14,54 +14,59 @@ summary_table_text = "The Summary Table contains general information about the s
 
 poi_div = html.Div(
     [
-        html.H1("Parameter of interest"),
+        html.H2("Parameter of interest"),
         html.Div(
             [
-                dcc.Dropdown(
-                    id="param_select",
-                    options=data.available_param_dict,
-                    value=DEFAULT_PCODE,
-                    persistence=True,
-                    clearable=False,
+                html.Div(
+                    [
+                        dcc.Dropdown(
+                            id="param_select",
+                            options=data.available_param_dict,
+                            value=DEFAULT_PCODE,
+                            persistence=True,
+                            clearable=False,
+                        ),
+                    ],
+                    id="main-parameter-dropdown",
+                ),
+                dbc.Card(
+                    [
+                        dbc.CardHeader("Time-Series Plot"),
+                        dcc.Graph(id="plot_param_ts", className="scatter-plot"),
+                        dbc.CardHeader(
+                            time_plot_text,
+                            # className="plot-text",
+                        ),
+                    ],
+                    className="plots-wrapper",
+                ),
+                dbc.Card(
+                    [
+                        dbc.CardHeader("Box Plot"),
+                        dcc.Graph(id="plot_box", className="box-plot"),
+                        dbc.CardHeader(
+                            box_plot_text,
+                            # className="plot-text",
+                        ),
+                    ],
+                    className="plots-wrapper",
+                ),
+                dbc.Card(
+                    [
+                        dbc.CardHeader(id="data-table-text"),
+                        dash_table.DataTable(
+                            id="summary-table",
+                            sort_action="native",
+                        ),
+                        dbc.CardHeader(
+                            summary_table_text,
+                            # className="plot-text",
+                        ),
+                    ],
+                    className="table-container",
                 ),
             ],
-            id="main-parameter-dropdown",
-        ),
-        dbc.Card(
-            [
-                dbc.CardHeader("Time-Series Plot"),
-                dcc.Graph(id="plot_param_ts", className="scatter-plot"),
-                dbc.CardHeader(
-                    time_plot_text,
-                    # className="plot-text",
-                ),
-            ],
-            className="plots-wrapper",
-        ),
-        dbc.Card(
-            [
-                dbc.CardHeader("Box Plot"),
-                dcc.Graph(id="plot_box", className="box-plot"),
-                dbc.CardHeader(
-                    box_plot_text,
-                    # className="plot-text",
-                ),
-            ],
-            className="plots-wrapper",
-        ),
-        dbc.Card(
-            [
-                dbc.CardHeader(id="data-table-text"),
-                dash_table.DataTable(
-                    id="summary-table",
-                    sort_action="native",
-                ),
-                dbc.CardHeader(
-                    summary_table_text,
-                    # className="plot-text",
-                ),
-            ],
-            className="table-container",
+            className="sub-tile-wrapper",
         ),
     ],
     className="tile-container",
@@ -163,9 +168,14 @@ main_div = html.Div(
                         poi_div,
                         html.Div(
                             [
-                                html.H1("Comparative Plots"),
-                                comp_xy_div,
-                                comp_xyz_div,
+                                html.H2("Comparative Plots"),
+                                html.Div(
+                                    [
+                                        comp_xy_div,
+                                        comp_xyz_div,
+                                    ],
+                                    className="sub-tile-wrapper",
+                                ),
                             ],
                             className="tile-container",
                         ),
