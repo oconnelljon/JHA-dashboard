@@ -13,7 +13,7 @@ def main_navbar():
                 className="navbar-brand-container",
             ),
             html.Div(
-                html.Div("Jackson Hole Airport"),
+                html.H1("Jackson Hole Airport"),
                 className="navbar-JHA-container",
             ),
             html.Div(
