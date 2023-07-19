@@ -106,19 +106,13 @@ def toggle_modal(n1, n2, is_open):
         Input("param_select", "value"),
     ],
 )
-def filter_PoI_data(station_nm, start_date, end_date, param):
-    # .isin() method needs a list for querying properly.
+def filter_x_data(station_nm, start_date, end_date, param_x):
+    """Provides filtered data for PoI and mapbox plots"""
     if isinstance(station_nm, str):
         station_nm = [station_nm]
-    # if not staid:
-    #     staid = pc.STATION_LIST
-    # filtered = ALL_DATA.loc[(ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= str(end_date)) & (ALL_DATA["staid"].isin([staid])) & (ALL_DATA["USGSPCode"] == param)]
-    pcode_mask = data.ALL_DATA_DF["USGSPCode"] == param
+    pcode_mask = data.ALL_DATA_DF["USGSPCode"] == param_x
     staid_date_mask = (data.ALL_DATA_DF["station_nm"].isin(station_nm)) & (data.ALL_DATA_DF["ActivityStartDate"] >= str(start_date)) & (data.ALL_DATA_DF["ActivityStartDate"] <= end_date)
-
-    # mask = ((ALL_DATA["staid"].isin([staid])) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date) | (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y))
     filtered_all_data = data.ALL_DATA_DF.loc[staid_date_mask & pcode_mask]
-    # x_data = filtered_all_data.loc[:, ["staid", "datetime", "ResultMeasureValue", "USGSPCode"]]
     return filtered_all_data.to_json()
 
 
@@ -167,7 +161,7 @@ def filter_scatter_data(station_nm, start_date, end_date, param_x, param_y):
     filtered = data.ALL_DATA_DF.loc[staid_date_mask & pcode_mask]
     if station_nm is None:
         return filtered.to_json(), data.NODATA_DF.to_json()
-    return filtered.to_json(), data.NODATA_DF.loc[data.NODATA_DF["Station Name"].isin(station_nm)].to_json()
+    return filtered.to_json(), data.NODATA_DF.loc[data.NODATA_DF["staid"].isin(station_nm)].to_json()
 
 
 @dash.callback(
@@ -178,32 +172,36 @@ def filter_scatter_data(station_nm, start_date, end_date, param_x, param_y):
     ],
     [
         Input("memory-PoI-data", "data"),
-        Input("memory-time-plot-no-data", "data"),
+        Input("station-checklist", "value"),
         Input("param_select", "value"),
         Input("date_range", "end_date"),
     ],
 )
-def map_view_map(mem_data, no_data, param, end_date):
+def map_view_map(mem_data, checklist, param, end_date):
     # This is technically a secret, but anyone can request this from mapbox so I'm not concerened about it.
     mem_df = pd.read_json(mem_data)
-    no_data = pd.read_json(no_data)
-    mem_df.rename(
-        columns={
-            "station_nm": "Station Name",
-            "dec_lat_va": "Latitude",
-            "dec_long_va": "Longitude",
-            "ValueAndUnits": "Result",
-        },
-        inplace=True,
-    )
-    mem_df = mem_df[["Station Name", "datetime", "Result", "Latitude", "Longitude", "ResultMeasureValue", "ResultMeasure/MeasureUnitCode"]]
+    mem_df = mem_df.sort_values(by="datetime")
+    mem_df = mem_df.drop_duplicates(subset="staid", keep="first")
+    nondetects = common.filter_nondetect_data(mem_df)
+    no_data = common.filter_nodata_data(data.NODATA_DF, staids=list(mem_df["staid"]), checklist=checklist)
+    mem_df = mem_df.loc[mem_df["ValueAndUnits"] != "Not Detected"]
+    # mem_df.rename(
+    #     columns={
+    #         "station_nm": "Station Name",
+    #         "dec_lat_va": "Latitude",
+    #         "dec_long_va": "Longitude",
+    #         "ValueAndUnits": "Result",
+    #     },
+    #     inplace=True,
+    # )
+    # mem_df = mem_df[["Station Name", "datetime", "Result", "Latitude", "Longitude", "ResultMeasureValue", "ResultMeasure/MeasureUnitCode"]]
 
     #  Only plot the most recent data on the map.  Since sampling may not occur on the same day,
     #  select the previous 30 days of data to plot.  This should yield 1 point for each well to plot if data is available.
 
-    temp_df = mem_df.groupby("Station Name")["datetime"].max()
-    date_filtered_mem_df = mem_df.loc[mem_df["datetime"].isin(list(temp_df.values))]
-    date_filtered_mem_df["Sample Date"] = date_filtered_mem_df["datetime"].astype(str).copy()
+    # temp_df = mem_df.groupby("Station Name")["datetime"].max()
+    # date_filtered_mem_df = mem_df.loc[mem_df["datetime"].isin(list(temp_df.values))]
+    mem_df["Sample Date"] = mem_df["datetime"].astype(str).copy()
 
     # Debugging helper lines.
     # date_filtered_mem_df[["Station ID", "Sample Date", "Result", "Latitude", "Longitude", "ResultMeasureValue", "ResultMeasure/MeasureUnitCode"]]
@@ -211,41 +209,77 @@ def map_view_map(mem_data, no_data, param, end_date):
 
     fig1 = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
 
-    # Create figure 1 plot
     fig1 = px.scatter_mapbox(
-        no_data,
-        lat="Latitude",
-        lon="Longitude",
+        mem_df,
+        lat="dec_lat_va",
+        lon="dec_long_va",
         color="ResultMeasureValue",
         color_continuous_scale=px.colors.sequential.Sunset,
-        hover_name="Station Name",
-        hover_data={"Result": True, "Sample Date": True, "Latitude": True, "Longitude": True, "ResultMeasureValue": False},
+        labels={
+            "station_nm": "Station Name",
+            "dec_lat_va": "Latitude",
+            "dec_long_va": "Longitude",
+            "ValueAndUnits": "Result",
+            "datetime": "Sample Date",
+        },
+        hover_name="station_nm",
+        hover_data={"ValueAndUnits": True, "datetime": True, "dec_lat_va": True, "dec_long_va": True, "ResultMeasureValue": False},
         mapbox_style="streets",
     )
 
-    # Create figure 2 plot
-    fig2 = px.scatter_mapbox(
-        date_filtered_mem_df,
-        lat="Latitude",
-        lon="Longitude",
-        color="ResultMeasureValue",
-        color_continuous_scale=px.colors.sequential.Sunset,
-        hover_name="Station Name",
-        hover_data={"Result": True, "Sample Date": True, "Latitude": True, "Longitude": True, "ResultMeasureValue": False},
-        mapbox_style="streets",
-    )
+    if nondetects is not None:
+        fig2 = px.scatter_mapbox(
+            nondetects,
+            lat="dec_lat_va",
+            lon="dec_long_va",
+            color="ValueAndUnits",
+            # color_continuous_scale=px.colors.sequential.Sunset,
+            color_discrete_map={"Not Detected": "green"},
+            labels={
+                "station_nm": "Station Name",
+                "dec_lat_va": "Latitude",
+                "dec_long_va": "Longitude",
+                "ValueAndUnits": "Result",
+                "datetime": "Sample Date",
+            },
+            hover_name="station_nm",
+            hover_data={"ValueAndUnits": True, "datetime": True, "dec_lat_va": True, "dec_long_va": True, "ResultMeasureValue": False},
+            mapbox_style="streets",
+        )
+        fig1.update_layout(showlegend=False)
+        fig1.add_trace(fig2.data[0])
 
-    fig1.add_trace(fig2.data[0])  # Overlay real data over No data plot
+    if no_data is not None:
+        # Create figure 1 plot
+        fig3 = px.scatter_mapbox(
+            no_data,
+            lat="dec_lat_va",
+            lon="dec_long_va",
+            color="Result",
+            # color_continuous_scale=px.colors.sequential.Sunset,
+            color_discrete_map={"No Data": "black"},
+            labels={
+                "station_nm": "Station Name",
+                "dec_lat_va": "Latitude",
+                "dec_long_va": "Longitude",
+                # "ValueAndUnits": "Result",
+                "datetime": "Sample Date",
+            },
+            hover_name="station_nm",
+            hover_data={"Result": True, "datetime": True, "dec_lat_va": True, "dec_long_va": True, "ResultMeasureValue": False},
+            mapbox_style="streets",
+        )
+        fig3.update_traces(marker={"size": 8})
+        fig1.add_trace(fig3.data[0])
 
     # Update marker sizes
-    fig1.update_traces(marker={"size": 12})
-    fig2.update_traces(marker={"size": 11})
+    fig1.update_traces(marker={"size": 12})  # , cluster=dict(enabled=True)
 
     # Color bar Title, if not available, display nothing, else display units
-    if len(date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].array) == 0 or date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].loc[~date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].isnull()].empty:  #  or bool(date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].isnull().array[0])
+    if len(mem_df["ResultMeasure/MeasureUnitCode"].array) == 0 or mem_df["ResultMeasure/MeasureUnitCode"].loc[~mem_df["ResultMeasure/MeasureUnitCode"].isnull()].empty:  #  or bool(date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].isnull().array[0])
         color_bar_title = ""
     else:
-        color_bar_title = date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].loc[~date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].isnull()].array[0]
+        color_bar_title = mem_df["ResultMeasure/MeasureUnitCode"].loc[~mem_df["ResultMeasure/MeasureUnitCode"].isnull()].array[0]
 
     fig1.update_layout(
         autosize=True,
@@ -445,7 +479,7 @@ def plot_xy(mem_data, param_x: str, param_y: str):
     ],
 )
 def plot_xyz(checklist, start_date, end_date, param_x: str, param_y: str, param_z: str):
-    mem_df = common.filter_scatter(data.ALL_DATA_DF, checklist, start_date, end_date, param_x, param_y, param_z)
+    mem_df = common.filter_xyz_data(data.ALL_DATA_DF, checklist, start_date, end_date, param_x, param_y, param_z)
     x_data = mem_df.loc[mem_df["USGSPCode"] == param_x]
     x_data = x_data.rename(columns={"ResultMeasureValue": "ResultMeasureValue_x"})
     y_data = mem_df.loc[mem_df["USGSPCode"] == param_y]
