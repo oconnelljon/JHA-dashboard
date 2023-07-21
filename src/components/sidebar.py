@@ -21,7 +21,7 @@ def main_sidebar(checklist_option):
             ),
             html.Div(
                 [
-                    html.H2("Select Date Range"),
+                    html.H2("Query Range"),
                     dcc.DatePickerRange(
                         id="date_range",
                         start_date=datetime.now().date() - timedelta(days=1460),
