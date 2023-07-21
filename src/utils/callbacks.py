@@ -9,7 +9,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from natsort import natsorted, index_natsorted
 
-import utils.param_codes as pc
+import utils.epa_codes as pc
 from utils.settings import MAPBOX_ACCESS_TOKEN, MAPBOX_BASELAYER_STYLE
 from utils import common, data
 
@@ -354,8 +354,16 @@ def plot_param_ts(mem_data, param):
         category_orders={"station_nm": natsorted(list(mem_df["station_nm"]))},
     )
 
+    fig.update_layout(
+        margin=dict(l=5, r=5, t=5, b=5),
+        xaxis_title="Sample Date",
+        yaxis_title=data.available_param_dict.get(param),
+    )
+
     try:
-        if smcl := pc.SMCL_DICT.get(mem_df.loc[mem_df["USGSPCode"] == param]["CharacteristicName"].unique()[0], False):
+        smcl_name = mem_df.loc[mem_df["USGSPCode"] == param]["CharacteristicName"].unique()[0]
+        smcl = pc.SMCL_DICT.get(smcl_name, False)
+        if smcl and smcl_name != "Nitrate" and smcl_name != "Manganese":
             fig.add_hline(
                 y=smcl,
                 annotation_text=f"EPA SDWR: {smcl}",
@@ -365,13 +373,71 @@ def plot_param_ts(mem_data, param):
                 y=0.5,  # 0.5 mg/L is Anoxic
                 annotation_text="Anoxic: 0.5",
             )
+        if mcl := pc.MCL_DICT.get(smcl_name, False):
+            fig.add_hline(
+                y=mcl,
+                # annotation_text=f"EPA DWR: {mcl}",
+            )
+        if smcl_name in ["Nitrate", "Manganese"]:
+            fig.update_yaxes(type="log")
+    except IndexError:
+        print("Invalid index, no worries")
+
+    return fig
+
+
+@dash.callback(
+    Output("plot_box", "figure"),
+    [
+        Input("memory-PoI-data", "data"),
+        Input("param_select", "value"),
+    ],
+)
+def plot_box(mem_data, param):
+    mem_df = pd.read_json(mem_data)
+    mem_df["datetime"] = pd.to_datetime(mem_df["datetime"], format="%Y-%m-%d %H:%M")
+    mem_df = mem_df.dropna(subset=["ResultMeasureValue"])
+
+    fig = px.box(
+        mem_df,
+        labels={
+            "station_nm": "Station Name",
+            "datetime": "Sample Date",
+            "staid": "Station ID",
+            "ResultMeasureValue": "Result",
+        },
+        x="station_nm",
+        y="ResultMeasureValue",
+        color="station_nm",
+        category_orders={"station_nm": natsorted(list(mem_df["station_nm"]))},
+    )
+
+    try:
+        smcl_name = mem_df.loc[mem_df["USGSPCode"] == param]["CharacteristicName"].unique()[0]
+        smcl = pc.SMCL_DICT.get(smcl_name, False)
+        if smcl and smcl_name != "Nitrate" and smcl_name != "Manganese":
+            fig.add_hline(
+                y=smcl,
+                annotation_text=f"EPA SDWR: {smcl}",
+            )
+        if param == "p00300":
+            fig.add_hline(
+                y=0.5,  # 0.5 mg/L is Anoxic
+                annotation_text="Anoxic: 0.5",
+            )
+        if mcl := pc.MCL_DICT.get(smcl_name, False):
+            fig.add_hline(
+                y=mcl,
+                # annotation_text=f"EPA DWR: {mcl}",
+            )
+        if smcl_name in ["Nitrate", "Manganese"]:
+            fig.update_yaxes(type="log")
     except IndexError:
         print("Invalid index, no worries")
 
     fig.update_layout(
+        yaxis_title=str(data.available_param_dict.get(param)),
         margin=dict(l=5, r=5, t=5, b=5),
-        xaxis_title="Sample Date",
-        yaxis_title=data.available_param_dict.get(param),
     )
     return fig
 
@@ -560,48 +626,4 @@ def plot_xyz(checklist, start_date, end_date, param_x: str, param_y: str, param_
             scaleanchor="x",
             scaleratio=1,
         )
-    return fig
-
-
-@dash.callback(
-    Output("plot_box", "figure"),
-    [
-        Input("memory-PoI-data", "data"),
-        Input("param_select", "value"),
-    ],
-)
-def plot_box(mem_data, param):
-    mem_df = pd.read_json(mem_data)
-    mem_df["datetime"] = pd.to_datetime(mem_df["datetime"], format="%Y-%m-%d %H:%M")
-    mem_df = mem_df.dropna(subset=["ResultMeasureValue"])
-    # mem_df = mem_df.rename(
-    #     columns={
-    #         "station_nm": "Station Name",
-    #     },
-    # )
-    fig = px.box(
-        mem_df,
-        labels={
-            "station_nm": "Station Name",
-            "datetime": "Sample Date",
-            "staid": "Station ID",
-            "ResultMeasureValue": "Result",
-        },
-        x="station_nm",
-        y="ResultMeasureValue",
-        color="station_nm",
-        category_orders={"station_nm": natsorted(list(mem_df["station_nm"]))},
-    )
-
-    fig.update_layout(yaxis_title=str(data.available_param_dict.get(param)))
-
-    try:
-        if smcl := pc.SMCL_DICT.get(mem_df.loc[mem_df["USGSPCode"] == param]["CharacteristicName"].unique()[0], False):
-            fig = common.add_yline(fig=fig, smcl=smcl)
-    except IndexError:
-        print("Invalid index, no worries")
-
-    fig.update_layout(
-        margin=dict(l=5, r=5, t=5, b=5),
-    )
     return fig
