@@ -16,14 +16,14 @@ html, body, .root, .page-container, #react-entry-point{
     transform-origin:0 0;}
 
 .H1, H1 {
-    font-size: 3.1rem;
+    font-size: 2.0rem;
     margin: 0px;
     color: whitesmoke;
 }
 
 .H2, H2 {
     text-align: center;
-    font-size: 1.0rem;
+    font-size: 1.2rem;
     /* padding-left: 2px; */
     margin: 0px;
     background: #004c7d;
@@ -127,10 +127,10 @@ p {
     display: flex;
     height: calc(100vh - 73px);
     flex-direction: column;
-    flex-basis: 30rem;
+    flex-basis: 20rem;
     flex-shrink: 0;
-    background-color: #00264c;
-    border-top: #EEE;
+    /* background-color: #ffffff; */
+    border-right: groove;
     padding-top: 10px;
     /* padding-left: 8px; */
     padding-right: 5px;
@@ -150,6 +150,19 @@ p {
     margin-bottom: 4px;
 }
 
+#date-range {
+    width: 100%;
+}
+
+#coop-img-container {
+    height: 150px;
+    width: 175px;
+    background-color: white;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+}
+
 #sidebar-map-container {
     display: flex;
     flex-direction: column;
@@ -157,19 +170,19 @@ p {
 }
 
 .map-view-container {
-    flex-grow: 1;
+    min-height: 30rem;
     padding: 2px;
 }
 
 #station-checklist {
     line-height:1em;
     overflow-y:scroll;
-    overflow-x:hidden;
-    height: 100px;
+    /* overflow-x:hidden; */
+    height: 20rem;
 }
 
 #location-map {
-    height: 100%;
+    /* height: 100%; */
 }
 
 .body-container {
@@ -258,8 +271,8 @@ p {
 .table-container {
     /* margin-left: 0.6rem;
     margin-right: 0.6rem; */
-    flex-basis: 100%;
-    /* flex-grow: 1; */
+    flex-basis: 80rem;
+    flex-grow: 1;
     /* padding: 4px; */
 } 
 
