@@ -151,7 +151,6 @@ def filter_scatter_data(station_nm, start_date, end_date, param_x, param_y):
     tuple(json, json)
         tuple of filtered data and no data dataframes
     """
-    # .isin() method needs a list for querying properly.
     if isinstance(station_nm, str):
         station_nm = [station_nm]
 
@@ -185,22 +184,6 @@ def map_view_map(mem_data, checklist, param, end_date):
     nondetects = common.filter_nondetect_data(mem_df)
     no_data = common.filter_nodata_data(data.NODATA_DF, staids=list(mem_df["staid"]), checklist=checklist)
     mem_df = mem_df.loc[mem_df["ValueAndUnits"] != "Not Detected"]
-    # mem_df.rename(
-    #     columns={
-    #         "station_nm": "Station Name",
-    #         "dec_lat_va": "Latitude",
-    #         "dec_long_va": "Longitude",
-    #         "ValueAndUnits": "Result",
-    #     },
-    #     inplace=True,
-    # )
-    # mem_df = mem_df[["Station Name", "datetime", "Result", "Latitude", "Longitude", "ResultMeasureValue", "ResultMeasure/MeasureUnitCode"]]
-
-    #  Only plot the most recent data on the map.  Since sampling may not occur on the same day,
-    #  select the previous 30 days of data to plot.  This should yield 1 point for each well to plot if data is available.
-
-    # temp_df = mem_df.groupby("Station Name")["datetime"].max()
-    # date_filtered_mem_df = mem_df.loc[mem_df["datetime"].isin(list(temp_df.values))]
     mem_df["Sample Date"] = mem_df["datetime"].astype(str).copy()
 
     # Debugging helper lines.
@@ -233,7 +216,6 @@ def map_view_map(mem_data, checklist, param, end_date):
             lat="dec_lat_va",
             lon="dec_long_va",
             color="ValueAndUnits",
-            # color_continuous_scale=px.colors.sequential.Sunset,
             color_discrete_map={"Not Detected": "green"},
             labels={
                 "station_nm": "Station Name",
@@ -250,13 +232,11 @@ def map_view_map(mem_data, checklist, param, end_date):
         fig1.add_trace(fig2.data[0])
 
     if no_data is not None:
-        # Create figure 1 plot
         fig3 = px.scatter_mapbox(
             no_data,
             lat="dec_lat_va",
             lon="dec_long_va",
             color="Result",
-            # color_continuous_scale=px.colors.sequential.Sunset,
             color_discrete_map={"No Data": "black"},
             labels={
                 "station_nm": "Station Name",
@@ -272,8 +252,16 @@ def map_view_map(mem_data, checklist, param, end_date):
         fig3.update_traces(marker={"size": 8})
         fig1.add_trace(fig3.data[0])
 
-    # Update marker sizes
-    fig1.update_traces(marker={"size": 12})  # , cluster=dict(enabled=True)
+    fig1.update_traces(
+        marker=dict(
+            size=12,
+            # lines=dict(
+            #     width=1,
+            #     color="DarkSlateGrey",
+            # ),
+        ),
+        # selector=dict(mode="markers"),
+    )  # , cluster=dict(enabled=True)
 
     # Color bar Title, if not available, display nothing, else display units
     if len(mem_df["ResultMeasure/MeasureUnitCode"].array) == 0 or mem_df["ResultMeasure/MeasureUnitCode"].loc[~mem_df["ResultMeasure/MeasureUnitCode"].isnull()].empty:  #  or bool(date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].isnull().array[0])
@@ -292,12 +280,12 @@ def map_view_map(mem_data, checklist, param, end_date):
         mapbox=dict(
             accesstoken=MAPBOX_ACCESS_TOKEN,
             bearing=0,
-            center=dict(
-                lat=43.609,
-                lon=-110.737,
-            ),
+            # center=dict(
+            #     lat=43.609,
+            #     lon=-110.737,
+            # ),
             pitch=0,
-            zoom=14,
+            # zoom=14,
         ),
     )
 
