@@ -10,7 +10,7 @@ box_plot_text = "Box plots show the distribution of data for the entire selected
 scatter_x_y_text = "The scatter plot displays data from the above drop down menues on their respective axis'. Only selected stations and data within the time range are displayed."
 scatter_x_y_z_text = "Plot X vs Y data with a third parameter that controls the size of the plot marker."
 summary_table_text = "The Summary Table contains general information about the selected stations in the time range for the Parameter of Interest.  Stations with no data are not displayed."
-
+location_map_text = "The location map will only show the most recent available sample value per station."
 
 poi_div = html.Div(
     [
@@ -50,6 +50,17 @@ poi_div = html.Div(
                         ),
                     ],
                     className="plots-wrapper",
+                ),
+                # Map
+                dbc.Card(
+                    [
+                        dbc.CardHeader(html.P(id="map-text")),
+                        # html.H3(html.P(id="map-text")),
+                        html.P(id="graph-text-param", style={"font-weight": "bold", "text-align": "center"}),
+                        html.Div(id="map-tab-graph", className="map-view-container"),
+                        dbc.CardHeader(html.P(location_map_text)),
+                    ],
+                    className="table-container",
                 ),
                 dbc.Card(
                     [
