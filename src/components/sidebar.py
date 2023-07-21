@@ -37,10 +37,7 @@ def main_sidebar(checklist_option):
                 className="sidebar-sub-container",
                 id="daterange-container",
             ),
-            html.Img(
-                src=dash.get_asset_url("fort-peck-icon-150x175.png"),
-                id="coop-img-container"
-            ),
+            html.Img(src=dash.get_asset_url("fort-peck-icon-150x175.png"), id="coop-img-container"),
         ],
         className="sidebar-container",
     )
