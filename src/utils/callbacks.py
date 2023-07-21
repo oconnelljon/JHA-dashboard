@@ -173,7 +173,7 @@ def filter_scatter_data(station_nm, start_date, end_date, param_x, param_y):
 
 @dash.callback(
     [
-        Output("map-view-container", "children"),
+        Output("map-view-graph", "figure"),
         Output("map-text", "children"),
         Output("graph-text-param", "children"),
     ],
@@ -288,7 +288,7 @@ def map_view_map(mem_data, checklist, param, end_date):
         color_bar_title = mem_df["ResultMeasure/MeasureUnitCode"].loc[~mem_df["ResultMeasure/MeasureUnitCode"].isnull()].array[0]
 
     fig1.update_layout(
-        autosize=True,
+        # autosize=True,
         coloraxis_colorbar=dict(
             title=color_bar_title,
         ),
@@ -301,7 +301,7 @@ def map_view_map(mem_data, checklist, param, end_date):
             xanchor="right",
             x=1,
         ),
-        margin=dict(l=5, r=5, t=1, b=1),
+        margin=dict(l=5, r=0, t=0, b=1),
         mapbox=dict(
             accesstoken=MAPBOX_ACCESS_TOKEN,
             bearing=0,
@@ -310,8 +310,11 @@ def map_view_map(mem_data, checklist, param, end_date):
         ),
     )
 
+    # fig1.update_yaxes(automargin=True)
+    # fig1.update_xaxes(automargin=True)
+
     return (
-        dcc.Graph(id="location-map", figure=fig1, responsive=True),
+        fig1,
         f"Location Map -- Most recent values before {end_date} for:",
         f"{data.available_param_dict.get(param)}",
     )

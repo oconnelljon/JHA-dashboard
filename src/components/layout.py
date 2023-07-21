@@ -57,7 +57,7 @@ poi_div = html.Div(
                         dbc.CardHeader(html.P(id="map-text")),
                         # html.H3(html.P(id="map-text")),
                         html.P(id="graph-text-param", style={"font-weight": "bold", "text-align": "center"}),
-                        html.Div(id="map-tab-graph", className="map-view-container"),
+                        dcc.Graph(id="map-view-graph", className="map-view-container", responsive=True),
                         dbc.CardHeader(html.P(location_map_text)),
                     ],
                     className="table-container",
