@@ -10,7 +10,7 @@ import plotly.graph_objects as go
 from natsort import natsorted, index_natsorted
 
 import utils.param_codes as pc
-from utils.settings import MAPBOX_ACCESS_TOKEN
+from utils.settings import MAPBOX_ACCESS_TOKEN, MAPBOX_BASELAYER_STYLE
 from utils import common, data
 
 
@@ -216,7 +216,7 @@ def map_view_map(mem_data, checklist, param, end_date):
         },
         hover_name="station_nm",
         hover_data={"ValueAndUnits": True, "datetime": True, "dec_lat_va": True, "dec_long_va": True, "ResultMeasureValue": False},
-        mapbox_style="streets",
+        mapbox_style=MAPBOX_BASELAYER_STYLE,
     )
 
     if nondetects is not None:
@@ -235,7 +235,7 @@ def map_view_map(mem_data, checklist, param, end_date):
             },
             hover_name="station_nm",
             hover_data={"ValueAndUnits": True, "datetime": True, "dec_lat_va": True, "dec_long_va": True, "ResultMeasureValue": False},
-            mapbox_style="streets",
+            # mapbox_style="streets",
         )
         fig1.update_layout(showlegend=False)
         fig1.add_trace(fig2.data[0])
@@ -256,7 +256,7 @@ def map_view_map(mem_data, checklist, param, end_date):
             },
             hover_name="station_nm",
             hover_data={"Result": True, "datetime": True, "dec_lat_va": True, "dec_long_va": True, "ResultMeasureValue": False},
-            mapbox_style="streets",
+            # mapbox_style="streets",
         )
         fig3.update_traces(marker={"size": 8})
         fig1.add_trace(fig3.data[0])
