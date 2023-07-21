@@ -258,7 +258,15 @@ def map_view_map(mem_data, checklist, param, end_date):
             hover_data={"Result": True, "datetime": True, "dec_lat_va": True, "dec_long_va": True, "ResultMeasureValue": False},
             # mapbox_style="streets",
         )
-        fig3.update_layout(showlegend=False)
+        # fig3.update_layout(
+        #     legend=dict(
+        #         orientation="h",
+        #         yanchor="bottom",
+        #         y=1.02,
+        #         xanchor="left",
+        #         x=1,
+        #     ),
+        # )
         fig3.update_traces(marker={"size": 8})
         fig1.add_trace(fig3.data[0])
 
