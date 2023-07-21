@@ -1,11 +1,13 @@
 # callbacks.py
 from array import array
 import pandas as pd
+import numpy as np
 from dash import Input, Output, State, callback_context, dash, dcc
 import dash
 from dash.exceptions import PreventUpdate
 import plotly.express as px
 import plotly.graph_objects as go
+from natsort import natsorted, index_natsorted
 
 import utils.param_codes as pc
 from utils.settings import MAPBOX_ACCESS_TOKEN
@@ -60,6 +62,12 @@ def summarize_data(mem_data, param) -> tuple:
 
     my_data["Station ID"] = my_data.index
     my_data = my_data[["Station Name", "Station ID", "Latest Sample", "First Sample", "Sample Count", "Not Detected", "Median Value"]]
+    my_data = my_data.sort_values(
+        by="Station Name",
+        key=lambda x: np.argsort(
+            index_natsorted(my_data["Station Name"]),
+        ),
+    )
     return my_data.to_dict("records"), f"Summary Table for data from {group_staid['ActivityStartDate'].min().min()} to {group_staid['ActivityStartDate'].max().max()} for {data.available_param_dict[param]}"
 
 
@@ -200,6 +208,7 @@ def map_view_map(mem_data, checklist, param, end_date):
         color_continuous_scale=px.colors.sequential.Sunset,
         labels={
             "station_nm": "Station Name",
+            "staid": "Station ID",
             "dec_lat_va": "Latitude",
             "dec_long_va": "Longitude",
             "ValueAndUnits": "Result",
@@ -342,6 +351,7 @@ def plot_param_ts(mem_data, param):
             ValueAndUnits=True,
             ResultMeasureValue=False,
         ),
+        category_orders={"station_nm": natsorted(list(mem_df["station_nm"]))},
     )
 
     try:
@@ -414,6 +424,7 @@ def plot_xy(mem_data, param_x: str, param_y: str):
             ResultMeasureValue_x=False,
             ResultMeasureValue_y=False,
         ),
+        category_orders={"station_nm": natsorted(list(mem_df["station_nm"]))},
     )
 
     try:
@@ -506,6 +517,7 @@ def plot_xyz(checklist, start_date, end_date, param_x: str, param_y: str, param_
             staid_x=True,
             datetime=True,
         ),
+        category_orders={"station_nm_x": natsorted(list(combined["station_nm_x"]))},
     )
 
     try:
@@ -562,12 +574,24 @@ def plot_box(mem_data, param):
     mem_df = pd.read_json(mem_data)
     mem_df["datetime"] = pd.to_datetime(mem_df["datetime"], format="%Y-%m-%d %H:%M")
     mem_df = mem_df.dropna(subset=["ResultMeasureValue"])
-    mem_df = mem_df.rename(
-        columns={
+    # mem_df = mem_df.rename(
+    #     columns={
+    #         "station_nm": "Station Name",
+    #     },
+    # )
+    fig = px.box(
+        mem_df,
+        labels={
             "station_nm": "Station Name",
+            "datetime": "Sample Date",
+            "staid": "Station ID",
+            "ResultMeasureValue": "Result",
         },
+        x="station_nm",
+        y="ResultMeasureValue",
+        color="station_nm",
+        category_orders={"station_nm": natsorted(list(mem_df["station_nm"]))},
     )
-    fig = px.box(mem_df, x="Station Name", y="ResultMeasureValue", color="Station Name")
 
     fig.update_layout(yaxis_title=str(data.available_param_dict.get(param)))
 
