@@ -3,7 +3,7 @@
 import dash_bootstrap_components as dbc
 from dash import dcc, html
 import dash
-import utils.settings as APP_TITLE
+from utils.settings import APP_TITLE
 
 
 def main_navbar():
