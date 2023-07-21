@@ -171,7 +171,6 @@ p {
 
 .map-view-container {
     min-height: 30rem;
-    padding: 2px;
 }
 
 #station-checklist {
@@ -179,10 +178,6 @@ p {
     overflow-y:scroll;
     /* overflow-x:hidden; */
     height: 20rem;
-}
-
-#location-map {
-    /* height: 100%; */
 }
 
 .body-container {
