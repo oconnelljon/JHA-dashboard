@@ -16,7 +16,7 @@ html, body, .root, .page-container, #react-entry-point{
     transform-origin:0 0;}
 
 .H1, H1 {
-    font-size: 1.2rem;
+    font-size: 3.1rem;
     margin: 0px;
     color: whitesmoke;
 }
@@ -39,7 +39,7 @@ html, body, .root, .page-container, #react-entry-point{
 
 .H3, H3 {
     text-align: center;
-    font-size: 1.0rem;
+    font-size: 1.6rem;
     /* padding-left: 2px; */
     /* margin: 0px; */
     /* background: #004c7d; */
