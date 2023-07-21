@@ -4,7 +4,7 @@
 import io
 import requests
 import pandas as pd
-from typing import List
+from natsort import natsorted
 
 import utils.common as com
 import utils.settings as configs
@@ -60,13 +60,10 @@ def get_qwp_data(staid_list, start_lo, start_hi):
     dataframe["param_label"] = dataframe["param_label"].str.rstrip(", ")
     return dataframe
 
-
-# TODO fix this mess yo
 # Read in station meta data
 staid_meta_data = pd.read_csv(configs.staid_metadata_path)
 STAID_LIST = list(staid_meta_data["staid"])
-STATION_NMs = list(staid_meta_data["station_nm"])
-
+STATION_NMs = natsorted(list(staid_meta_data["station_nm"]))
 NODATA_DF = com.make_nodata_df(STATION_NMs, staid_meta_data)
 
 # Create dictionary of parameter labels and values for the App to display
