@@ -173,7 +173,7 @@ def filter_scatter_data(station_nm, start_date, end_date, param_x, param_y):
 
 @dash.callback(
     [
-        Output("map-tab-graph", "children"),
+        Output("map-view-container", "children"),
         Output("map-text", "children"),
         Output("graph-text-param", "children"),
     ],
@@ -237,7 +237,7 @@ def map_view_map(mem_data, checklist, param, end_date):
             hover_data={"ValueAndUnits": True, "datetime": True, "dec_lat_va": True, "dec_long_va": True, "ResultMeasureValue": False},
             # mapbox_style="streets",
         )
-        fig2.update_layout(showlegend=False)
+        fig2.update_traces(legendgroup="F2")
         fig1.add_trace(fig2.data[0])
 
     if no_data is not None:
@@ -289,26 +289,29 @@ def map_view_map(mem_data, checklist, param, end_date):
 
     fig1.update_layout(
         autosize=True,
-        # title=f"{available_param_dict.get(param)}",
         coloraxis_colorbar=dict(
             title=color_bar_title,
         ),
+        # coloraxis_colorbar_x=-0.15,
         hovermode="closest",
-        margin=dict(l=5, r=5, t=5, b=5),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+        ),
+        margin=dict(l=5, r=5, t=1, b=1),
         mapbox=dict(
             accesstoken=MAPBOX_ACCESS_TOKEN,
             bearing=0,
-            # center=dict(
-            #     lat=43.609,
-            #     lon=-110.737,
-            # ),
             pitch=0,
             # zoom=14,
         ),
     )
 
     return (
-        dcc.Graph(id="location-map", figure=fig1, className="THEGRAPH", responsive=True),
+        dcc.Graph(id="location-map", figure=fig1, responsive=True),
         f"Location Map -- Most recent values before {end_date} for:",
         f"{data.available_param_dict.get(param)}",
     )
