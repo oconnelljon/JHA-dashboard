@@ -17,7 +17,7 @@ from components.layout import make_layout
 
 f_app = flask.Flask(__name__)
 # Initialize App
-app = dash.Dash(__name__, assets_folder="assets", external_stylesheets=[dbc.themes.SPACELAB], title=APP_TITLE, server=f_app)  #type: ignore  # pylance doesn't think f_app is suitable.
+app = dash.Dash(__name__, assets_folder="assets", external_stylesheets=[dbc.themes.SPACELAB], title=APP_TITLE, server=f_app)  # type: ignore  # pylance doesn't think f_app is suitable.
 # server = app.server  # Important for debugging and using Flask!
 app.layout = make_layout()
 
