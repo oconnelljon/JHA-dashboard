@@ -1,6 +1,7 @@
 # sidebar.py
 from datetime import datetime, timedelta
 from dash import dcc, html
+import dash
 
 
 def main_sidebar(checklist_option):
@@ -23,7 +24,7 @@ def main_sidebar(checklist_option):
                 [
                     html.H2("Query Range"),
                     dcc.DatePickerRange(
-                        id="date_range",
+                        id="date-range",
                         start_date=datetime.now().date() - timedelta(days=1460),
                         end_date=datetime.now().date(),
                         initial_visible_month=datetime.now(),
@@ -36,16 +37,9 @@ def main_sidebar(checklist_option):
                 className="sidebar-sub-container",
                 id="daterange-container",
             ),
-            # Map
-            html.Div(
-                [
-                    html.H3("Location Map"),
-                    html.P(id="map-text"),
-                    html.P(id="graph-text-param", style={"font-weight": "bold", "text-align": "center"}),
-                    html.Div(id="map-tab-graph", className="map-view-container"),
-                ],
-                id="sidebar-map-container",
-                className="sidebar-sub-container",
+            html.Img(
+                src=dash.get_asset_url("fort-peck-icon-150x175.png"),
+                id="coop-img-container"
             ),
         ],
         className="sidebar-container",
