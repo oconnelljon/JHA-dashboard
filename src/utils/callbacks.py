@@ -109,8 +109,8 @@ def toggle_modal(n1, n2, is_open):
     Output("memory-PoI-data", "data"),
     [
         Input("station-checklist", "value"),
-        Input("date_range", "start_date"),
-        Input("date_range", "end_date"),
+        Input("date-range", "start_date"),
+        Input("date-range", "end_date"),
         Input("param_select", "value"),
     ],
 )
@@ -131,8 +131,8 @@ def filter_x_data(station_nm, start_date, end_date, param_x):
     ],
     [
         Input("station-checklist", "value"),
-        Input("date_range", "start_date"),
-        Input("date_range", "end_date"),
+        Input("date-range", "start_date"),
+        Input("date-range", "end_date"),
         Input("param_select_x", "value"),
         Input("param_select_y", "value"),
     ],
@@ -181,7 +181,7 @@ def filter_scatter_data(station_nm, start_date, end_date, param_x, param_y):
         Input("memory-PoI-data", "data"),
         Input("station-checklist", "value"),
         Input("param_select", "value"),
-        Input("date_range", "end_date"),
+        Input("date-range", "end_date"),
     ],
 )
 def map_view_map(mem_data, checklist, param, end_date):
@@ -237,7 +237,7 @@ def map_view_map(mem_data, checklist, param, end_date):
             hover_data={"ValueAndUnits": True, "datetime": True, "dec_lat_va": True, "dec_long_va": True, "ResultMeasureValue": False},
             # mapbox_style="streets",
         )
-        fig1.update_layout(showlegend=False)
+        fig2.update_layout(showlegend=False)
         fig1.add_trace(fig2.data[0])
 
     if no_data is not None:
@@ -258,6 +258,7 @@ def map_view_map(mem_data, checklist, param, end_date):
             hover_data={"Result": True, "datetime": True, "dec_lat_va": True, "dec_long_va": True, "ResultMeasureValue": False},
             # mapbox_style="streets",
         )
+        fig3.update_layout(showlegend=False)
         fig3.update_traces(marker={"size": 8})
         fig1.add_trace(fig3.data[0])
 
@@ -300,7 +301,7 @@ def map_view_map(mem_data, checklist, param, end_date):
 
     return (
         dcc.Graph(id="location-map", figure=fig1, className="THEGRAPH", responsive=True),
-        f"Most recent values before {end_date} for:",
+        f"Location Map -- Most recent values before {end_date} for:",
         f"{data.available_param_dict.get(param)}",
     )
 
@@ -536,8 +537,8 @@ def plot_xy(mem_data, param_x: str, param_y: str):
     Output("plot_xyz", "figure"),
     [
         Input("station-checklist", "value"),
-        Input("date_range", "start_date"),
-        Input("date_range", "end_date"),
+        Input("date-range", "start_date"),
+        Input("date-range", "end_date"),
         Input("param_select_xx", "value"),
         Input("param_select_yy", "value"),
         Input("param_select_zz", "value"),
