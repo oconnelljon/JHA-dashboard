@@ -219,6 +219,12 @@ def map_view_map(mem_data, checklist, param, end_date):
         mapbox_style=MAPBOX_BASELAYER_STYLE,
     )
 
+    fig1.update_traces(
+        marker=dict(
+            size=12,
+        ),
+    )
+
     if nondetects is not None:
         fig2 = px.scatter_mapbox(
             nondetects,
@@ -234,10 +240,19 @@ def map_view_map(mem_data, checklist, param, end_date):
                 "datetime": "Sample Date",
             },
             hover_name="station_nm",
-            hover_data={"ValueAndUnits": True, "datetime": True, "dec_lat_va": True, "dec_long_va": True, "ResultMeasureValue": False},
-            # mapbox_style="streets",
+            hover_data={
+                "ValueAndUnits": True,
+                "datetime": True,
+                "dec_lat_va": True,
+                "dec_long_va": True,
+                "ResultMeasureValue": False,
+            },
         )
-        fig2.update_traces(legendgroup="F2")
+        fig2.update_traces(
+            marker=dict(
+                size=10,
+            ),
+        )
         fig1.add_trace(fig2.data[0])
 
     if no_data is not None:
@@ -251,35 +266,20 @@ def map_view_map(mem_data, checklist, param, end_date):
                 "station_nm": "Station Name",
                 "dec_lat_va": "Latitude",
                 "dec_long_va": "Longitude",
-                # "ValueAndUnits": "Result",
+                "ValueAndUnits": "Result",
                 "datetime": "Sample Date",
             },
             hover_name="station_nm",
-            hover_data={"Result": True, "datetime": True, "dec_lat_va": True, "dec_long_va": True, "ResultMeasureValue": False},
-            # mapbox_style="streets",
+            hover_data={
+                "Result": True,
+                "datetime": True,
+                "dec_lat_va": True,
+                "dec_long_va": True,
+                "ResultMeasureValue": False,
+            },
         )
-        # fig3.update_layout(
-        #     legend=dict(
-        #         orientation="h",
-        #         yanchor="bottom",
-        #         y=1.02,
-        #         xanchor="left",
-        #         x=1,
-        #     ),
-        # )
-        fig3.update_traces(marker={"size": 8})
+        fig3.update_traces(marker={"size": 10})
         fig1.add_trace(fig3.data[0])
-
-    fig1.update_traces(
-        marker=dict(
-            size=12,
-            # lines=dict(
-            #     width=1,
-            #     color="DarkSlateGrey",
-            # ),
-        ),
-        # selector=dict(mode="markers"),
-    )  # , cluster=dict(enabled=True)
 
     # Color bar Title, if not available, display nothing, else display units
     if len(mem_df["ResultMeasure/MeasureUnitCode"].array) == 0 or mem_df["ResultMeasure/MeasureUnitCode"].loc[~mem_df["ResultMeasure/MeasureUnitCode"].isnull()].empty:  #  or bool(date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].isnull().array[0])
@@ -288,11 +288,9 @@ def map_view_map(mem_data, checklist, param, end_date):
         color_bar_title = mem_df["ResultMeasure/MeasureUnitCode"].loc[~mem_df["ResultMeasure/MeasureUnitCode"].isnull()].array[0]
 
     fig1.update_layout(
-        # autosize=True,
         coloraxis_colorbar=dict(
             title=color_bar_title,
         ),
-        # coloraxis_colorbar_x=-0.15,
         hovermode="closest",
         legend=dict(
             orientation="h",
@@ -306,12 +304,8 @@ def map_view_map(mem_data, checklist, param, end_date):
             accesstoken=MAPBOX_ACCESS_TOKEN,
             bearing=0,
             pitch=0,
-            # zoom=14,
         ),
     )
-
-    # fig1.update_yaxes(automargin=True)
-    # fig1.update_xaxes(automargin=True)
 
     return (
         fig1,
