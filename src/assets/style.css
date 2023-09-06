@@ -5,28 +5,40 @@ html, body, .root, .page-container, #react-entry-point{
     overflow: hidden;
 }
 
+.SmallerPage{
+    -webkit-transform:scale(0.80);
+    -moz-transform:scale(0.80);
+    -ms-transform:scale(0.80);
+    transform:scale(0.80);
+    -ms-transform-origin:0 0;
+    -webkit-transform-origin:0 0;
+    -moz-transform-origin:0 0;
+    transform-origin:0 0;}
+
 .H1, H1 {
+    font-size: 2.0rem;
+    margin: 0px;
+    color: whitesmoke;
+}
+
+.H2, H2 {
     text-align: center;
-    font-size: 1.5rem;
-    padding-left: 2px;
+    font-size: 1.2rem;
     margin: 0px;
     background: #004c7d;
     color: whitesmoke;
 }
 
-.tile-container H1 {
+.tile-container H2 {
     width: 100%;
     background: #004c7d;
     color: whitesmoke;
     padding: 0.3rem;
 }
 
-.H2, H2 {
-    font-size: 1.1rem;
-    padding-left: 2px;
-    background: #193b5d;
-    color: whitesmoke;
-    margin: 0px;
+.H3, H3 {
+    text-align: center;
+    font-size: 1.6rem;
 }
 
 input[type="checkbox"] {
@@ -64,7 +76,7 @@ p {
     font-size: 2rem;
 }
 
-.navbar-JHA-container {
+.navbar-title-container {
     font-size: 2rem;
 }
 
@@ -78,6 +90,7 @@ p {
     display: inline-flex;
 }
 
+/* ################### Modal */
 .modal-content {
     width: auto;
 }
@@ -96,16 +109,15 @@ p {
     column-gap: 2em;
 }
 
-
+/* ################### Sidebar */
 .sidebar-container {
     display: flex;
-    height: calc(100vh - 76px);
+    height: calc(100vh - 73px);
     flex-direction: column;
-    flex-basis: 30rem;
+    flex-basis: 20rem;
     flex-shrink: 0;
-    background-color: #f8f9fa;
+    border-right: groove;
     padding-top: 10px;
-    padding-left: 8px;
     padding-right: 5px;
 }
 
@@ -116,10 +128,22 @@ p {
 
 .sidebar-sub-container {
     align-self: stretch;
-    border: 1px solid #cacccd;
+    background-color: white;
     border-radius: 4px;
-    /* margin: 3px; */
     margin-bottom: 4px;
+}
+
+#date-range {
+    width: 100%;
+}
+
+#coop-img-container {
+    height: 150px;
+    width: 175px;
+    background-color: white;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
 }
 
 #sidebar-map-container {
@@ -129,65 +153,56 @@ p {
 }
 
 .map-view-container {
-    flex-grow: 1;
-    padding: 2px;
+    /* Needs height so it doesn't get run over */
+    min-height: 29rem;
 }
 
 #station-checklist {
     line-height:1em;
     overflow-y:scroll;
-    overflow-x:hidden;
-    height: 100px;
-}
-
-#location-map {
-    height: 100%;
+    height: 20rem;
 }
 
 .body-container {
     display: flex;
-    background-color: rgb(161, 161, 161);
-    padding-bottom: 1rem;
-    height: calc(100vh - 76px);
-    margin-left: auto;
-    
+    height: calc(100vh - 73px);
+}
+
+#main-wrapper {
+    overflow-y: scroll;
+    width: 100%;
 }
 
 .main-body-container {
-    background-color: #ffffff;
-    margin-right: auto;
-    margin-left: auto;
     padding: 10px 10px 10px 10px;
-    height: 100%;
-    height: calc(100vh - 76px);
-    overflow-y: scroll;
 }
 
 .main-content-container {
     display: flex;
     flex-wrap: wrap;
-    flex-grow: 1;
+    margin-right: auto;
+    margin-left: auto;
     gap: 1rem;
     max-width: 85rem;
-}
-
-.time-and-sumtable-container {
-    display: flex;
-    flex-grow: 1;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    background-color: #b2bdc9;
-    border: 1px solid #3f3f3f78;
-    padding: 4px;
 }
 
 .tile-container {
     display: flex;
     flex-wrap: wrap;
-    justify-content: space-evenly;
-    gap: 0.5rem;
-    background-color: #b2bdc9;
+    background-color: #f4faff;
     border: 1px solid #3f3f3f78;
+}
+
+.sub-tile-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: auto;
+    padding-left: 0.6rem;
+    padding-right: 0.6rem;
+    gap: 0.5rem 1.5rem;
+    padding-bottom: 0.3rem;
+    background-color: #f4faff;
 }
 
 .plot-text {
@@ -197,29 +212,29 @@ p {
 }
 
 #map-text {
-    /* background: #193b5d; */
-    /* color: whitesmoke; */
     padding-left: 0.5rem;
 }
 
 #main-parameter-dropdown {
     flex-basis: 100%;
-    margin-left: 5px;
-    margin-right: 5px;
 }
 
 .table-container {
-    flex-basis: 100%;
-    /* flex-grow: 1; */
-    padding: 4px;
+    flex-basis: 80rem;
+    flex-grow: 1;
 } 
 
 .plots-wrapper {
     flex-basis: 40rem;
-    padding: 4px;
 }
 
 #summary-table {
     max-height: 20rem;
     overflow-y: scroll;
+}
+
+.card-header {
+    color: #00264c;
+    border-color: #00264c;
+    background-color: #e7e7e7;
 }

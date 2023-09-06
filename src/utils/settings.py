@@ -15,6 +15,7 @@ config.read("config.cfg")
 # Set defaults, load local data
 APP_TITLE = config["DEFAULTS"]["APP_TITLE"]
 DEFAULT_PCODE = config["DEFAULTS"]["DEFAULT_PCODE"]
+MAPBOX_BASELAYER_STYLE = config["DEFAULTS"]["MAPBOX_BASELAYER_STYLE"]
 default_start_date_lo = config["DEFAULTS"]["default_start_date_lo"]
 default_start_date_hi = config["DEFAULTS"]["default_start_date_hi"]
 staid_metadata_path = config["DEFAULTS"]["staid_metadata_path"]

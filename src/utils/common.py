@@ -50,13 +50,73 @@ def add_yline(fig, smcl):
     return fig
 
 
-def filter_scatter(data, station_nm, start_date, end_date, param_x, param_y, param_z):
+def filter_x_data(data, station_nm, start_date, end_date, param_x):
     # .isin() method needs a list for querying properly.
     if isinstance(station_nm, str):
         station_nm = [station_nm]
+
+    pcode_mask = data["USGSPCode"] == param_x
+    staid_date_mask = (data["station_nm"].isin(station_nm)) & (data["ActivityStartDate"] >= str(start_date)) & (data["ActivityStartDate"] <= end_date)
+    return data.loc[staid_date_mask & pcode_mask]
+
+
+def filter_xy_data(data, station_nm, start_date, end_date, param_x, param_y):
+    if isinstance(station_nm, str):
+        station_nm = [station_nm]
+
+    pcode_mask = (data["USGSPCode"] == param_x) | (data["USGSPCode"] == param_y)
+    staid_date_mask = (data["station_nm"].isin(station_nm)) & (data["ActivityStartDate"] >= str(start_date)) & (data["ActivityStartDate"] <= end_date)
+    return data.loc[staid_date_mask & pcode_mask]
+
+
+def filter_xyz_data(data, station_nm, start_date, end_date, param_x, param_y, param_z):
+    if isinstance(station_nm, str):
+        station_nm = [station_nm]
+
     pcode_mask = (data["USGSPCode"] == param_x) | (data["USGSPCode"] == param_y) | (data["USGSPCode"] == param_z)
     staid_date_mask = (data["station_nm"].isin(station_nm)) & (data["ActivityStartDate"] >= str(start_date)) & (data["ActivityStartDate"] <= end_date)
     return data.loc[staid_date_mask & pcode_mask]
+
+
+def filter_nondetect_data(data: pd.DataFrame) -> pd.DataFrame | None:
+    """Find nondetect values in dataframe and return them as a stand alone dataframe
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        Input data to be check for nondetects
+
+    Returns
+    -------
+    pd.DataFrame | None
+        Dataframe of nondetect values.
+    """
+    non_detect_df = data.loc[data["ResultDetectionConditionText"] == "Not Detected"]
+    return None if non_detect_df.empty else non_detect_df
+
+
+def filter_nodata_data(no_data: pd.DataFrame, staids: str | list, checklist: str | list) -> pd.DataFrame | None:
+    """Find stations with no data and return a no_data dataframe
+
+    Parameters
+    ----------
+    no_data : pd.DataFrame
+        Dataframe containing no_data representations of all stations
+    station_nm : str | list
+        String or list of station names to check for no data
+
+    Returns
+    -------
+    pd.DataFrame | None
+        Dataframe containing no_data representation of stations without valid data
+    """
+    if isinstance(staids, str):
+        staids = [staids]
+    if isinstance(checklist, str):
+        checklist = [checklist]
+
+    no_data_df = no_data.loc[~no_data["staid"].isin(staids) & no_data["station_nm"].isin(checklist)]
+    return None if no_data_df.empty else no_data_df
 
 
 def make_nodata_df(station_nms, staid_metadata):
@@ -71,16 +131,18 @@ def make_nodata_df(station_nms, staid_metadata):
         }
     )
     nodata_df_staids = pd.merge(nodata_df, staid_metadata, on="station_nm", how="left")
-    nodata_df_staids = nodata_df_staids.loc[
+    return nodata_df_staids.loc[
         :,
         ["station_nm", "staid", "datetime", "Result", "ResultMeasureValue", "dec_lat_va", "dec_long_va"],
     ]
-    return nodata_df_staids.rename(
-        columns={
-            "station_nm": "Station Name",
-            "staid": "Station ID",
-            "dec_lat_va": "Latitude",
-            "dec_long_va": "Longitude",
-            "datetime": "Sample Date",
-        }
-    )
+
+
+# return nodata_df_staids.rename(
+#     columns={
+#         "station_nm": "Station Name",
+#         "staid": "Station ID",
+#         "dec_lat_va": "Latitude",
+#         "dec_long_va": "Longitude",
+#         "datetime": "Sample Date",
+#     }
+# )

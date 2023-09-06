@@ -1,14 +1,16 @@
 # callbacks.py
 from array import array
 import pandas as pd
+import numpy as np
 from dash import Input, Output, State, callback_context, dash, dcc
 import dash
 from dash.exceptions import PreventUpdate
 import plotly.express as px
 import plotly.graph_objects as go
+from natsort import natsorted, index_natsorted
 
-import utils.param_codes as pc
-from utils.settings import MAPBOX_ACCESS_TOKEN
+import utils.epa_codes as pc
+from utils.settings import MAPBOX_ACCESS_TOKEN, MAPBOX_BASELAYER_STYLE
 from utils import common, data
 
 
@@ -60,6 +62,12 @@ def summarize_data(mem_data, param) -> tuple:
 
     my_data["Station ID"] = my_data.index
     my_data = my_data[["Station Name", "Station ID", "Latest Sample", "First Sample", "Sample Count", "Not Detected", "Median Value"]]
+    my_data = my_data.sort_values(
+        by="Station Name",
+        key=lambda x: np.argsort(
+            index_natsorted(my_data["Station Name"]),
+        ),
+    )
     return my_data.to_dict("records"), f"Summary Table for data from {group_staid['ActivityStartDate'].min().min()} to {group_staid['ActivityStartDate'].max().max()} for {data.available_param_dict[param]}"
 
 
@@ -85,7 +93,7 @@ def sync_checklists(staids_selected, all_selected):
     prevent_initial_call=True,
 )
 def user_download(n_clicks):
-    return dcc.send_data_frame(data.ALL_DATA.to_csv, "You_data.csv")
+    return dcc.send_data_frame(data.ALL_DATA_DF.to_csv, "You_data.csv")
 
 
 @dash.callback(
@@ -101,24 +109,18 @@ def toggle_modal(n1, n2, is_open):
     Output("memory-PoI-data", "data"),
     [
         Input("station-checklist", "value"),
-        Input("date_range", "start_date"),
-        Input("date_range", "end_date"),
+        Input("date-range", "start_date"),
+        Input("date-range", "end_date"),
         Input("param_select", "value"),
     ],
 )
-def filter_PoI_data(station_nm, start_date, end_date, param):
-    # .isin() method needs a list for querying properly.
+def filter_x_data(station_nm, start_date, end_date, param_x):
+    """Provides filtered data for PoI and mapbox plots"""
     if isinstance(station_nm, str):
         station_nm = [station_nm]
-    # if not staid:
-    #     staid = pc.STATION_LIST
-    # filtered = ALL_DATA.loc[(ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= str(end_date)) & (ALL_DATA["staid"].isin([staid])) & (ALL_DATA["USGSPCode"] == param)]
-    pcode_mask = data.ALL_DATA["USGSPCode"] == param
-    staid_date_mask = (data.ALL_DATA["station_nm"].isin(station_nm)) & (data.ALL_DATA["ActivityStartDate"] >= str(start_date)) & (data.ALL_DATA["ActivityStartDate"] <= end_date)
-
-    # mask = ((ALL_DATA["staid"].isin([staid])) & (ALL_DATA["ActivityStartDate"] >= str(start_date)) & (ALL_DATA["ActivityStartDate"] <= end_date) | (ALL_DATA["USGSPCode"] == param_x) | (ALL_DATA["USGSPCode"] == param_y))
-    filtered_all_data = data.ALL_DATA.loc[staid_date_mask & pcode_mask]
-    # x_data = filtered_all_data.loc[:, ["staid", "datetime", "ResultMeasureValue", "USGSPCode"]]
+    pcode_mask = data.ALL_DATA_DF["USGSPCode"] == param_x
+    staid_date_mask = (data.ALL_DATA_DF["station_nm"].isin(station_nm)) & (data.ALL_DATA_DF["ActivityStartDate"] >= str(start_date)) & (data.ALL_DATA_DF["ActivityStartDate"] <= end_date)
+    filtered_all_data = data.ALL_DATA_DF.loc[staid_date_mask & pcode_mask]
     return filtered_all_data.to_json()
 
 
@@ -129,60 +131,68 @@ def filter_PoI_data(station_nm, start_date, end_date, param):
     ],
     [
         Input("station-checklist", "value"),
-        Input("date_range", "start_date"),
-        Input("date_range", "end_date"),
+        Input("date-range", "start_date"),
+        Input("date-range", "end_date"),
         Input("param_select_x", "value"),
         Input("param_select_y", "value"),
     ],
 )
 def filter_scatter_data(station_nm, start_date, end_date, param_x, param_y):
-    # .isin() method needs a list for querying properly.
+    """Filter all and no data dataframes based on station selection, start date,
+    end date, and two parameters
+
+    Parameters
+    ----------
+    station_nm : _type_
+        List of stadion id's in the format USGS-XXXXXXXX
+    start_date : _type_
+        _description_
+    end_date : _type_
+        _description_
+    param_x : _type_
+        _description_
+    param_y : _type_
+        _description_
+
+    Returns
+    -------
+    tuple(json, json)
+        tuple of filtered data and no data dataframes
+    """
     if isinstance(station_nm, str):
         station_nm = [station_nm]
 
-    pcode_mask = (data.ALL_DATA["USGSPCode"] == param_x) | (data.ALL_DATA["USGSPCode"] == param_y)
-    staid_date_mask = (data.ALL_DATA["station_nm"].isin(station_nm)) & (data.ALL_DATA["ActivityStartDate"] >= str(start_date)) & (data.ALL_DATA["ActivityStartDate"] <= end_date)
+    pcode_mask = (data.ALL_DATA_DF["USGSPCode"] == param_x) | (data.ALL_DATA_DF["USGSPCode"] == param_y)
+    staid_date_mask = (data.ALL_DATA_DF["station_nm"].isin(station_nm)) & (data.ALL_DATA_DF["ActivityStartDate"] >= str(start_date)) & (data.ALL_DATA_DF["ActivityStartDate"] <= end_date)
 
-    filtered = data.ALL_DATA.loc[staid_date_mask & pcode_mask]
+    filtered = data.ALL_DATA_DF.loc[staid_date_mask & pcode_mask]
     if station_nm is None:
-        return filtered.to_json(), data.nodata_df_staids.to_json()
-    return filtered.to_json(), data.nodata_df_staids.loc[data.nodata_df_staids["Station Name"].isin(station_nm)].to_json()
+        return filtered.to_json(), data.NODATA_DF.to_json()
+    return filtered.to_json(), data.NODATA_DF.loc[data.NODATA_DF["staid"].isin(station_nm)].to_json()
 
 
 @dash.callback(
     [
-        Output("map-tab-graph", "children"),
+        Output("map-view-graph", "figure"),
         Output("map-text", "children"),
         Output("graph-text-param", "children"),
     ],
     [
         Input("memory-PoI-data", "data"),
-        Input("memory-time-plot-no-data", "data"),
+        Input("station-checklist", "value"),
         Input("param_select", "value"),
-        Input("date_range", "end_date"),
+        Input("date-range", "end_date"),
     ],
 )
-def map_view_map(mem_data, no_data, param, end_date):
+def map_view_map(mem_data, checklist, param, end_date):
     # This is technically a secret, but anyone can request this from mapbox so I'm not concerened about it.
     mem_df = pd.read_json(mem_data)
-    no_data = pd.read_json(no_data)
-    mem_df.rename(
-        columns={
-            "station_nm": "Station Name",
-            "dec_lat_va": "Latitude",
-            "dec_long_va": "Longitude",
-            "ValueAndUnits": "Result",
-        },
-        inplace=True,
-    )
-    mem_df = mem_df[["Station Name", "datetime", "Result", "Latitude", "Longitude", "ResultMeasureValue", "ResultMeasure/MeasureUnitCode"]]
-
-    #  Only plot the most recent data on the map.  Since sampling may not occur on the same day,
-    #  select the previous 30 days of data to plot.  This should yield 1 point for each well to plot if data is available.
-
-    temp_df = mem_df.groupby("Station Name")["datetime"].max()
-    date_filtered_mem_df = mem_df.loc[mem_df["datetime"].isin(list(temp_df.values))]
-    date_filtered_mem_df["Sample Date"] = date_filtered_mem_df["datetime"].astype(str).copy()
+    mem_df = mem_df.sort_values(by="datetime")
+    mem_df = mem_df.drop_duplicates(subset="staid", keep="first")
+    nondetects = common.filter_nondetect_data(mem_df)
+    no_data = common.filter_nodata_data(data.NODATA_DF, staids=list(mem_df["staid"]), checklist=checklist)
+    mem_df = mem_df.loc[mem_df["ValueAndUnits"] != "Not Detected"]
+    mem_df["Sample Date"] = mem_df["datetime"].astype(str).copy()
 
     # Debugging helper lines.
     # date_filtered_mem_df[["Station ID", "Sample Date", "Result", "Latitude", "Longitude", "ResultMeasureValue", "ResultMeasure/MeasureUnitCode"]]
@@ -190,65 +200,116 @@ def map_view_map(mem_data, no_data, param, end_date):
 
     fig1 = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
 
-    # Create figure 1 plot
     fig1 = px.scatter_mapbox(
-        no_data,
-        lat="Latitude",
-        lon="Longitude",
+        mem_df,
+        lat="dec_lat_va",
+        lon="dec_long_va",
         color="ResultMeasureValue",
         color_continuous_scale=px.colors.sequential.Sunset,
-        hover_name="Station Name",
-        hover_data={"Result": True, "Sample Date": True, "Latitude": True, "Longitude": True, "ResultMeasureValue": False},
-        mapbox_style="streets",
+        labels={
+            "station_nm": "Station Name",
+            "staid": "Station ID",
+            "dec_lat_va": "Latitude",
+            "dec_long_va": "Longitude",
+            "ValueAndUnits": "Result",
+            "datetime": "Sample Date",
+        },
+        hover_name="station_nm",
+        hover_data={"ValueAndUnits": True, "datetime": True, "dec_lat_va": True, "dec_long_va": True, "ResultMeasureValue": False},
+        mapbox_style=MAPBOX_BASELAYER_STYLE,
     )
 
-    # Create figure 2 plot
-    fig2 = px.scatter_mapbox(
-        date_filtered_mem_df,
-        lat="Latitude",
-        lon="Longitude",
-        color="ResultMeasureValue",
-        color_continuous_scale=px.colors.sequential.Sunset,
-        hover_name="Station Name",
-        hover_data={"Result": True, "Sample Date": True, "Latitude": True, "Longitude": True, "ResultMeasureValue": False},
-        mapbox_style="streets",
+    fig1.update_traces(
+        marker=dict(
+            size=12,
+        ),
     )
 
-    fig1.add_trace(fig2.data[0])  # Overlay real data over No data plot
+    if nondetects is not None:
+        fig2 = px.scatter_mapbox(
+            nondetects,
+            lat="dec_lat_va",
+            lon="dec_long_va",
+            color="ValueAndUnits",
+            color_discrete_map={"Not Detected": "green"},
+            labels={
+                "station_nm": "Station Name",
+                "dec_lat_va": "Latitude",
+                "dec_long_va": "Longitude",
+                "ValueAndUnits": "Result",
+                "datetime": "Sample Date",
+            },
+            hover_name="station_nm",
+            hover_data={
+                "ValueAndUnits": True,
+                "datetime": True,
+                "dec_lat_va": True,
+                "dec_long_va": True,
+                "ResultMeasureValue": False,
+            },
+        )
+        fig2.update_traces(
+            marker=dict(
+                size=10,
+            ),
+        )
+        fig1.add_trace(fig2.data[0])
 
-    # Update marker sizes
-    fig1.update_traces(marker={"size": 12})
-    fig2.update_traces(marker={"size": 11})
+    if no_data is not None:
+        fig3 = px.scatter_mapbox(
+            no_data,
+            lat="dec_lat_va",
+            lon="dec_long_va",
+            color="Result",
+            color_discrete_map={"No Data": "black"},
+            labels={
+                "station_nm": "Station Name",
+                "dec_lat_va": "Latitude",
+                "dec_long_va": "Longitude",
+                "ValueAndUnits": "Result",
+                "datetime": "Sample Date",
+            },
+            hover_name="station_nm",
+            hover_data={
+                "Result": True,
+                "datetime": True,
+                "dec_lat_va": True,
+                "dec_long_va": True,
+                "ResultMeasureValue": False,
+            },
+        )
+        fig3.update_traces(marker={"size": 10})
+        fig1.add_trace(fig3.data[0])
 
     # Color bar Title, if not available, display nothing, else display units
-    if len(date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].array) == 0 or date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].loc[~date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].isnull()].empty:  #  or bool(date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].isnull().array[0])
+    if len(mem_df["ResultMeasure/MeasureUnitCode"].array) == 0 or mem_df["ResultMeasure/MeasureUnitCode"].loc[~mem_df["ResultMeasure/MeasureUnitCode"].isnull()].empty:  #  or bool(date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].isnull().array[0])
         color_bar_title = ""
     else:
-        color_bar_title = date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].loc[~date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].isnull()].array[0]
+        color_bar_title = mem_df["ResultMeasure/MeasureUnitCode"].loc[~mem_df["ResultMeasure/MeasureUnitCode"].isnull()].array[0]
 
     fig1.update_layout(
-        autosize=True,
-        # title=f"{available_param_dict.get(param)}",
         coloraxis_colorbar=dict(
             title=color_bar_title,
         ),
         hovermode="closest",
-        margin=dict(l=5, r=5, t=5, b=5),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+        ),
+        margin=dict(l=5, r=0, t=0, b=1),
         mapbox=dict(
             accesstoken=MAPBOX_ACCESS_TOKEN,
             bearing=0,
-            center=dict(
-                lat=43.609,
-                lon=-110.737,
-            ),
             pitch=0,
-            zoom=14,
         ),
     )
 
     return (
-        dcc.Graph(id="location-map", figure=fig1, className="THEGRAPH", responsive=True),
-        f"Most recent values before {end_date} for:",
+        fig1,
+        f"Location Map -- Most recent values before {end_date} for:",
         f"{data.available_param_dict.get(param)}",
     )
 
@@ -299,10 +360,19 @@ def plot_param_ts(mem_data, param):
             ValueAndUnits=True,
             ResultMeasureValue=False,
         ),
+        category_orders={"station_nm": natsorted(list(mem_df["station_nm"]))},
+    )
+
+    fig.update_layout(
+        margin=dict(l=5, r=5, t=5, b=5),
+        xaxis_title="Sample Date",
+        yaxis_title=data.available_param_dict.get(param),
     )
 
     try:
-        if smcl := pc.SMCL_DICT.get(mem_df.loc[mem_df["USGSPCode"] == param]["CharacteristicName"].unique()[0], False):
+        smcl_name = mem_df.loc[mem_df["USGSPCode"] == param]["CharacteristicName"].unique()[0]
+        smcl = pc.SMCL_DICT.get(smcl_name, False)
+        if smcl and smcl_name != "Nitrate" and smcl_name != "Manganese":
             fig.add_hline(
                 y=smcl,
                 annotation_text=f"EPA SDWR: {smcl}",
@@ -312,13 +382,71 @@ def plot_param_ts(mem_data, param):
                 y=0.5,  # 0.5 mg/L is Anoxic
                 annotation_text="Anoxic: 0.5",
             )
+        if mcl := pc.MCL_DICT.get(smcl_name, False):
+            fig.add_hline(
+                y=mcl,
+                # annotation_text=f"EPA DWR: {mcl}",
+            )
+        if smcl_name in ["Nitrate", "Manganese"]:
+            fig.update_yaxes(type="log")
+    except IndexError:
+        print("Invalid index, no worries")
+
+    return fig
+
+
+@dash.callback(
+    Output("plot_box", "figure"),
+    [
+        Input("memory-PoI-data", "data"),
+        Input("param_select", "value"),
+    ],
+)
+def plot_box(mem_data, param):
+    mem_df = pd.read_json(mem_data)
+    mem_df["datetime"] = pd.to_datetime(mem_df["datetime"], format="%Y-%m-%d %H:%M")
+    mem_df = mem_df.dropna(subset=["ResultMeasureValue"])
+
+    fig = px.box(
+        mem_df,
+        labels={
+            "station_nm": "Station Name",
+            "datetime": "Sample Date",
+            "staid": "Station ID",
+            "ResultMeasureValue": "Result",
+        },
+        x="station_nm",
+        y="ResultMeasureValue",
+        color="station_nm",
+        category_orders={"station_nm": natsorted(list(mem_df["station_nm"]))},
+    )
+
+    try:
+        smcl_name = mem_df.loc[mem_df["USGSPCode"] == param]["CharacteristicName"].unique()[0]
+        smcl = pc.SMCL_DICT.get(smcl_name, False)
+        if smcl and smcl_name != "Nitrate" and smcl_name != "Manganese":
+            fig.add_hline(
+                y=smcl,
+                annotation_text=f"EPA SDWR: {smcl}",
+            )
+        if param == "p00300":
+            fig.add_hline(
+                y=0.5,  # 0.5 mg/L is Anoxic
+                annotation_text="Anoxic: 0.5",
+            )
+        if mcl := pc.MCL_DICT.get(smcl_name, False):
+            fig.add_hline(
+                y=mcl,
+                # annotation_text=f"EPA DWR: {mcl}",
+            )
+        if smcl_name in ["Nitrate", "Manganese"]:
+            fig.update_yaxes(type="log")
     except IndexError:
         print("Invalid index, no worries")
 
     fig.update_layout(
+        yaxis_title=str(data.available_param_dict.get(param)),
         margin=dict(l=5, r=5, t=5, b=5),
-        xaxis_title="Sample Date",
-        yaxis_title=data.available_param_dict.get(param),
     )
     return fig
 
@@ -371,6 +499,7 @@ def plot_xy(mem_data, param_x: str, param_y: str):
             ResultMeasureValue_x=False,
             ResultMeasureValue_y=False,
         ),
+        category_orders={"station_nm": natsorted(list(mem_df["station_nm"]))},
     )
 
     try:
@@ -416,15 +545,15 @@ def plot_xy(mem_data, param_x: str, param_y: str):
     Output("plot_xyz", "figure"),
     [
         Input("station-checklist", "value"),
-        Input("date_range", "start_date"),
-        Input("date_range", "end_date"),
+        Input("date-range", "start_date"),
+        Input("date-range", "end_date"),
         Input("param_select_xx", "value"),
         Input("param_select_yy", "value"),
         Input("param_select_zz", "value"),
     ],
 )
 def plot_xyz(checklist, start_date, end_date, param_x: str, param_y: str, param_z: str):
-    mem_df = common.filter_scatter(data.ALL_DATA, checklist, start_date, end_date, param_x, param_y, param_z)
+    mem_df = common.filter_xyz_data(data.ALL_DATA_DF, checklist, start_date, end_date, param_x, param_y, param_z)
     x_data = mem_df.loc[mem_df["USGSPCode"] == param_x]
     x_data = x_data.rename(columns={"ResultMeasureValue": "ResultMeasureValue_x"})
     y_data = mem_df.loc[mem_df["USGSPCode"] == param_y]
@@ -463,6 +592,7 @@ def plot_xyz(checklist, start_date, end_date, param_x: str, param_y: str, param_
             staid_x=True,
             datetime=True,
         ),
+        category_orders={"station_nm_x": natsorted(list(combined["station_nm_x"]))},
     )
 
     try:
@@ -505,36 +635,4 @@ def plot_xyz(checklist, start_date, end_date, param_x: str, param_y: str, param_
             scaleanchor="x",
             scaleratio=1,
         )
-    return fig
-
-
-@dash.callback(
-    Output("plot_box", "figure"),
-    [
-        Input("memory-PoI-data", "data"),
-        Input("param_select", "value"),
-    ],
-)
-def plot_box(mem_data, param):
-    mem_df = pd.read_json(mem_data)
-    mem_df["datetime"] = pd.to_datetime(mem_df["datetime"], format="%Y-%m-%d %H:%M")
-    mem_df = mem_df.dropna(subset=["ResultMeasureValue"])
-    mem_df = mem_df.rename(
-        columns={
-            "station_nm": "Station Name",
-        },
-    )
-    fig = px.box(mem_df, x="Station Name", y="ResultMeasureValue", color="Station Name")
-
-    fig.update_layout(yaxis_title=str(data.available_param_dict.get(param)))
-
-    try:
-        if smcl := pc.SMCL_DICT.get(mem_df.loc[mem_df["USGSPCode"] == param]["CharacteristicName"].unique()[0], False):
-            fig = common.add_yline(fig=fig, smcl=smcl)
-    except IndexError:
-        print("Invalid index, no worries")
-
-    fig.update_layout(
-        margin=dict(l=5, r=5, t=5, b=5),
-    )
     return fig

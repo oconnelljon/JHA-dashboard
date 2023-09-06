@@ -3,6 +3,7 @@
 import dash_bootstrap_components as dbc
 from dash import dcc, html
 import dash
+from utils.settings import APP_TITLE
 
 
 def main_navbar():
@@ -13,8 +14,8 @@ def main_navbar():
                 className="navbar-brand-container",
             ),
             html.Div(
-                html.Div("Jackson Hole Airport"),
-                className="navbar-JHA-container",
+                html.H1(APP_TITLE),
+                className="navbar-title-container",
             ),
             html.Div(
                 [
