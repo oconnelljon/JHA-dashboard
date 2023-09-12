@@ -1,7 +1,13 @@
 # sidebar.py
 from datetime import datetime, timedelta
+
+# import dash
+import dash_bootstrap_components as dbc
 from dash import dcc, html
-import dash
+
+location_map_text = (
+    "The location map will only show the most recent available sample value per station."
+)
 
 
 def main_sidebar(checklist_option):
@@ -15,6 +21,7 @@ def main_sidebar(checklist_option):
                         id="station-checklist",
                         options=checklist_option,
                         persistence=False,
+                        labelClassName="checkbox-label",
                     ),
                 ],
                 className="sidebar-sub-container",
@@ -37,7 +44,19 @@ def main_sidebar(checklist_option):
                 className="sidebar-sub-container",
                 id="daterange-container",
             ),
-            html.Img(src=dash.get_asset_url("fort-peck-icon-150x175.png"), id="coop-img-container"),
+            # Map
+            dbc.Card(
+                [
+                    dbc.CardHeader(html.P(id="map-text")),
+                    # html.H3(html.P(id="map-text")),
+                    html.P(
+                        id="graph-text-param", style={"font-weight": "bold", "text-align": "center"}
+                    ),
+                    dcc.Graph(id="map-view-graph", className="map-view-container", responsive=True),
+                    dbc.CardHeader(html.P(location_map_text)),
+                ],
+                className="map-container",
+            ),
         ],
         className="sidebar-container",
     )
