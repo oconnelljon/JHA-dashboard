@@ -53,7 +53,7 @@ def main_sidebar(checklist_option):
                         id="graph-text-param", style={"font-weight": "bold", "text-align": "center"}
                     ),
                     dcc.Graph(id="map-view-graph", className="map-view-container", responsive=True),
-                    dbc.CardHeader(html.P(location_map_text)),
+                    dbc.CardFooter(html.P(location_map_text)),
                 ],
                 className="map-container",
             ),
