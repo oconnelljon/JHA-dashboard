@@ -1,6 +1,8 @@
 import textwrap
-import pandas as pd
+from itertools import cycle, islice
 from typing import List
+
+import pandas as pd
 
 
 def title_wrapper(text: str) -> str:
@@ -56,7 +58,11 @@ def filter_x_data(data, station_nm, start_date, end_date, param_x):
         station_nm = [station_nm]
 
     pcode_mask = data["USGSPCode"] == param_x
-    staid_date_mask = (data["station_nm"].isin(station_nm)) & (data["ActivityStartDate"] >= str(start_date)) & (data["ActivityStartDate"] <= end_date)
+    staid_date_mask = (
+        (data["station_nm"].isin(station_nm))
+        & (data["ActivityStartDate"] >= str(start_date))
+        & (data["ActivityStartDate"] <= end_date)
+    )
     return data.loc[staid_date_mask & pcode_mask]
 
 
@@ -65,7 +71,11 @@ def filter_xy_data(data, station_nm, start_date, end_date, param_x, param_y):
         station_nm = [station_nm]
 
     pcode_mask = (data["USGSPCode"] == param_x) | (data["USGSPCode"] == param_y)
-    staid_date_mask = (data["station_nm"].isin(station_nm)) & (data["ActivityStartDate"] >= str(start_date)) & (data["ActivityStartDate"] <= end_date)
+    staid_date_mask = (
+        (data["station_nm"].isin(station_nm))
+        & (data["ActivityStartDate"] >= str(start_date))
+        & (data["ActivityStartDate"] <= end_date)
+    )
     return data.loc[staid_date_mask & pcode_mask]
 
 
@@ -73,8 +83,16 @@ def filter_xyz_data(data, station_nm, start_date, end_date, param_x, param_y, pa
     if isinstance(station_nm, str):
         station_nm = [station_nm]
 
-    pcode_mask = (data["USGSPCode"] == param_x) | (data["USGSPCode"] == param_y) | (data["USGSPCode"] == param_z)
-    staid_date_mask = (data["station_nm"].isin(station_nm)) & (data["ActivityStartDate"] >= str(start_date)) & (data["ActivityStartDate"] <= end_date)
+    pcode_mask = (
+        (data["USGSPCode"] == param_x)
+        | (data["USGSPCode"] == param_y)
+        | (data["USGSPCode"] == param_z)
+    )
+    staid_date_mask = (
+        (data["station_nm"].isin(station_nm))
+        & (data["ActivityStartDate"] >= str(start_date))
+        & (data["ActivityStartDate"] <= end_date)
+    )
     return data.loc[staid_date_mask & pcode_mask]
 
 
@@ -95,7 +113,9 @@ def filter_nondetect_data(data: pd.DataFrame) -> pd.DataFrame | None:
     return None if non_detect_df.empty else non_detect_df
 
 
-def filter_nodata_data(no_data: pd.DataFrame, staids: str | list, checklist: str | list) -> pd.DataFrame | None:
+def filter_nodata_data(
+    no_data: pd.DataFrame, staids: str | list, checklist: str | list
+) -> pd.DataFrame | None:
     """Find stations with no data and return a no_data dataframe
 
     Parameters
@@ -133,7 +153,15 @@ def make_nodata_df(station_nms, staid_metadata):
     nodata_df_staids = pd.merge(nodata_df, staid_metadata, on="station_nm", how="left")
     return nodata_df_staids.loc[
         :,
-        ["station_nm", "staid", "datetime", "Result", "ResultMeasureValue", "dec_lat_va", "dec_long_va"],
+        [
+            "station_nm",
+            "staid",
+            "datetime",
+            "Result",
+            "ResultMeasureValue",
+            "dec_lat_va",
+            "dec_long_va",
+        ],
     ]
 
 
@@ -146,3 +174,24 @@ def make_nodata_df(station_nms, staid_metadata):
 #         "datetime": "Sample Date",
 #     }
 # )
+
+
+def roundrobin(*iterables):
+    """
+    Notes
+    -----
+    Source: https://docs.python.org/3/library/itertools.html#itertools-recipes
+    Can be installed: python -m pip install more-itertools
+    """
+    "roundrobin('ABC', 'D', 'EF') --> A D E B F C"
+    # Recipe credited to George Sakkis
+    num_active = len(iterables)
+    nexts = cycle(iter(it).__next__ for it in iterables)
+    while num_active:
+        try:
+            for next in nexts:
+                yield next()
+        except StopIteration:
+            # Remove the iterator we just exhausted from the cycle.
+            num_active -= 1
+            nexts = cycle(islice(nexts, num_active))
