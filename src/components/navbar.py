@@ -27,7 +27,12 @@ def main_navbar():
                                     dbc.Label("Download all data."),
                                     html.Div(
                                         [
-                                            dbc.Button("Download", color="primary", id="download-modal-button", n_clicks=0),
+                                            dbc.Button(
+                                                "Download",
+                                                color="primary",
+                                                id="download-modal-button",
+                                                n_clicks=0,
+                                            ),
                                             dcc.Download(id="download-dataframe-csv"),
                                             dbc.Button("Close", id="cancel-button", n_clicks=0),
                                         ],
