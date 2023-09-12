@@ -217,7 +217,7 @@ def map_view_map(mem_data, checklist, param, end_date):
     # This is technically a secret, but anyone can request this from mapbox so I'm not concerened about it.
     mem_df = pd.read_json(mem_data)
     mem_df = mem_df.sort_values(by="datetime")
-    mem_df = mem_df.drop_duplicates(subset="staid", keep="first")
+    mem_df = mem_df.drop_duplicates(subset="staid", keep="last")
     nondetects = common.filter_nondetect_data(mem_df)
     no_data = common.filter_nodata_data(
         data.NODATA_DF, staids=list(mem_df["staid"]), checklist=checklist
