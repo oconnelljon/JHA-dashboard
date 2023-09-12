@@ -22,7 +22,7 @@ from utils.settings import MAPBOX_ACCESS_TOKEN, MAPBOX_BASELAYER_STYLE
     ],
     [
         Input("memory-PoI-data", "data"),
-        Input("param_select", "value"),
+        Input("param-select", "value"),
     ],
 )
 def summarize_data(mem_data, param) -> tuple:
@@ -127,7 +127,7 @@ def toggle_modal(n1, n2, is_open):
         Input("station-checklist", "value"),
         Input("date-range", "start_date"),
         Input("date-range", "end_date"),
-        Input("param_select", "value"),
+        Input("param-select", "value"),
     ],
 )
 def filter_x_data(station_nm, start_date, end_date, param_x):
@@ -209,7 +209,7 @@ def filter_scatter_data(station_nm, start_date, end_date, param_x, param_y):
     [
         Input("memory-PoI-data", "data"),
         Input("station-checklist", "value"),
-        Input("param_select", "value"),
+        Input("param-select", "value"),
         Input("date-range", "end_date"),
     ],
 )
@@ -366,7 +366,7 @@ def map_view_map(mem_data, checklist, param, end_date):
     Output("plot_param_ts", "figure"),
     [
         Input("memory-PoI-data", "data"),
-        Input("param_select", "value"),
+        Input("param-select", "value"),
     ],
 )
 def plot_param_ts(mem_data, param):
@@ -377,7 +377,7 @@ def plot_param_ts(mem_data, param):
     data : JSON
         JSON object from memory-output cache
     param : str
-        Parameter code, e.g. p00400 from param_select dropdown
+        Parameter code, e.g. p00400 from param-select dropdown
 
     Returns
     -------
@@ -449,7 +449,7 @@ def plot_param_ts(mem_data, param):
     Output("plot_dumbbell", "figure"),
     [
         Input("memory-PoI-data", "data"),
-        Input("param_select", "value"),
+        Input("param-select", "value"),
     ],
 )
 def plot_dumbbell(mem_data, param):
@@ -526,7 +526,7 @@ def plot_dumbbell(mem_data, param):
     Output("plot_box", "figure"),
     [
         Input("memory-PoI-data", "data"),
-        Input("param_select", "value"),
+        Input("param-select", "value"),
     ],
 )
 def plot_box(mem_data, param):
