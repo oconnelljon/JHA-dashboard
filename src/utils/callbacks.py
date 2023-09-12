@@ -1,17 +1,18 @@
 # callbacks.py
 from array import array
-import pandas as pd
+
 import numpy as np
-from dash import Input, Output, State, callback_context, dash, dcc
-import dash
-from dash.exceptions import PreventUpdate
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from natsort import natsorted, index_natsorted
+from dash import Input, Output, State, callback_context, dash, dcc
+from dash.exceptions import PreventUpdate
+import dash
+from natsort import index_natsorted, natsorted
 
 import utils.epa_codes as pc
-from utils.settings import MAPBOX_ACCESS_TOKEN, MAPBOX_BASELAYER_STYLE
 from utils import common, data
+from utils.settings import MAPBOX_ACCESS_TOKEN, MAPBOX_BASELAYER_STYLE
 
 
 @dash.callback(
@@ -58,17 +59,32 @@ def summarize_data(mem_data, param) -> tuple:
     first_sample = group_staid["ActivityStartDate"].min()
     first_sample = first_sample.rename("First Sample")
 
-    my_data = pd.concat([station_nms, total_samples, non_detects, table_median, first_sample, last_sample], axis=1)
+    my_data = pd.concat(
+        [station_nms, total_samples, non_detects, table_median, first_sample, last_sample], axis=1
+    )
 
     my_data["Station ID"] = my_data.index
-    my_data = my_data[["Station Name", "Station ID", "Latest Sample", "First Sample", "Sample Count", "Not Detected", "Median Value"]]
+    my_data = my_data[
+        [
+            "Station Name",
+            "Station ID",
+            "Latest Sample",
+            "First Sample",
+            "Sample Count",
+            "Not Detected",
+            "Median Value",
+        ]
+    ]
     my_data = my_data.sort_values(
         by="Station Name",
         key=lambda x: np.argsort(
             index_natsorted(my_data["Station Name"]),
         ),
     )
-    return my_data.to_dict("records"), f"Summary Table for data from {group_staid['ActivityStartDate'].min().min()} to {group_staid['ActivityStartDate'].max().max()} for {data.available_param_dict[param]}"
+    return (
+        my_data.to_dict("records"),
+        f"Summary Table for data from {group_staid['ActivityStartDate'].min().min()} to {group_staid['ActivityStartDate'].max().max()} for {data.available_param_dict[param]}",
+    )
 
 
 @dash.callback(
@@ -119,7 +135,11 @@ def filter_x_data(station_nm, start_date, end_date, param_x):
     if isinstance(station_nm, str):
         station_nm = [station_nm]
     pcode_mask = data.ALL_DATA_DF["USGSPCode"] == param_x
-    staid_date_mask = (data.ALL_DATA_DF["station_nm"].isin(station_nm)) & (data.ALL_DATA_DF["ActivityStartDate"] >= str(start_date)) & (data.ALL_DATA_DF["ActivityStartDate"] <= end_date)
+    staid_date_mask = (
+        (data.ALL_DATA_DF["station_nm"].isin(station_nm))
+        & (data.ALL_DATA_DF["ActivityStartDate"] >= str(start_date))
+        & (data.ALL_DATA_DF["ActivityStartDate"] <= end_date)
+    )
     filtered_all_data = data.ALL_DATA_DF.loc[staid_date_mask & pcode_mask]
     return filtered_all_data.to_json()
 
@@ -162,13 +182,22 @@ def filter_scatter_data(station_nm, start_date, end_date, param_x, param_y):
     if isinstance(station_nm, str):
         station_nm = [station_nm]
 
-    pcode_mask = (data.ALL_DATA_DF["USGSPCode"] == param_x) | (data.ALL_DATA_DF["USGSPCode"] == param_y)
-    staid_date_mask = (data.ALL_DATA_DF["station_nm"].isin(station_nm)) & (data.ALL_DATA_DF["ActivityStartDate"] >= str(start_date)) & (data.ALL_DATA_DF["ActivityStartDate"] <= end_date)
+    pcode_mask = (data.ALL_DATA_DF["USGSPCode"] == param_x) | (
+        data.ALL_DATA_DF["USGSPCode"] == param_y
+    )
+    staid_date_mask = (
+        (data.ALL_DATA_DF["station_nm"].isin(station_nm))
+        & (data.ALL_DATA_DF["ActivityStartDate"] >= str(start_date))
+        & (data.ALL_DATA_DF["ActivityStartDate"] <= end_date)
+    )
 
     filtered = data.ALL_DATA_DF.loc[staid_date_mask & pcode_mask]
     if station_nm is None:
         return filtered.to_json(), data.NODATA_DF.to_json()
-    return filtered.to_json(), data.NODATA_DF.loc[data.NODATA_DF["staid"].isin(station_nm)].to_json()
+    return (
+        filtered.to_json(),
+        data.NODATA_DF.loc[data.NODATA_DF["staid"].isin(station_nm)].to_json(),
+    )
 
 
 @dash.callback(
@@ -190,7 +219,9 @@ def map_view_map(mem_data, checklist, param, end_date):
     mem_df = mem_df.sort_values(by="datetime")
     mem_df = mem_df.drop_duplicates(subset="staid", keep="first")
     nondetects = common.filter_nondetect_data(mem_df)
-    no_data = common.filter_nodata_data(data.NODATA_DF, staids=list(mem_df["staid"]), checklist=checklist)
+    no_data = common.filter_nodata_data(
+        data.NODATA_DF, staids=list(mem_df["staid"]), checklist=checklist
+    )
     mem_df = mem_df.loc[mem_df["ValueAndUnits"] != "Not Detected"]
     mem_df["Sample Date"] = mem_df["datetime"].astype(str).copy()
 
@@ -198,7 +229,8 @@ def map_view_map(mem_data, checklist, param, end_date):
     # date_filtered_mem_df[["Station ID", "Sample Date", "Result", "Latitude", "Longitude", "ResultMeasureValue", "ResultMeasure/MeasureUnitCode"]]
     # mem_df = mem_df[["Station ID", "Sample Date", "Result", "Latitude", "Longitude", "ResultMeasureValue", "ResultMeasure/MeasureUnitCode"]]
 
-    fig1 = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
+    # !important!  Solves strange plotly bug where graph fails to load on initialization,
+    fig1 = go.Figure(layout=dict(template="plotly"))
 
     fig1 = px.scatter_mapbox(
         mem_df,
@@ -215,7 +247,13 @@ def map_view_map(mem_data, checklist, param, end_date):
             "datetime": "Sample Date",
         },
         hover_name="station_nm",
-        hover_data={"ValueAndUnits": True, "datetime": True, "dec_lat_va": True, "dec_long_va": True, "ResultMeasureValue": False},
+        hover_data={
+            "ValueAndUnits": True,
+            "datetime": True,
+            "dec_lat_va": True,
+            "dec_long_va": True,
+            "ResultMeasureValue": False,
+        },
         mapbox_style=MAPBOX_BASELAYER_STYLE,
     )
 
@@ -282,10 +320,19 @@ def map_view_map(mem_data, checklist, param, end_date):
         fig1.add_trace(fig3.data[0])
 
     # Color bar Title, if not available, display nothing, else display units
-    if len(mem_df["ResultMeasure/MeasureUnitCode"].array) == 0 or mem_df["ResultMeasure/MeasureUnitCode"].loc[~mem_df["ResultMeasure/MeasureUnitCode"].isnull()].empty:  #  or bool(date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].isnull().array[0])
+    if (
+        len(mem_df["ResultMeasure/MeasureUnitCode"].array) == 0
+        or mem_df["ResultMeasure/MeasureUnitCode"]
+        .loc[~mem_df["ResultMeasure/MeasureUnitCode"].isnull()]
+        .empty
+    ):  #  or bool(date_filtered_mem_df["ResultMeasure/MeasureUnitCode"].isnull().array[0])
         color_bar_title = ""
     else:
-        color_bar_title = mem_df["ResultMeasure/MeasureUnitCode"].loc[~mem_df["ResultMeasure/MeasureUnitCode"].isnull()].array[0]
+        color_bar_title = (
+            mem_df["ResultMeasure/MeasureUnitCode"]
+            .loc[~mem_df["ResultMeasure/MeasureUnitCode"].isnull()]
+            .array[0]
+        )
 
     fig1.update_layout(
         coloraxis_colorbar=dict(
@@ -304,6 +351,7 @@ def map_view_map(mem_data, checklist, param, end_date):
             accesstoken=MAPBOX_ACCESS_TOKEN,
             bearing=0,
             pitch=0,
+            zoom=13,
         ),
     )
 
@@ -341,7 +389,9 @@ def plot_param_ts(mem_data, param):
     # mem_df["datetime"] = pd.to_datetime(mem_df["datetime"], format="%Y-%m-%d %H:%M")
     mem_df = mem_df.dropna(subset=["ResultMeasureValue"])
 
-    fig = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
+    fig = go.Figure(
+        layout=dict(template="plotly")
+    )  # !important!  Solves strange plotly bug where graph fails to load on initialization,
     fig = px.scatter(
         mem_df,
         x="datetime",
@@ -392,6 +442,83 @@ def plot_param_ts(mem_data, param):
     except IndexError:
         print("Invalid index, no worries")
 
+    return fig
+
+
+@dash.callback(
+    Output("plot_dumbbell", "figure"),
+    [
+        Input("memory-PoI-data", "data"),
+        Input("param_select", "value"),
+    ],
+)
+def plot_dumbbell(mem_data, param):
+    df = pd.read_json(mem_data)
+    min_df = df[
+        df["ActivityStartDate"] == df.groupby("staid")["ActivityStartDate"].transform(min)
+    ].sort_values(by="staid")
+    max_df = df[
+        df["ActivityStartDate"] == df.groupby("staid")["ActivityStartDate"].transform(max)
+    ].sort_values(by="staid")
+
+    first_values = list(min_df["ResultMeasureValue"].array)
+    last_values = list(max_df["ResultMeasureValue"].array)
+    staids = list(min_df["station_nm"].array)
+
+    short_nones = [None] * len(first_values)
+    line_data_x = list(common.roundrobin(first_values, last_values, short_nones))
+
+    long_nones = [None] * len(line_data_x)
+    line_data_y = list(common.roundrobin(staids, staids, long_nones))
+
+    fig = go.Figure(
+        data=[
+            go.Scatter(
+                x=first_values,
+                y=staids,
+                name="First sample",
+                mode="markers",
+                marker=dict(
+                    color="#B2D0EF",
+                    size=16,
+                ),
+            ),
+            go.Scatter(
+                x=last_values,
+                y=staids,
+                name="Last sample",
+                mode="markers",
+                marker=dict(
+                    color="#3283D6",
+                    size=16,
+                ),
+            ),
+            # Plot lines and arrows
+            go.Scatter(
+                x=line_data_x,
+                y=line_data_y,
+                mode="markers+lines",
+                showlegend=False,
+                marker=dict(
+                    symbol="arrow",
+                    color="black",
+                    size=16,
+                    angleref="previous",
+                ),
+            ),
+        ]
+    )
+    fig.update_layout(
+        xaxis_title=data.available_param_dict.get(param),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="left",
+            x=0,
+        ),
+        margin=dict(l=5, r=5, t=0, b=1),
+    )
     return fig
 
 
@@ -476,7 +603,9 @@ def plot_xy(mem_data, param_x: str, param_y: str):
     #     combined_x = array("f", [float("NaN")])
     #     combined_y = array("f", [float("NaN")])
 
-    fig = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
+    fig = go.Figure(
+        layout=dict(template="plotly")
+    )  # !important!  Solves strange plotly bug where graph fails to load on initialization,
     fig = px.scatter(
         combined,
         x="ResultMeasureValue_x",
@@ -503,13 +632,17 @@ def plot_xy(mem_data, param_x: str, param_y: str):
     )
 
     try:
-        if smcl := pc.SMCL_DICT.get(mem_df.loc[mem_df["USGSPCode"] == param_x]["CharacteristicName"].unique()[0], False):
+        if smcl := pc.SMCL_DICT.get(
+            mem_df.loc[mem_df["USGSPCode"] == param_x]["CharacteristicName"].unique()[0], False
+        ):
             fig = common.add_xline(fig=fig, smcl=smcl)
     except IndexError:
         print("Invalid index, no worries")
 
     try:
-        if smcl := pc.SMCL_DICT.get(mem_df.loc[mem_df["USGSPCode"] == param_y]["CharacteristicName"].unique()[0], False):
+        if smcl := pc.SMCL_DICT.get(
+            mem_df.loc[mem_df["USGSPCode"] == param_y]["CharacteristicName"].unique()[0], False
+        ):
             fig = common.add_yline(fig=fig, smcl=smcl)
     except IndexError:
         print("Invalid index, no worries")
@@ -553,7 +686,9 @@ def plot_xy(mem_data, param_x: str, param_y: str):
     ],
 )
 def plot_xyz(checklist, start_date, end_date, param_x: str, param_y: str, param_z: str):
-    mem_df = common.filter_xyz_data(data.ALL_DATA_DF, checklist, start_date, end_date, param_x, param_y, param_z)
+    mem_df = common.filter_xyz_data(
+        data.ALL_DATA_DF, checklist, start_date, end_date, param_x, param_y, param_z
+    )
     x_data = mem_df.loc[mem_df["USGSPCode"] == param_x]
     x_data = x_data.rename(columns={"ResultMeasureValue": "ResultMeasureValue_x"})
     y_data = mem_df.loc[mem_df["USGSPCode"] == param_y]
@@ -562,7 +697,16 @@ def plot_xyz(checklist, start_date, end_date, param_x: str, param_y: str, param_
     z_data = z_data.rename(columns={"ResultMeasureValue": "ResultMeasureValue_z"})
     # y_data = y_data.loc[:,["staid", "datetime", "ResultMeasureValue", "USGSPCode"]]  # Can take out later, just helping debug now.
     combined = x_data.merge(y_data, on="datetime").merge(z_data, on="datetime")
-    combined = combined[["datetime", "ResultMeasureValue_x", "ResultMeasureValue_y", "ResultMeasureValue_z", "station_nm_x", "staid_x"]]
+    combined = combined[
+        [
+            "datetime",
+            "ResultMeasureValue_x",
+            "ResultMeasureValue_y",
+            "ResultMeasureValue_z",
+            "station_nm_x",
+            "staid_x",
+        ]
+    ]
     # combined = combined.rename(columns={"station_nm_x": "Station Name", "staid_x": "staid"})
     combined_x = combined["ResultMeasureValue_x"].array
     combined_y = combined["ResultMeasureValue_y"].array
@@ -575,7 +719,9 @@ def plot_xyz(checklist, start_date, end_date, param_x: str, param_y: str, param_
         combined_y = array("f", [float("NaN")])
         combined_z = array("f", [1])
 
-    fig = go.Figure(layout=dict(template="plotly"))  # !important!  Solves strange plotly bug where graph fails to load on initialization,
+    fig = go.Figure(
+        layout=dict(template="plotly")
+    )  # !important!  Solves strange plotly bug where graph fails to load on initialization,
     fig = px.scatter(
         combined,
         x=combined_x,
@@ -596,13 +742,17 @@ def plot_xyz(checklist, start_date, end_date, param_x: str, param_y: str, param_
     )
 
     try:
-        if smcl := pc.SMCL_DICT.get(mem_df.loc[mem_df["USGSPCode"] == param_x]["CharacteristicName"].unique()[0], False):
+        if smcl := pc.SMCL_DICT.get(
+            mem_df.loc[mem_df["USGSPCode"] == param_x]["CharacteristicName"].unique()[0], False
+        ):
             fig = common.add_xline(fig=fig, smcl=smcl)
     except IndexError:
         print("Invalid index, no worries")
 
     try:
-        if smcl := pc.SMCL_DICT.get(mem_df.loc[mem_df["USGSPCode"] == param_y]["CharacteristicName"].unique()[0], False):
+        if smcl := pc.SMCL_DICT.get(
+            mem_df.loc[mem_df["USGSPCode"] == param_y]["CharacteristicName"].unique()[0], False
+        ):
             fig = common.add_yline(fig=fig, smcl=smcl)
     except IndexError:
         print("Invalid index, no worries")

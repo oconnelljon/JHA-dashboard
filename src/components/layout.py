@@ -4,13 +4,16 @@ from components import main_navbar, main_sidebar
 from utils import data
 from utils.settings import DEFAULT_PCODE
 
-parameter_of_interest_text = "Select a parameter of interest to populate the Time-Series and Box plots.  Only selected stations and data within the time range are displayed."
-time_plot_text = "The Time-Series Plot shows the values for the Parameter of Interest for the selected stations across the selected time range."
-box_plot_text = "Box plots show the distribution of data for the entire selected time range.  The longer the box, the larger the variation in the data."
-scatter_x_y_text = "The scatter plot displays data from the above drop down menues on their respective axis'. Only selected stations and data within the time range are displayed."
-scatter_x_y_z_text = "Plot X vs Y data with a third parameter that controls the size of the plot marker."
-summary_table_text = "The Summary Table contains general information about the selected stations in the time range for the Parameter of Interest.  Stations with no data are not displayed."
-location_map_text = "The location map will only show the most recent available sample value per station."
+
+parameter_of_interest_text = "Select a Parameter of Interest to populate the PoI plots and table. Only queried stations and data within the queried time range are displayed."
+time_plot_text = "Time-Series plots show the values for the Parameter of Interest for the queried stations across the queried time range."
+dumbbell_plot_text = "Dumbbell plots show a change in a parameter from the first available sample to the latest. The longer the line, the larger the change.  Arrow's indicate if the parameter increased or decreased over the queried time range."
+box_plot_text = "Box plots show the distribution of data for the entire queried time range.  The longer the box, the larger the variation in the data."
+scatter_x_y_text = "The scatter plot displays data from the above drop down menues on their respective axis'. Only queried stations and data within the time range are displayed."
+scatter_x_y_z_text = (
+    "Plot X vs Y data with a third parameter that controls the size of the plot marker."
+)
+summary_table_text = "The Summary Table contains general information about the queried stations in the time range for the Parameter of Interest.  Stations with no data are not displayed."
 
 poi_div = html.Div(
     [
@@ -23,7 +26,7 @@ poi_div = html.Div(
                             id="param_select",
                             options=data.available_param_dict,
                             value=DEFAULT_PCODE,
-                            persistence=True,
+                            # persistence=True,
                             clearable=False,
                         ),
                     ],
@@ -33,7 +36,7 @@ poi_div = html.Div(
                     [
                         dbc.CardHeader("Time-Series Plot"),
                         dcc.Graph(id="plot_param_ts", className="scatter-plot"),
-                        dbc.CardHeader(
+                        dbc.CardFooter(
                             time_plot_text,
                             # className="plot-text",
                         ),
@@ -42,25 +45,24 @@ poi_div = html.Div(
                 ),
                 dbc.Card(
                     [
+                        dbc.CardHeader("Dumbbell Plot"),
+                        dcc.Graph(id="plot_dumbbell", className="first-last-plot"),
+                        dbc.CardFooter(
+                            dumbbell_plot_text,
+                        ),
+                    ],
+                    className="plots-wrapper",
+                ),
+                dbc.Card(
+                    [
                         dbc.CardHeader("Box Plot"),
                         dcc.Graph(id="plot_box", className="box-plot"),
-                        dbc.CardHeader(
+                        dbc.CardFooter(
                             box_plot_text,
                             # className="plot-text",
                         ),
                     ],
                     className="plots-wrapper",
-                ),
-                # Map
-                dbc.Card(
-                    [
-                        dbc.CardHeader(html.P(id="map-text")),
-                        # html.H3(html.P(id="map-text")),
-                        html.P(id="graph-text-param", style={"font-weight": "bold", "text-align": "center"}),
-                        dcc.Graph(id="map-view-graph", className="map-view-container", responsive=True),
-                        dbc.CardHeader(html.P(location_map_text)),
-                    ],
-                    className="table-container",
                 ),
                 dbc.Card(
                     [
@@ -69,7 +71,7 @@ poi_div = html.Div(
                             id="summary-table",
                             sort_action="native",
                         ),
-                        dbc.CardHeader(
+                        dbc.CardFooter(
                             summary_table_text,
                             # className="plot-text",
                         ),
@@ -205,7 +207,9 @@ def make_layout():
     return html.Div(
         [
             dcc.Store(id="memory-PoI-data", storage_type="memory"),  # Holds plotting data for map
-            dcc.Store(id="memory-time-plot-no-data", storage_type="memory"),  # Holds plotting data for map if no data found
+            dcc.Store(
+                id="memory-time-plot-no-data", storage_type="memory"
+            ),  # Holds plotting data for map if no data found
             dcc.Store(id="memory-xy-plot", storage_type="memory"),  # Holds scatter plot x-y data
             html.Div(
                 [
