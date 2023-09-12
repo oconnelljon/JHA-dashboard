@@ -23,7 +23,7 @@ poi_div = html.Div(
                 html.Div(
                     [
                         dcc.Dropdown(
-                            id="param_select",
+                            id="param-select",
                             options=data.available_param_dict,
                             value=DEFAULT_PCODE,
                             # persistence=True,
