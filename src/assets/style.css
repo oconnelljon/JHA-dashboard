@@ -161,7 +161,7 @@ p {
     flex-shrink: 0;
     border-right: groove;
     padding-top: 10px;
-    padding-right: 5px;
+    /* padding-right: 5px; */
 }
 
 .station-sub-container p {
@@ -171,14 +171,21 @@ p {
 
 .sidebar-sub-container {
     /* max-height: 10rem; */
-    align-self: stretch;
+    /* align-self: stretch; */
     background-color: white;
     border-radius: 4px;
     margin-bottom: 4px;
 }
 
-#date-range {
+#daterange-container {
+    text-align: center;
+    /* margin: 0 auto; */
     /* width: 100%; */
+}
+
+.DateRangePickerInput_arrow {
+    vertical-align: revert;
+    align-self: center;
 }
 
 #coop-img-container {
@@ -316,5 +323,9 @@ p {
 }
 
 .table-container .card-footer{
+    height: revert;
+}
+
+.map-container .card-footer{
     height: revert;
 }
