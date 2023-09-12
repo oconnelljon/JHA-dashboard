@@ -1,11 +1,53 @@
 /* Good colors: https://www.color-hex.com/color/335379 #033F7A  #f5f5f5 */
+
+/*
+  1. Use a more-intuitive box-sizing model.
+*/
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+/*
+2. Remove default margin
+*/
+* {
+margin: 0;
+}
+/*
+Typographic tweaks!
+3. Add accessible line-height
+4. Improve text rendering
+*/
+body {
+line-height: 1.5;
+-webkit-font-smoothing: antialiased;
+}
+/*
+6. Remove built-in form typography styles
+*/
+input, button, textarea, select {
+font: inherit;
+}
+/*
+7. Avoid text overflows
+*/
+p, h1, h2, h3, h4, h5, h6 {
+overflow-wrap: break-word;
+}
+/*
+8. Create a root stacking context
+*/
+#root, #__next {
+isolation: isolate;
+}
+
+
 html, body, .root, .page-container, #react-entry-point{
-    height: 100%;
+    min-height: 100vh;;
     margin: 0;
     overflow: hidden;
 }
 
-.SmallerPage{
+/* .SmallerPage{
     -webkit-transform:scale(0.80);
     -moz-transform:scale(0.80);
     -ms-transform:scale(0.80);
@@ -13,18 +55,19 @@ html, body, .root, .page-container, #react-entry-point{
     -ms-transform-origin:0 0;
     -webkit-transform-origin:0 0;
     -moz-transform-origin:0 0;
-    transform-origin:0 0;}
+    transform-origin:0 0;
+} */
 
 .H1, H1 {
-    font-size: 2.0rem;
+    font-size: 1.3rem;
     margin: 0px;
     color: whitesmoke;
 }
 
 .H2, H2 {
     text-align: center;
-    font-size: 1.2rem;
-    margin: 0px;
+    font-size: 1.0rem;
+    margin: 5px;
     background: #004c7d;
     color: whitesmoke;
 }
@@ -114,7 +157,7 @@ p {
     display: flex;
     height: calc(100vh - 73px);
     flex-direction: column;
-    flex-basis: 20rem;
+    flex-basis: 25rem;
     flex-shrink: 0;
     border-right: groove;
     padding-top: 10px;
@@ -127,6 +170,7 @@ p {
 }
 
 .sidebar-sub-container {
+    /* max-height: 10rem; */
     align-self: stretch;
     background-color: white;
     border-radius: 4px;
@@ -134,7 +178,7 @@ p {
 }
 
 #date-range {
-    width: 100%;
+    /* width: 100%; */
 }
 
 #coop-img-container {
@@ -152,16 +196,39 @@ p {
     flex-grow: 1;
 }
 
+.DateRangePickerInput__withBorder {
+    display: flex;
+}
+
+.map-container {
+    /* flex-basis: 60rem; */
+    flex-grow: 1;
+}
+
 .map-view-container {
     /* Needs height so it doesn't get run over */
     min-height: 29rem;
+    flex-grow: 1;
 }
 
 #station-checklist {
     line-height:1em;
     overflow-y:scroll;
-    height: 20rem;
+    height: 7rem;
 }
+
+.checkbox-label {
+    font-size: 0.9rem;
+}
+
+/* .DateInput_input {
+    padding: 5px 5px 5px;
+    width: revert;
+}
+
+.DateInput {
+    width: revert;
+} */
 
 .body-container {
     display: flex;
@@ -234,7 +301,20 @@ p {
 }
 
 .card-header {
+    font-size: 0.8rem;
     color: #00264c;
     border-color: #00264c;
     background-color: #e7e7e7;
+}
+
+.card-footer {
+    font-size: 0.8rem;
+    height: 100%;
+    /* color: #00264c; */
+    /* border-color: #00264c; */
+    /* background-color: #e7e7e7; */
+}
+
+.table-container .card-footer{
+    height: revert;
 }
