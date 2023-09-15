@@ -206,11 +206,9 @@ main_div = html.Div(
 def make_layout():
     return html.Div(
         [
-            dcc.Store(id="memory-PoI-data", storage_type="memory"),  # Holds plotting data for map
-            dcc.Store(
-                id="memory-time-plot-no-data", storage_type="memory"
-            ),  # Holds plotting data for map if no data found
-            dcc.Store(id="memory-xy-plot", storage_type="memory"),  # Holds scatter plot x-y data
+            dcc.Store(id="memory-PoI-data", storage_type="memory"),
+            dcc.Store(id="memory-time-plot-no-data", storage_type="memory"),
+            dcc.Store(id="memory-xy-plot", storage_type="memory"),
             html.Div(
                 [
                     dcc.Location(id="url"),
