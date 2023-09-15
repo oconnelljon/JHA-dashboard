@@ -38,7 +38,7 @@ def get_qwp_data(staid_list, start_lo, start_hi):
     # Load and scrub QWP data
     decode_response = io.StringIO(response.content.decode("utf-8"))
     dataframe = pd.read_csv(decode_response, dtype={"USGSPCode": str})
-    if dataframe.empty == True:
+    if dataframe.empty is True:
         print("No data from qwp!")
         raise SystemExit
     dataframe["USGSPCode"] = "p" + dataframe["USGSPCode"]
