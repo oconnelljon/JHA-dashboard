@@ -3,9 +3,9 @@
 /*
   1. Use a more-intuitive box-sizing model.
 */
-*, *::before, *::after {
+/* *, *::before, *::after {
     box-sizing: border-box;
-}
+} */
 /*
 2. Remove default margin
 */
@@ -36,9 +36,9 @@ overflow-wrap: break-word;
 /*
 8. Create a root stacking context
 */
-#root, #__next {
+/* #root, #__next {
 isolation: isolate;
-}
+} */
 
 
 html, body, .root, .page-container, #react-entry-point{
@@ -97,7 +97,7 @@ p {
     margin-bottom: 2px;
 }
 
-.navbar-container {
+/* .navbar-container {
     z-index: 2000;
     display: flex;
     justify-content: space-between;
@@ -113,7 +113,7 @@ p {
         rgb(0 0 0 / 12%) 0px 1px 10px 0px;
     background-color: #00264c;
     height: 73px
-}
+} */
 
 .navbar-brand-container {
     font-size: 2rem;
