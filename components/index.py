@@ -66,7 +66,7 @@ index_string = """
                     </div>
                     <!-- /.footer-doi -->
 
-                    <hr>
+                    <!-- <hr> -->
 
                 <!-- .footer-utl-links -->
                 <div class="footer-doi">
