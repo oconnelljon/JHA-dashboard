@@ -121,6 +121,7 @@ footer.footer {
 	position: relative;
 	width: 100%;
 	border-top: 1px solid #E5E5E5;
+    margin-top: auto;
 }
 
 footer.footer .footer-doi {

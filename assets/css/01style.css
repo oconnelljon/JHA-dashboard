@@ -41,21 +41,40 @@ isolation: isolate;
 } */
 
 
-html, body, .root, .page-container, #react-entry-point{
-    min-height: 80vh;
+html, body {
     margin: 0;
-    overflow: hidden;
+    /* overflow: hidden; */
+    height: 100vh;
+    min-height: 100%;
 }
 
-/* .SmallerPage{
-    -webkit-transform:scale(0.80);
-    -moz-transform:scale(0.80);
-    -ms-transform:scale(0.80);
-    transform:scale(0.80);
-    -ms-transform-origin:0 0;
-    -webkit-transform-origin:0 0;
-    -moz-transform-origin:0 0;
-    transform-origin:0 0;
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+header,
+footer {
+    flex: none;
+}
+
+#react-entry-point {
+    overflow-y: hidden;
+    /* flex: auto; */
+}
+
+.root {
+    height: 100%;
+}
+
+.body-container {
+    height: calc(100% - 2.7rem);
+    display: flex;
+    /* height: calc(81.5vh - 2.7rem) */
+}
+
+/* .footer .tmp-container {
+    height: 100px;
 } */
 
 .H1, H1 {
@@ -155,7 +174,7 @@ p {
 /* ################### Sidebar */
 .sidebar-container {
     display: flex;
-    height: calc(100vh - 73px);
+    height: 100%;
     flex-direction: column;
     flex-basis: 25rem;
     flex-shrink: 0;
@@ -237,15 +256,10 @@ p {
     width: revert;
 } */
 
-.body-container {
-    display: flex;
-    /* height: calc(100vh - 73px); */
-    height: inherit;
-}
-
 #main-wrapper {
     overflow-y: scroll;
     width: 100%;
+    flex: auto;
 }
 
 .main-body-container {
