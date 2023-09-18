@@ -1,6 +1,6 @@
 from dash import dcc, html, dash_table
 import dash_bootstrap_components as dbc
-from components import main_navbar, main_sidebar
+from components import make_title_bar, main_sidebar
 from utils import data
 from utils.settings import DEFAULT_PCODE
 
@@ -209,19 +209,14 @@ def make_layout():
             dcc.Store(id="memory-PoI-data", storage_type="memory"),
             dcc.Store(id="memory-time-plot-no-data", storage_type="memory"),
             dcc.Store(id="memory-xy-plot", storage_type="memory"),
+            dcc.Location(id="url"),
+            make_title_bar(),
             html.Div(
                 [
-                    dcc.Location(id="url"),
-                    main_navbar(),
-                    html.Div(
-                        [
-                            main_sidebar(checklist_option=data.STATION_NMs),
-                            main_div,
-                        ],
-                        className="body-container",
-                    ),
+                    main_sidebar(checklist_option=data.STATION_NMs),
+                    main_div,
                 ],
-                className="page-container",
+                className="body-container",
             ),
         ],
         className="root",
