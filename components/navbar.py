@@ -17,6 +17,7 @@ def make_title_bar():
             html.Div(
                 [
                     dbc.Button("Download", color="primary", id="download-button", n_clicks=0),
+                    dbc.Button("Info", color="primary", id="info-button", n_clicks=0),
                     dbc.Modal(
                         [
                             dbc.ModalBody(

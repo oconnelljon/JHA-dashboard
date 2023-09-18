@@ -121,22 +121,31 @@ def sync_checklists(staids_selected, all_selected):
     return staids_selected, all_selected
 
 
-# @dash.callback(
-#     Output("download-dataframe-csv", "data"),
-#     Input("download-modal-button", "n_clicks"),
-#     prevent_initial_call=True,
-# )
-# def user_download(n_clicks):
-#     return dcc.send_data_frame(data.ALL_DATA_DF.to_csv, "You_data.csv")
+@dash.callback(
+    Output("download-dataframe-csv", "data"),
+    Input("download-modal-button", "n_clicks"),
+    prevent_initial_call=True,
+)
+def user_download(n_clicks):
+    return dcc.send_data_frame(data.ALL_DATA_DF.to_csv, "You_data.csv")
 
 
-# @dash.callback(
-#     Output("download-modal-container", "is_open"),
-#     [Input("download-button", "n_clicks"), Input("cancel-button", "n_clicks")],
-#     [State("download-modal-container", "is_open")],
-# )
-# def toggle_modal(n1, n2, is_open):
-#     return not is_open if n1 or n2 else is_open
+@dash.callback(
+    Output("download-modal-container", "is_open"),
+    [Input("download-button", "n_clicks"), Input("cancel-button", "n_clicks")],
+    [State("download-modal-container", "is_open")],
+)
+def toggle_download_modal(n1, n2, is_open):
+    return not is_open if n1 or n2 else is_open
+
+
+@dash.callback(
+    Output("info-modal", "is_open"),
+    [Input("info-button", "n_clicks"), Input("cancel-button", "n_clicks")],
+    [State("info-modal", "is_open")],
+)
+def toggle_info_modal(n1, n2, is_open):
+    return not is_open if n1 or n2 else is_open
 
 
 @dash.callback(

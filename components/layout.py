@@ -1,9 +1,9 @@
-from dash import dcc, html, dash_table
 import dash_bootstrap_components as dbc
-from components import make_title_bar, main_sidebar
+from dash import dash_table, dcc, html
+
+from components import main_sidebar, make_title_bar
 from utils import data
 from utils.settings import DEFAULT_PCODE
-
 
 parameter_of_interest_text = "Select a Parameter of Interest to populate the PoI plots and table. Only queried stations and data within the queried time range are displayed."
 time_plot_text = "Time-Series plots show the values for the Parameter of Interest for the queried stations across the queried time range."
@@ -14,6 +14,10 @@ scatter_x_y_z_text = (
     "Plot X vs Y data with a third parameter that controls the size of the plot marker."
 )
 summary_table_text = "The Summary Table contains general information about the queried stations in the time range for the Parameter of Interest.  Stations with no data are not displayed."
+about_tab_text = "This is the Jackson Hole Airport data review dashboard!  \nHi Peter!"
+learn_tab_text = "Put things to learn more about here!"
+disclaimer_tab_text1 = "This software has been approved for release by the U.S. Geological Survey (USGS). Although the software has been subjected to review, the USGS reserves the right to update the software as needed pursuant to further analysis and review. No warranty, expressed or implied, is made by the USGS or the U.S. Government as to the functionality of the software and related material nor shall the fact of release constitute any such warranty. Furthermore, the software is released on condition that neither the USGS nor the U.S. Government shall be held liable for any damages resulting from its authorized or unauthorized use. \n"
+disclaimer_tab_text2 = "Unless otherwise stated, all data, metadata and related materials are considered to satisfy the quality standards relative to the purpose for which the data were collected. Some data presented may be preliminary and is subject to revision; it is being provided for timely best science. The information is provided on the condition that neither the U.S. Geological Survey nor the U.S. Government shall be held liable for any damages resulting from the authorized and unauthorized use of the information."
 
 poi_div = html.Div(
     [
@@ -172,6 +176,7 @@ comp_xyz_div = dbc.Card(
     className="plots-wrapper",
 )
 
+# TODO make collapsable containers for map and plots but leave PoI
 main_div = html.Div(
     [
         html.Main(
@@ -203,6 +208,56 @@ main_div = html.Div(
 )
 
 
+about_tab = dbc.Card(
+    dbc.CardBody(
+        [
+            html.P(about_tab_text, className="card-text"),
+        ]
+    ),
+    className="about-tab",
+)
+
+learn_tab = dbc.Card(
+    dbc.CardBody(
+        [
+            html.P(learn_tab_text, className="card-text"),
+        ]
+    ),
+    className="learn-tab",
+)
+
+disclaimer_tab = dbc.Card(
+    dbc.CardBody(
+        [
+            html.P(disclaimer_tab_text1, className="card-text1"),
+            html.Br(),
+            html.P(disclaimer_tab_text2, className="card-text2"),
+        ]
+    ),
+    className="disclaimer-tab",
+)
+
+info_tabs = dbc.Tabs(
+    [
+        dbc.Tab(about_tab, label="About"),
+        dbc.Tab(learn_tab, label="Learn more"),
+        dbc.Tab(disclaimer_tab, label="Disclaimer"),
+    ],
+)
+
+# TODO spash modal on startup
+info_modal = dbc.Modal(
+    [
+        dbc.ModalHeader(dbc.ModalTitle("Welcome!")),
+        dbc.ModalBody(info_tabs),
+        # dbc.ModalFooter(),
+    ],
+    id="info-modal",
+    is_open=True,
+    # centered=True,
+)
+
+
 def make_layout():
     return html.Div(
         [
@@ -210,6 +265,7 @@ def make_layout():
             dcc.Store(id="memory-time-plot-no-data", storage_type="memory"),
             dcc.Store(id="memory-xy-plot", storage_type="memory"),
             dcc.Location(id="url"),
+            info_modal,
             make_title_bar(),
             html.Div(
                 [
