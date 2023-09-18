@@ -24,10 +24,10 @@ If you want the to hide the search, remove the comment out slashes and astricks 
 /* =============LOGO===============*/ 
 /* THE DEFAULT LOGO HEIGHT IS 65PX:
 If you want the logo to be smaller (50px), comment out the ".logo-header img {height 65px;}" below and remove the comment out slashes and astricks surrounding the ".logo-header img {height: 50px...margin-top: 18px;}" and the header search input (so the search box size is reduced too). 50px is the MINIMUM HEIGHT for the logo. */
- .logo-header img {
+ /* .logo-header img {
     height: 65px;
-}
-/*
+} */
+
 .logo-header img {
 	height: 50px;
 } 
@@ -40,7 +40,7 @@ If you want the logo to be smaller (50px), comment out the ".logo-header img {he
 	height: 30px;
 	margin-top: 18px;
 }
-*/
+
 
 /* =============STANDARD CONTENT===============*/ 
 /* TO CHANGE THE TEXT SIZE OF THE CONTENT, FONT, ETC:

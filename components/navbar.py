@@ -9,10 +9,7 @@ from utils.settings import APP_TITLE
 def main_navbar():
     return html.Div(
         [
-            html.Div(
-                html.Img(src=dash.get_asset_url("usgs-logo.png")),
-                className="navbar-brand-container",
-            ),
+            html.Div(),
             html.Div(
                 html.H1(APP_TITLE),
                 className="navbar-title-container",

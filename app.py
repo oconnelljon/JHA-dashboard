@@ -10,36 +10,37 @@ import dash
 import dash_bootstrap_components as dbc
 import flask
 
+from components.index import index_string
 from utils.settings import PORT, ADDRESS, APP_TITLE
 import utils.data
 import utils.callbacks
 from components.layout import make_layout
 
 CSS = [
-    # dbc.themes.SPACELAB,
-    "assets/css/common.css",
-    "assets/css/custom.css",
-    "assets/css/03_style.css",
-    # "assets/uswds/dist/css/uswds.css"
+    dbc.themes.SPACELAB,
+    # "assets/css/common.css",
+    # "assets/css/custom.css",
+    # "assets/css/03_style.css",
+    # # "assets/uswds/dist/css/uswds.css"
 ]
 
-f_app = flask.Flask(__name__)
+# f_app = flask.Flask(__name__)
 # Initialize App
 app = dash.Dash(
     __name__,
     assets_folder="assets",
     external_stylesheets=CSS,
     title=APP_TITLE,
-    server=f_app,
+    # server=f_app,
 )  # type: ignore  # pylance doesn't think f_app is suitable.
 # server = app.server  # Important for debugging and using Flask!
-
+app.index_string = index_string
 
 app.layout = make_layout()
 
 if __name__ == "__main__":
     app.run_server(
-        debug=True,
+        debug=False,
         port=PORT,
         host=ADDRESS,
         threaded=True,
