@@ -6,7 +6,7 @@ import dash
 from utils.settings import APP_TITLE
 
 
-def main_navbar():
+def make_title_bar():
     return html.Div(
         [
             html.Div(),
