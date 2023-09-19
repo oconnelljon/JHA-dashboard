@@ -20,24 +20,31 @@ def make_title_bar():
                     dbc.Button("Info", color="primary", id="info-button", n_clicks=0),
                     dbc.Modal(
                         [
+                            dbc.ModalHeader(dbc.ModalTitle("Download Data")),
                             dbc.ModalBody(
                                 [
-                                    dbc.Label("Download all data."),
                                     html.Div(
                                         [
                                             dbc.Button(
-                                                "Download",
+                                                "Download All Data",
                                                 color="primary",
-                                                id="download-modal-button",
+                                                id="download-all-button",
                                                 n_clicks=0,
                                             ),
-                                            dcc.Download(id="download-dataframe-csv"),
+                                            dcc.Download(id="download-all-data-csv"),
+                                            dbc.Button(
+                                                "Download Queried Data",
+                                                color="primary",
+                                                id="download-query-button",
+                                                n_clicks=0,
+                                            ),
+                                            dcc.Download(id="download-query-data-csv"),
                                             dbc.Button("Close", id="cancel-button", n_clicks=0),
                                         ],
                                         id="modal-button-container",
                                     ),
                                 ],
-                            )
+                            ),
                         ],
                         id="download-modal-container",
                         is_open=False,

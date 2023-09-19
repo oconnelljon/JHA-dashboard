@@ -122,8 +122,21 @@ def sync_checklists(staids_selected, all_selected):
 
 
 @dash.callback(
-    Output("download-dataframe-csv", "data"),
-    Input("download-modal-button", "n_clicks"),
+    Output("download-query-data-csv", "data"),
+    [
+        Input("memory-PoI-data", "data"),
+        Input("download-query-button", "n_clicks"),
+    ],
+    prevent_initial_call=True,
+)
+def user_download(mem_data, n_clicks):
+    mem_df = pd.read_json(mem_data)
+    return dcc.send_data_frame(mem_df.to_csv, "You_data.csv")
+
+
+@dash.callback(
+    Output("download-all-data-csv", "data"),
+    Input("download-all-button", "n_clicks"),
     prevent_initial_call=True,
 )
 def user_download(n_clicks):
