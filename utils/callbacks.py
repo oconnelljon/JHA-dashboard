@@ -129,7 +129,7 @@ def sync_checklists(staids_selected, all_selected):
     ],
     prevent_initial_call=True,
 )
-def user_download(mem_data, n_clicks):
+def user_all_data_download(mem_data, _):
     mem_df = pd.read_json(mem_data)
     return dcc.send_data_frame(mem_df.to_csv, "You_data.csv")
 
@@ -139,7 +139,7 @@ def user_download(mem_data, n_clicks):
     Input("download-all-button", "n_clicks"),
     prevent_initial_call=True,
 )
-def user_download(n_clicks):
+def user_queried_data_download(_):
     return dcc.send_data_frame(data.ALL_DATA_DF.to_csv, "You_data.csv")
 
 
