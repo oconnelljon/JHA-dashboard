@@ -1,16 +1,15 @@
 # callbacks.py
 from array import array
 
+import dash
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import utils.epa_codes as pc
 from dash import Input, Output, State, callback_context, dash, dcc
 from dash.exceptions import PreventUpdate
-import dash
 from natsort import index_natsorted, natsorted
-
-import utils.epa_codes as pc
 from utils import common, data
 from utils.settings import MAPBOX_ACCESS_TOKEN, MAPBOX_BASELAYER_STYLE
 
@@ -115,7 +114,9 @@ def sync_checklists(staids_selected, all_selected):
     ctx = callback_context
     input_id = ctx.triggered[0]["prop_id"].split(".")[0]
     if input_id == "station-checklist":
-        all_selected = ["Select All"] if set(staids_selected) == set(data.STATION_NMs) else []
+        all_selected = (
+            ["Select All"] if set(staids_selected) == set(data.STATION_NMs) else []
+        )
     else:
         staids_selected = data.STATION_NMs if all_selected else []
     return staids_selected, all_selected
@@ -479,7 +480,9 @@ def plot_param_ts(mem_data, param):
     )
 
     try:
-        smcl_name = mem_df.loc[mem_df["USGSPCode"] == param]["CharacteristicName"].unique()[0]
+        smcl_name = mem_df.loc[mem_df["USGSPCode"] == param][
+            "CharacteristicName"
+        ].unique()[0]
         smcl = pc.SMCL_DICT.get(smcl_name, False)
         if smcl and smcl_name != "Nitrate" and smcl_name != "Manganese":
             fig.add_hline(
@@ -514,10 +517,12 @@ def plot_param_ts(mem_data, param):
 def plot_dumbbell(mem_data, param):
     df = pd.read_json(mem_data)
     min_df = df[
-        df["ActivityStartDate"] == df.groupby("staid")["ActivityStartDate"].transform(min)
+        df["ActivityStartDate"]
+        == df.groupby("staid")["ActivityStartDate"].transform(min)
     ].sort_values(by="staid")
     max_df = df[
-        df["ActivityStartDate"] == df.groupby("staid")["ActivityStartDate"].transform(max)
+        df["ActivityStartDate"]
+        == df.groupby("staid")["ActivityStartDate"].transform(max)
     ].sort_values(by="staid")
 
     first_values = list(min_df["ResultMeasureValue"].array)
@@ -645,7 +650,9 @@ def plot_box(mem_data, param):
     )
 
     try:
-        smcl_name = mem_df.loc[mem_df["USGSPCode"] == param]["CharacteristicName"].unique()[0]
+        smcl_name = mem_df.loc[mem_df["USGSPCode"] == param][
+            "CharacteristicName"
+        ].unique()[0]
         smcl = pc.SMCL_DICT.get(smcl_name, False)
         if smcl and smcl_name != "Nitrate" and smcl_name != "Manganese":
             fig.add_hline(
@@ -715,7 +722,10 @@ def plot_xy(mem_data, param_x: str, param_y: str):
 
     try:
         if smcl := pc.SMCL_DICT.get(
-            mem_df.loc[mem_df["USGSPCode"] == param_x]["CharacteristicName"].unique()[0], False
+            mem_df.loc[mem_df["USGSPCode"] == param_x]["CharacteristicName"].unique()[
+                0
+            ],
+            False,
         ):
             fig = common.add_xline(fig=fig, smcl=smcl)
     except IndexError:
@@ -723,7 +733,10 @@ def plot_xy(mem_data, param_x: str, param_y: str):
 
     try:
         if smcl := pc.SMCL_DICT.get(
-            mem_df.loc[mem_df["USGSPCode"] == param_y]["CharacteristicName"].unique()[0], False
+            mem_df.loc[mem_df["USGSPCode"] == param_y]["CharacteristicName"].unique()[
+                0
+            ],
+            False,
         ):
             fig = common.add_yline(fig=fig, smcl=smcl)
     except IndexError:
@@ -825,7 +838,10 @@ def plot_xyz(checklist, start_date, end_date, param_x: str, param_y: str, param_
 
     try:
         if smcl := pc.SMCL_DICT.get(
-            mem_df.loc[mem_df["USGSPCode"] == param_x]["CharacteristicName"].unique()[0], False
+            mem_df.loc[mem_df["USGSPCode"] == param_x]["CharacteristicName"].unique()[
+                0
+            ],
+            False,
         ):
             fig = common.add_xline(fig=fig, smcl=smcl)
     except IndexError:
@@ -833,7 +849,10 @@ def plot_xyz(checklist, start_date, end_date, param_x: str, param_y: str, param_
 
     try:
         if smcl := pc.SMCL_DICT.get(
-            mem_df.loc[mem_df["USGSPCode"] == param_y]["CharacteristicName"].unique()[0], False
+            mem_df.loc[mem_df["USGSPCode"] == param_y]["CharacteristicName"].unique()[
+                0
+            ],
+            False,
         ):
             fig = common.add_yline(fig=fig, smcl=smcl)
     except IndexError:

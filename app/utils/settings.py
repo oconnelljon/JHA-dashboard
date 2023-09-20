@@ -1,6 +1,7 @@
 # Load environment and configuration variables
 import configparser
 import os
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -10,7 +11,7 @@ ADDRESS = os.getenv("ADDRESS")
 
 # load configuration variables
 config = configparser.ConfigParser()
-config.read("config.cfg")
+config.read("app/config.cfg")
 
 # Set defaults, load local data
 APP_TITLE = config["DEFAULTS"]["APP_TITLE"]

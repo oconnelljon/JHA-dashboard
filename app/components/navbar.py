@@ -1,8 +1,8 @@
 # navbar.py
 
+import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html
-import dash
 from utils.settings import APP_TITLE
 
 
@@ -16,7 +16,9 @@ def make_title_bar():
             ),
             html.Div(
                 [
-                    dbc.Button("Download", color="primary", id="download-button", n_clicks=0),
+                    dbc.Button(
+                        "Download", color="primary", id="download-button", n_clicks=0
+                    ),
                     dbc.Button("Info", color="primary", id="info-button", n_clicks=0),
                     dbc.Modal(
                         [
@@ -39,7 +41,9 @@ def make_title_bar():
                                                 n_clicks=0,
                                             ),
                                             dcc.Download(id="download-query-data-csv"),
-                                            dbc.Button("Close", id="cancel-button", n_clicks=0),
+                                            dbc.Button(
+                                                "Close", id="cancel-button", n_clicks=0
+                                            ),
                                         ],
                                         id="modal-button-container",
                                     ),

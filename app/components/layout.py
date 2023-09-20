@@ -1,7 +1,6 @@
 import dash_bootstrap_components as dbc
-from dash import dash_table, dcc, html
-
 from components import main_sidebar, make_title_bar
+from dash import dash_table, dcc, html
 from utils import data
 from utils.settings import DEFAULT_PCODE
 

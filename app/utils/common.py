@@ -19,7 +19,9 @@ def get_meta_data(staids: List) -> pd.DataFrame:
     dataframe = pd.read_csv(url, sep="\t", comment="#")
     dataframe = dataframe.drop(index=0)
     dataframe = dataframe.rename(columns={"site_no": "station_id_num"})
-    dataframe["staid"] = dataframe["station_nm"].str.slice(14).str.strip().apply(pd.Series)
+    dataframe["staid"] = (
+        dataframe["station_nm"].str.slice(14).str.strip().apply(pd.Series)
+    )
     dataframe["station_id_num"] = "USGS-" + dataframe["station_id_num"]
     return dataframe[["staid", "station_id_num", "dec_lat_va", "dec_long_va"]]
 
@@ -135,7 +137,9 @@ def filter_nodata_data(
     if isinstance(checklist, str):
         checklist = [checklist]
 
-    no_data_df = no_data.loc[~no_data["staid"].isin(staids) & no_data["station_nm"].isin(checklist)]
+    no_data_df = no_data.loc[
+        ~no_data["staid"].isin(staids) & no_data["station_nm"].isin(checklist)
+    ]
     return None if no_data_df.empty else no_data_df
 
 

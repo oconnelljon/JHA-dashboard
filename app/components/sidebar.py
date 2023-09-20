@@ -5,11 +5,9 @@ from datetime import datetime, timedelta
 import dash_bootstrap_components as dbc
 from dash import dcc, html
 
-location_map_text = (
-    "The location map will only show the most recent available sample value per station."
-)
-#TODO fix height
-#TODO move map somewhere else
+location_map_text = "The location map will only show the most recent available sample value per station."
+# TODO fix height
+# TODO move map somewhere else
 def main_sidebar(checklist_option):
     return html.Aside(
         [
@@ -50,9 +48,14 @@ def main_sidebar(checklist_option):
                     dbc.CardHeader(html.P(id="map-text")),
                     # html.H3(html.P(id="map-text")),
                     html.P(
-                        id="graph-text-param", style={"font-weight": "bold", "text-align": "center"}
+                        id="graph-text-param",
+                        style={"font-weight": "bold", "text-align": "center"},
                     ),
-                    dcc.Graph(id="map-view-graph", className="map-view-container", responsive=True),
+                    dcc.Graph(
+                        id="map-view-graph",
+                        className="map-view-container",
+                        responsive=True,
+                    ),
                     dbc.CardFooter(html.P(location_map_text)),
                 ],
                 className="map-container",

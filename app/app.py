@@ -9,12 +9,11 @@ module imports the data module.
 import dash
 import dash_bootstrap_components as dbc
 import flask
-
-from components.index import index_string
-from utils.settings import PORT, ADDRESS, APP_TITLE
-import utils.data
 import utils.callbacks
+import utils.data
+from components.index import index_string
 from components.layout import make_layout
+from utils.settings import ADDRESS, APP_TITLE, PORT
 
 CSS = [
     dbc.themes.SPACELAB,
