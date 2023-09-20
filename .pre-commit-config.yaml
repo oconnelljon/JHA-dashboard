@@ -1,8 +1,12 @@
 repos:
-  - repo: https://github.com/ambv/black
-    rev: stable
+  - repo: https://github.com/pycqa/isort
+    rev: 5.9.3
+    hooks:
+      - id: isort
+        args: ["--profile", "black", "--filter-files"]
+
+  - repo: https://github.com/psf/black
+    rev: 21.7b0
     hooks:
       - id: black
-        language: python
-        types: [python]
-        language_version: python3.11
+        language_version: python3
