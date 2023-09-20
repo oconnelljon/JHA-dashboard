@@ -213,19 +213,7 @@ main_div = html.Div(
         html.Main(
             [
                 poi_div,
-                html.Div(
-                    [
-                        html.H2("Comparative Plots"),
-                        html.Div(
-                            [
-                                comp_xy_div,
-                                comp_xyz_div,
-                            ],
-                            className="sub-tile-wrapper",
-                        ),
-                    ],
-                    className="tile-container",
-                ),
+                comp_plots,
             ],
             className="main-content-container",
         ),

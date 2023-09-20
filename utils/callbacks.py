@@ -166,7 +166,16 @@ def toggle_info_modal(n1, n2, is_open):
     [Input("poi-collapse-button", "n_clicks")],
     [State("poi-tile", "is_open")],
 )
-def toggle_collapse(n, is_open):
+def poi_toggle_collapse(n, is_open):
+    return not is_open if n else is_open
+
+
+@dash.callback(
+    Output("comp-tile", "is_open"),
+    [Input("comp-collapse-button", "n_clicks")],
+    [State("comp-tile", "is_open")],
+)
+def comp_toggle_collapse(n, is_open):
     return not is_open if n else is_open
 
 
