@@ -185,6 +185,28 @@ comp_xyz_div = dbc.Card(
     className="plots-wrapper",
 )
 
+comp_plots = html.Div(
+    [
+        dbc.Button(
+            "Compartative Plots",
+            color="primary",
+            id="comp-collapse-button",
+            className="collapse-button",
+            n_clicks=0,
+        ),
+        dbc.Collapse(
+            [
+                comp_xy_div,
+                comp_xyz_div,
+            ],
+            className="sub-tile-wrapper",
+            id="comp-tile",
+            is_open=True,
+        ),
+    ],
+    className="tile-container",
+)
+
 # TODO make collapsable containers for map and plots but leave PoI
 main_div = html.Div(
     [
