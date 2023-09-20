@@ -263,10 +263,10 @@ p {
 }
 
 .main-body-container {
-    padding: 10px 10px 10px 10px;
 }
 
 .main-content-container {
+    padding: 10px 10px 10px 10px;
     display: flex;
     flex-wrap: wrap;
     margin-right: auto;
@@ -275,8 +275,14 @@ p {
     max-width: 85rem;
 }
 
+.collapse-button {
+    width: 100%;
+    padding: 0.3rem;
+}
+
 .tile-container {
     display: flex;
+    width: 100%;
     flex-wrap: wrap;
     background-color: #f4faff;
     border: 1px solid #3f3f3f78;
@@ -293,6 +299,10 @@ p {
     padding-bottom: 0.3rem;
     background-color: #f4faff;
 }
+
+/* .sub-tile-wrapper, [collapsed="true"] {
+    width: 100%;
+} */
 
 .plot-text {
     background: #193b5d;

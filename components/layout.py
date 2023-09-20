@@ -21,9 +21,16 @@ disclaimer_tab_text2 = "Unless otherwise stated, all data, metadata and related 
 
 poi_div = html.Div(
     [
-        html.H2("Parameter of interest"),
-        html.Div(
+        dbc.Button(
+            "Parameter of Interest",
+            color="primary",
+            id="poi-collapse-button",
+            className="collapse-button",
+            n_clicks=0,
+        ),
+        dbc.Collapse(
             [
+                # html.H2("Parameter of interest"),
                 html.Div(
                     [
                         dcc.Dropdown(
@@ -84,6 +91,8 @@ poi_div = html.Div(
                 ),
             ],
             className="sub-tile-wrapper",
+            id="poi-tile",
+            is_open=True,
         ),
     ],
     className="tile-container",
@@ -181,27 +190,22 @@ main_div = html.Div(
     [
         html.Main(
             [
+                poi_div,
                 html.Div(
                     [
-                        poi_div,
+                        html.H2("Comparative Plots"),
                         html.Div(
                             [
-                                html.H2("Comparative Plots"),
-                                html.Div(
-                                    [
-                                        comp_xy_div,
-                                        comp_xyz_div,
-                                    ],
-                                    className="sub-tile-wrapper",
-                                ),
+                                comp_xy_div,
+                                comp_xyz_div,
                             ],
-                            className="tile-container",
+                            className="sub-tile-wrapper",
                         ),
                     ],
-                    className="main-content-container",
+                    className="tile-container",
                 ),
             ],
-            className="main-body-container",
+            className="main-content-container",
         ),
     ],
     id="main-wrapper",
@@ -254,6 +258,7 @@ info_modal = dbc.Modal(
     ],
     id="info-modal",
     is_open=True,
+    # is_open=False,
     # centered=True,
 )
 
