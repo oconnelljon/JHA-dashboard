@@ -93,7 +93,7 @@ footer {
 
 #react-entry-point {
     overflow-y: hidden;
-    /* flex: auto; */
+    flex: auto;
 }
 
 .root {
