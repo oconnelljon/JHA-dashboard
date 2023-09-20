@@ -8,7 +8,7 @@ from dash import dcc, html
 location_map_text = (
     "The location map will only show the most recent available sample value per station."
 )
-
+#TODO fix height
 #TODO move map somewhere else
 def main_sidebar(checklist_option):
     return html.Aside(
