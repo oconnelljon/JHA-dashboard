@@ -1,7 +1,6 @@
 # callbacks.py
 from array import array
 
-import dash
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -9,6 +8,7 @@ import plotly.graph_objects as go
 import utils.epa_codes as pc
 from dash import Input, Output, State, callback_context, dash, dcc
 from dash.exceptions import PreventUpdate
+import dash
 from natsort import index_natsorted, natsorted
 from utils import common, data
 from utils.settings import MAPBOX_ACCESS_TOKEN, MAPBOX_BASELAYER_STYLE

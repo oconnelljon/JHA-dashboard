@@ -9,8 +9,8 @@ module imports the data module.
 import dash
 import dash_bootstrap_components as dbc
 import flask
-import utils.callbacks
 import utils.data
+import utils.callbacks
 from components.index import index_string
 from components.layout import make_layout
 from utils.settings import ADDRESS, APP_TITLE, PORT
