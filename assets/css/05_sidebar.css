@@ -1,0 +1,53 @@
+.sidebar-container {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    flex-basis: 25rem;
+    flex-shrink: 0;
+    border-right: groove;
+    padding-top: 10px;
+    /* padding-right: 5px; */
+}
+
+.station-sub-container p {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+}
+
+.sidebar-sub-container {
+    /* max-height: 10rem; */
+    /* align-self: stretch; */
+    background-color: white;
+    border-radius: 4px;
+    margin-bottom: 4px;
+}
+
+#daterange-container {
+    text-align: center;
+    /* margin: 0 auto; */
+    /* width: 100%; */
+}
+
+.DateRangePickerInput_arrow {
+    vertical-align: revert;
+    align-self: center;
+}
+
+#coop-img-container {
+    height: 150px;
+    width: 175px;
+    background-color: white;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+}
+
+#sidebar-map-container {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.DateRangePickerInput__withBorder {
+    display: flex;
+}
