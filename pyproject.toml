@@ -1,10 +1,9 @@
 [tool.poetry]
-name = "jha-dashboard"
+name = "app"
 version = "0.1.0"
 description = "Data review dashboard for the Jackson Hole Airport, Montana."
 authors = ["O'Connell, Jonathan P <joconnell@usgs.gov>"]
 readme = "README.md"
-packages = [{include = "jha_dashboard"}]
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.13"
@@ -26,6 +25,8 @@ pytest = "^7.2.1"
 nuitka = "^1.5.8"
 ipykernel = "^6.23.3"
 pyinstaller = "^5.13.0"
+pre-commit = "^3.4.0"
+isort = "^5.12.0"
 
 [build-system]
 requires = ["poetry-core"]
